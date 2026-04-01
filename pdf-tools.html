@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Tools — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.18);
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --radius: 12px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app { position:relative; z-index:1; max-width:1000px; margin:0 auto; padding:36px 20px 80px; }
+
+/* Header */
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 36px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  text-decoration: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.back-btn:hover { color: var(--accent); border-color: rgba(34,211,238,0.3); }
+
+.header-info { flex:1; }
+
+h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+h1 span { color: var(--accent); }
+
+.header-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 28px;
+  animation: fadeUp 0.5s 0.05s ease both;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.03em;
+}
+.tab-btn:hover { color: var(--text-2); background: var(--surface-2); }
+.tab-btn.active {
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+}
+
+/* Tab panels */
+.panel { display: none; animation: fadeUp 0.3s ease both; }
+.panel.active { display: block; }
+
+/* Drop zone */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface);
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.over {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.drop-zone input[type=file] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.drop-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+  opacity: 0.7;
+}
+.drop-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.drop-hint {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* ─── VIEWER ─── */
+#viewer-controls {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  flex-wrap: wrap;
+}
+.ctrl-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ctrl-sep { width:1px; height:24px; background: var(--border); }
+
+.icon-btn {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 14px;
+  transition: all 0.15s;
+}
+.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+.icon-btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+
+.page-input {
+  width: 48px;
+  height: 32px;
+  text-align: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+}
+.page-input:focus { outline: none; border-color: var(--accent); }
+
+.page-of {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.zoom-select {
+  height: 32px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 0 8px;
+  cursor: pointer;
+}
+.zoom-select:focus { outline: none; border-color: var(--accent); }
+
+#viewer-canvas-wrap {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: auto;
+  max-height: 680px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+}
+#pdf-canvas {
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  border-radius: 4px;
+  display: block;
+  max-width: 100%;
+}
+
+/* ─── MERGE ─── */
+.merge-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+}
+@media (max-width: 700px) { .merge-layout { grid-template-columns: 1fr; } }
+
+.file-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.file-list-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.clear-btn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.clear-btn:hover { opacity: 1; }
+
+.file-items { padding: 8px; }
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  margin-bottom: 6px;
+  transition: background 0.15s;
+}
+.file-item:last-child { margin-bottom: 0; }
+.file-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  min-width: 20px;
+}
+.file-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-size {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.file-del {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+.file-del:hover { color: var(--danger); background: rgba(248,113,113,0.1); }
+
+.empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* Merge sidebar */
+.merge-sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.info-card h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text-2);
+  font-family: 'DM Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.info-row:last-child { border-bottom: none; }
+.info-label { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-3); }
+.info-val { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); }
+
+/* ─── SPLIT ─── */
+.split-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+}
+@media (max-width: 700px) { .split-layout { grid-template-columns: 1fr; } }
+
+.thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-height: 560px;
+  overflow-y: auto;
+}
+.thumb-item {
+  position: relative;
+  cursor: pointer;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: border-color 0.15s;
+  background: var(--surface-3);
+}
+.thumb-item.selected { border-color: var(--accent); }
+.thumb-item canvas { display: block; width: 100%; border-radius: 4px; }
+.thumb-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.7);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-align: center;
+  padding: 3px;
+  color: var(--text-2);
+}
+.thumb-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #000;
+  font-weight: 700;
+}
+.thumb-item.selected .thumb-check { display: flex; }
+
+.split-sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+/* Range input */
+.range-input-wrap label {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 8px;
+}
+.range-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+.range-input:focus { outline: none; border-color: var(--accent); }
+.range-hint {
+  margin-top: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+/* Buttons */
+.btn {
+  width: 100%;
+  padding: 13px 20px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.02em;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #000;
+}
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-primary:active { transform: none; }
+.btn-primary:disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+
+.btn-outline {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Progress */
+.progress-wrap {
+  display: none;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  gap: 10px;
+  align-items: center;
+}
+.progress-wrap.show { display: flex; }
+.progress-bar-bg {
+  flex: 1;
+  height: 4px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s;
+  width: 0%;
+}
+.progress-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* Toast */
+#toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+  z-index: 1000;
+  white-space: nowrap;
+}
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+#toast.success { border-color: var(--success); color: var(--success); }
+#toast.error { border-color: var(--danger); color: var(--danger); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <a href="./index.html" class="back-btn">← 홈</a>
+    <div class="header-info">
+      <h1>PDF <span>Tools</span></h1>
+      <div class="header-sub">// 뷰어 · 병합 · 분할 — 서버 업로드 없음</div>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="viewer">📄 뷰어</button>
+    <button class="tab-btn" data-tab="merge">🔗 병합</button>
+    <button class="tab-btn" data-tab="split">✂️ 분할</button>
+  </div>
+
+  <!-- ─── VIEWER PANEL ─── -->
+  <div id="panel-viewer" class="panel active">
+    <div class="drop-zone" id="viewer-drop">
+      <input type="file" accept=".pdf" id="viewer-file-input">
+      <div class="drop-icon">📄</div>
+      <div class="drop-title">PDF 파일을 여기에 놓거나 클릭</div>
+      <div class="drop-hint">// 단일 PDF 파일</div>
+    </div>
+
+    <div id="viewer-controls" style="display:none; margin-top:16px;">
+      <div class="ctrl-group">
+        <button class="icon-btn" id="v-prev" title="이전 페이지">‹</button>
+        <input type="number" class="page-input" id="v-page-num" value="1" min="1">
+        <span class="page-of">/ <span id="v-total">—</span></span>
+        <button class="icon-btn" id="v-next" title="다음 페이지">›</button>
+      </div>
+      <div class="ctrl-sep"></div>
+      <div class="ctrl-group">
+        <select class="zoom-select" id="v-zoom">
+          <option value="0.5">50%</option>
+          <option value="0.75">75%</option>
+          <option value="1" selected>100%</option>
+          <option value="1.25">125%</option>
+          <option value="1.5">150%</option>
+          <option value="2">200%</option>
+        </select>
+      </div>
+      <div class="ctrl-sep"></div>
+      <div class="ctrl-group" style="margin-left:auto;">
+        <button class="icon-btn" id="v-reset" title="닫기">✕</button>
+      </div>
+    </div>
+
+    <div id="viewer-canvas-wrap" style="display:none; margin-top:0;">
+      <canvas id="pdf-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- ─── MERGE PANEL ─── -->
+  <div id="panel-merge" class="panel">
+    <div class="drop-zone" id="merge-drop" style="margin-bottom:20px;">
+      <input type="file" accept=".pdf" multiple id="merge-file-input">
+      <div class="drop-icon">📎</div>
+      <div class="drop-title">PDF 파일들을 여기에 놓거나 클릭</div>
+      <div class="drop-hint">// 여러 파일 선택 가능 · 순서대로 병합</div>
+    </div>
+
+    <div class="merge-layout">
+      <div class="file-list">
+        <div class="file-list-header">
+          <span>파일 목록</span>
+          <button class="clear-btn" id="merge-clear">전체 삭제</button>
+        </div>
+        <div class="file-items" id="merge-file-items">
+          <div class="empty-state">// 파일을 추가하세요</div>
+        </div>
+      </div>
+
+      <div class="merge-sidebar">
+        <div class="info-card">
+          <h3>요약</h3>
+          <div class="info-row">
+            <span class="info-label">파일 수</span>
+            <span class="info-val" id="merge-count">0</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">총 크기</span>
+            <span class="info-val" id="merge-size">—</span>
+          </div>
+        </div>
+        <div class="progress-wrap" id="merge-progress">
+          <div class="progress-bar-bg"><div class="progress-bar" id="merge-bar"></div></div>
+          <span class="progress-label" id="merge-pct">0%</span>
+        </div>
+        <button class="btn btn-primary" id="merge-btn" disabled>PDF 병합 & 다운로드</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SPLIT PANEL ─── -->
+  <div id="panel-split" class="panel">
+    <div class="drop-zone" id="split-drop" style="margin-bottom:20px;">
+      <input type="file" accept=".pdf" id="split-file-input">
+      <div class="drop-icon">✂️</div>
+      <div class="drop-title">분할할 PDF를 여기에 놓거나 클릭</div>
+      <div class="drop-hint">// 단일 PDF · 페이지를 선택하거나 범위 입력</div>
+    </div>
+
+    <div class="split-layout" id="split-content" style="display:none;">
+      <div class="thumb-grid" id="thumb-grid"></div>
+
+      <div class="split-sidebar">
+        <div class="info-card">
+          <h3>파일 정보</h3>
+          <div class="info-row">
+            <span class="info-label">파일명</span>
+            <span class="info-val" id="split-fname" style="font-size:11px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">전체 페이지</span>
+            <span class="info-val" id="split-total-pages">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">선택 페이지</span>
+            <span class="info-val" id="split-selected-count">0</span>
+          </div>
+        </div>
+
+        <div class="info-card range-input-wrap">
+          <h3>페이지 범위 입력</h3>
+          <input type="text" class="range-input" id="range-input" placeholder="예: 1-3, 5, 7-9">
+          <div class="range-hint">// 콤마로 구분, 하이픈으로 범위</div>
+        </div>
+
+        <div class="info-card" style="padding:12px 16px;">
+          <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <button class="btn btn-outline" id="split-select-all" style="width:auto; flex:1; padding:8px 12px; font-size:12px;">전체 선택</button>
+            <button class="btn btn-outline" id="split-deselect-all" style="width:auto; flex:1; padding:8px 12px; font-size:12px;">전체 해제</button>
+          </div>
+        </div>
+
+        <div class="progress-wrap" id="split-progress">
+          <div class="progress-bar-bg"><div class="progress-bar" id="split-bar"></div></div>
+          <span class="progress-label" id="split-pct">0%</span>
+        </div>
+        <button class="btn btn-primary" id="split-btn" disabled>선택 페이지 추출</button>
+        <button class="btn btn-outline" id="split-reset">다른 파일 열기</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── Setup PDF.js worker ───
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ─── Toast ───
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = '', 3000);
+}
+
+function fmtSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+// ─── Tabs ───
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ═══════════════════════════════════════
+// VIEWER
+// ═══════════════════════════════════════
+let vPdfDoc = null, vPage = 1, vScale = 1;
+
+function setupDrop(dropEl, inputEl, handler) {
+  dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('over'); });
+  dropEl.addEventListener('dragleave', () => dropEl.classList.remove('over'));
+  dropEl.addEventListener('drop', e => {
+    e.preventDefault();
+    dropEl.classList.remove('over');
+    const files = e.dataTransfer.files;
+    if (files.length) handler(files);
+  });
+  inputEl.addEventListener('change', () => {
+    if (inputEl.files.length) handler(inputEl.files);
+    inputEl.value = '';
+  });
+}
+
+setupDrop(
+  document.getElementById('viewer-drop'),
+  document.getElementById('viewer-file-input'),
+  files => loadViewerFile(files[0])
+);
+
+async function loadViewerFile(file) {
+  if (!file.name.toLowerCase().endsWith('.pdf')) { toast('PDF 파일만 지원합니다', 'error'); return; }
+  const ab = await file.arrayBuffer();
+  vPdfDoc = await pdfjsLib.getDocument({ data: ab }).promise;
+  vPage = 1;
+  document.getElementById('v-total').textContent = vPdfDoc.numPages;
+  document.getElementById('v-page-num').max = vPdfDoc.numPages;
+  document.getElementById('v-page-num').value = 1;
+  document.getElementById('viewer-drop').style.display = 'none';
+  document.getElementById('viewer-controls').style.display = 'flex';
+  document.getElementById('viewer-canvas-wrap').style.display = 'flex';
+  renderViewerPage();
+}
+
+async function renderViewerPage() {
+  if (!vPdfDoc) return;
+  const page = await vPdfDoc.getPage(vPage);
+  const viewport = page.getViewport({ scale: vScale });
+  const canvas = document.getElementById('pdf-canvas');
+  canvas.height = viewport.height;
+  canvas.width = viewport.width;
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+  document.getElementById('v-prev').disabled = vPage <= 1;
+  document.getElementById('v-next').disabled = vPage >= vPdfDoc.numPages;
+  document.getElementById('v-page-num').value = vPage;
+}
+
+document.getElementById('v-prev').addEventListener('click', () => { if (vPage > 1) { vPage--; renderViewerPage(); } });
+document.getElementById('v-next').addEventListener('click', () => { if (vPdfDoc && vPage < vPdfDoc.numPages) { vPage++; renderViewerPage(); } });
+document.getElementById('v-page-num').addEventListener('change', function() {
+  const n = parseInt(this.value);
+  if (vPdfDoc && n >= 1 && n <= vPdfDoc.numPages) { vPage = n; renderViewerPage(); }
+});
+document.getElementById('v-zoom').addEventListener('change', function() {
+  vScale = parseFloat(this.value);
+  renderViewerPage();
+});
+document.getElementById('v-reset').addEventListener('click', () => {
+  vPdfDoc = null;
+  document.getElementById('viewer-drop').style.display = '';
+  document.getElementById('viewer-controls').style.display = 'none';
+  document.getElementById('viewer-canvas-wrap').style.display = 'none';
+});
+
+// ═══════════════════════════════════════
+// MERGE
+// ═══════════════════════════════════════
+let mergeFiles = [];
+
+setupDrop(
+  document.getElementById('merge-drop'),
+  document.getElementById('merge-file-input'),
+  files => addMergeFiles(Array.from(files))
+);
+
+function addMergeFiles(files) {
+  files.forEach(f => { if (f.name.toLowerCase().endsWith('.pdf')) mergeFiles.push(f); });
+  renderMergeList();
+}
+
+function renderMergeList() {
+  const el = document.getElementById('merge-file-items');
+  document.getElementById('merge-count').textContent = mergeFiles.length;
+  const totalSize = mergeFiles.reduce((s, f) => s + f.size, 0);
+  document.getElementById('merge-size').textContent = mergeFiles.length ? fmtSize(totalSize) : '—';
+  document.getElementById('merge-btn').disabled = mergeFiles.length < 2;
+
+  if (!mergeFiles.length) {
+    el.innerHTML = '<div class="empty-state">// 파일을 추가하세요</div>';
+    return;
+  }
+  el.innerHTML = mergeFiles.map((f, i) => `
+    <div class="file-item">
+      <span class="file-num">${String(i + 1).padStart(2, '0')}</span>
+      <span class="file-name">${f.name}</span>
+      <span class="file-size">${fmtSize(f.size)}</span>
+      <button class="file-del" data-i="${i}">✕</button>
+    </div>
+  `).join('');
+  el.querySelectorAll('.file-del').forEach(btn => {
+    btn.addEventListener('click', () => { mergeFiles.splice(+btn.dataset.i, 1); renderMergeList(); });
+  });
+}
+
+document.getElementById('merge-clear').addEventListener('click', () => { mergeFiles = []; renderMergeList(); });
+
+document.getElementById('merge-btn').addEventListener('click', async () => {
+  const prog = document.getElementById('merge-progress');
+  const bar = document.getElementById('merge-bar');
+  const pct = document.getElementById('merge-pct');
+  prog.classList.add('show');
+
+  try {
+    const merged = await PDFLib.PDFDocument.create();
+    for (let i = 0; i < mergeFiles.length; i++) {
+      const ab = await mergeFiles[i].arrayBuffer();
+      const doc = await PDFLib.PDFDocument.load(ab);
+      const pages = await merged.copyPages(doc, doc.getPageIndices());
+      pages.forEach(p => merged.addPage(p));
+      const p = Math.round(((i + 1) / mergeFiles.length) * 100);
+      bar.style.width = p + '%';
+      pct.textContent = p + '%';
+    }
+    const bytes = await merged.save();
+    downloadBlob(bytes, 'merged.pdf', 'application/pdf');
+    toast('병합 완료!', 'success');
+  } catch(e) {
+    toast('병합 중 오류가 발생했습니다', 'error');
+    console.error(e);
+  }
+  setTimeout(() => { prog.classList.remove('show'); bar.style.width = '0%'; pct.textContent = '0%'; }, 1000);
+});
+
+// ═══════════════════════════════════════
+// SPLIT
+// ═══════════════════════════════════════
+let splitFile = null, splitPdfDoc = null, selectedPages = new Set();
+let splitTotalPages = 0;
+
+setupDrop(
+  document.getElementById('split-drop'),
+  document.getElementById('split-file-input'),
+  files => loadSplitFile(files[0])
+);
+
+async function loadSplitFile(file) {
+  if (!file.name.toLowerCase().endsWith('.pdf')) { toast('PDF 파일만 지원합니다', 'error'); return; }
+  splitFile = file;
+  const ab = await file.arrayBuffer();
+  splitPdfDoc = await pdfjsLib.getDocument({ data: ab }).promise;
+  splitTotalPages = splitPdfDoc.numPages;
+  selectedPages = new Set();
+
+  document.getElementById('split-drop').style.display = 'none';
+  document.getElementById('split-content').style.display = 'grid';
+  document.getElementById('split-fname').textContent = file.name;
+  document.getElementById('split-total-pages').textContent = splitTotalPages;
+  document.getElementById('split-selected-count').textContent = 0;
+  document.getElementById('split-btn').disabled = true;
+
+  renderThumbs();
+}
+
+async function renderThumbs() {
+  const grid = document.getElementById('thumb-grid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= splitTotalPages; i++) {
+    const item = document.createElement('div');
+    item.className = 'thumb-item';
+    item.dataset.page = i;
+    const canvas = document.createElement('canvas');
+    const check = document.createElement('div');
+    check.className = 'thumb-check';
+    check.textContent = '✓';
+    const label = document.createElement('div');
+    label.className = 'thumb-label';
+    label.textContent = `p.${i}`;
+    item.append(canvas, check, label);
+    grid.appendChild(item);
+    item.addEventListener('click', () => togglePage(i, item));
+
+    const page = await splitPdfDoc.getPage(i);
+    const vp = page.getViewport({ scale: 0.25 });
+    canvas.width = vp.width;
+    canvas.height = vp.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  }
+}
+
+function togglePage(n, el) {
+  if (selectedPages.has(n)) selectedPages.delete(n);
+  else selectedPages.add(n);
+  el.classList.toggle('selected', selectedPages.has(n));
+  updateSplitInfo();
+}
+
+function updateSplitInfo() {
+  document.getElementById('split-selected-count').textContent = selectedPages.size;
+  document.getElementById('split-btn').disabled = selectedPages.size === 0;
+}
+
+// Range input sync
+document.getElementById('range-input').addEventListener('input', function() {
+  selectedPages = parseRange(this.value, splitTotalPages);
+  document.querySelectorAll('.thumb-item').forEach(el => {
+    el.classList.toggle('selected', selectedPages.has(+el.dataset.page));
+  });
+  updateSplitInfo();
+});
+
+function parseRange(str, max) {
+  const pages = new Set();
+  str.split(',').forEach(part => {
+    part = part.trim();
+    if (!part) return;
+    const m = part.match(/^(\d+)-(\d+)$/);
+    if (m) {
+      const a = Math.max(1, +m[1]), b = Math.min(max, +m[2]);
+      for (let i = a; i <= b; i++) pages.add(i);
+    } else if (/^\d+$/.test(part)) {
+      const n = +part;
+      if (n >= 1 && n <= max) pages.add(n);
+    }
+  });
+  return pages;
+}
+
+document.getElementById('split-select-all').addEventListener('click', () => {
+  selectedPages = new Set(Array.from({length: splitTotalPages}, (_, i) => i + 1));
+  document.querySelectorAll('.thumb-item').forEach(el => el.classList.add('selected'));
+  updateSplitInfo();
+});
+document.getElementById('split-deselect-all').addEventListener('click', () => {
+  selectedPages.clear();
+  document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('selected'));
+  updateSplitInfo();
+});
+
+document.getElementById('split-btn').addEventListener('click', async () => {
+  const prog = document.getElementById('split-progress');
+  const bar = document.getElementById('split-bar');
+  const pct = document.getElementById('split-pct');
+  prog.classList.add('show');
+
+  try {
+    const ab = await splitFile.arrayBuffer();
+    const src = await PDFLib.PDFDocument.load(ab);
+    const out = await PDFLib.PDFDocument.create();
+    const pageList = Array.from(selectedPages).sort((a, b) => a - b);
+
+    for (let i = 0; i < pageList.length; i++) {
+      const [copied] = await out.copyPages(src, [pageList[i] - 1]);
+      out.addPage(copied);
+      const p = Math.round(((i + 1) / pageList.length) * 100);
+      bar.style.width = p + '%';
+      pct.textContent = p + '%';
+    }
+
+    const bytes = await out.save();
+    const base = splitFile.name.replace(/\.pdf$/i, '');
+    downloadBlob(bytes, `${base}_extracted.pdf`, 'application/pdf');
+    toast(`${pageList.length}페이지 추출 완료!`, 'success');
+  } catch(e) {
+    toast('분할 중 오류가 발생했습니다', 'error');
+    console.error(e);
+  }
+  setTimeout(() => { prog.classList.remove('show'); bar.style.width = '0%'; pct.textContent = '0%'; }, 1000);
+});
+
+document.getElementById('split-reset').addEventListener('click', () => {
+  splitFile = null; splitPdfDoc = null; selectedPages.clear(); splitTotalPages = 0;
+  document.getElementById('split-drop').style.display = '';
+  document.getElementById('split-content').style.display = 'none';
+  document.getElementById('range-input').value = '';
+});
+
+// ─── Util ───
+function downloadBlob(bytes, name, mime) {
+  const blob = new Blob([bytes], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+</script>
+</body>
+</html>
