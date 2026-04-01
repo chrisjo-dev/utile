@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focus Stats — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.15);
+  --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --purple: #a78bfa;
+  --radius: 14px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* ── Top Bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 48px;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--accent); }
+
+.topbar-center {
+  text-align: center;
+}
+.topbar-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.3);
+  border-radius: 8px;
+  color: var(--accent);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background: rgba(34,211,238,0.15);
+  border-color: rgba(34,211,238,0.5);
+}
+
+/* ── Page Header ── */
+.page-header {
+  margin-bottom: 48px;
+  animation: fadeUp 0.6s ease both;
+}
+
+.page-header h1 {
+  font-size: clamp(36px, 6vw, 60px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin-bottom: 12px;
+}
+
+.page-header h1 span { color: var(--accent); }
+
+.page-subtitle {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+/* ── Section Header ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.section-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  padding: 4px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Summary Cards ── */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+@media (max-width: 720px) {
+  .summary-cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 400px) {
+  .summary-cards { grid-template-columns: 1fr; }
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.2s, transform 0.2s;
+  animation: fadeUp 0.6s ease both;
+}
+.stat-card:hover {
+  border-color: rgba(34,211,238,0.25);
+  transform: translateY(-2px);
+}
+
+.stat-card-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 12px;
+}
+
+.stat-card-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.stat-card-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+/* ── Chart Containers ── */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+
+.chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 24px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.04em;
+}
+
+/* ── Trend Chart ── */
+.trend-section {
+  margin-bottom: 48px;
+}
+
+#trend-svg {
+  width: 100%;
+  display: block;
+}
+
+/* ── Two Column Section ── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+@media (max-width: 640px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+/* ── Donut Chart ── */
+#donut-svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-pct {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+/* ── Heatmap ── */
+.heatmap-wrap {
+  overflow-x: auto;
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: 32px repeat(24, 1fr);
+  gap: 3px;
+  min-width: 480px;
+}
+
+.heatmap-header {
+  display: grid;
+  grid-template-columns: 32px repeat(24, 1fr);
+  gap: 3px;
+  margin-bottom: 6px;
+  min-width: 480px;
+}
+
+.heatmap-hour-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text-3);
+  text-align: center;
+}
+
+.heatmap-row-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+}
+
+.heatmap-cell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--surface-3);
+  position: relative;
+  cursor: default;
+  transition: opacity 0.15s;
+}
+
+.heatmap-cell:hover { opacity: 0.8; }
+.heatmap-cell[title]:hover { opacity: 0.8; }
+
+/* ── Calendar ── */
+.calendar-section {
+  margin-bottom: 48px;
+}
+
+.calendar-wrap {
+  overflow-x: auto;
+}
+
+.calendar-grid-wrap {
+  display: flex;
+  gap: 3px;
+  min-width: 600px;
+  align-items: flex-start;
+}
+
+.calendar-week-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.calendar-month-labels {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 6px;
+  min-width: 600px;
+  padding-left: 0;
+}
+
+.calendar-day-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-right: 3px;
+  flex-shrink: 0;
+}
+
+.calendar-day-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text-3);
+  height: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 4px;
+  width: 20px;
+}
+
+.cal-cell {
+  width: 13px;
+  height: 13px;
+  border-radius: 2px;
+  background: var(--surface-3);
+  cursor: default;
+  position: relative;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+.cal-cell:hover { opacity: 0.75; }
+
+.cal-tooltip {
+  display: none;
+  position: fixed;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text);
+  z-index: 100;
+  pointer-events: none;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+/* ── Session History Table ── */
+.history-section {
+  margin-bottom: 48px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+}
+
+thead th {
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 12px 16px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+  cursor: pointer;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface-2); }
+
+tbody td {
+  padding: 12px 16px;
+  color: var(--text-2);
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.eff-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.eff-green { background: rgba(74,222,128,0.12); color: var(--green); }
+.eff-yellow { background: rgba(251,191,36,0.12); color: var(--yellow); }
+.eff-red { background: rgba(248,113,113,0.12); color: var(--red); }
+
+.timeline-row td {
+  padding: 0 !important;
+  border-bottom: none !important;
+}
+
+.timeline-inner {
+  display: none;
+  padding: 12px 16px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.timeline-inner.open { display: block; }
+
+.timeline-bar-wrap {
+  display: flex;
+  height: 20px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--surface-3);
+  gap: 1px;
+}
+
+.timeline-seg {
+  height: 100%;
+  min-width: 2px;
+  border-radius: 1px;
+}
+
+.timeline-label {
+  font-size: 10px;
+  color: var(--text-3);
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+}
+
+/* ── Empty State ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  text-align: center;
+  gap: 16px;
+  animation: fadeUp 0.6s ease both;
+}
+
+.empty-icon {
+  font-size: 48px;
+  opacity: 0.4;
+}
+
+.empty-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.empty-desc {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text-3);
+  line-height: 1.6;
+}
+
+/* ── Bottom Actions ── */
+.bottom-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  background: rgba(248,113,113,0.06);
+  border: 1px solid rgba(248,113,113,0.2);
+  border-radius: 8px;
+  color: var(--red);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btn-danger:hover {
+  background: rgba(248,113,113,0.12);
+  border-color: rgba(248,113,113,0.4);
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.anim-1 { animation-delay: 0.05s; }
+.anim-2 { animation-delay: 0.10s; }
+.anim-3 { animation-delay: 0.15s; }
+.anim-4 { animation-delay: 0.20s; }
+.anim-5 { animation-delay: 0.25s; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <a class="back-link" href="./index.html">
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 2L4 7l5 5"/>
+      </svg>
+      utile
+    </a>
+    <div class="topbar-center">
+      <div class="topbar-title">focus stats</div>
+    </div>
+    <a class="btn-primary" href="./focus-monitor.html">집중 시작 →</a>
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Focus <span>Stats.</span></h1>
+    <p class="page-subtitle">// 집중 세션 통계</p>
+  </div>
+
+  <!-- Main content injected by JS -->
+  <div id="app"></div>
+
+</div>
+
+<!-- Tooltip -->
+<div class="cal-tooltip" id="cal-tooltip"></div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'utile-focus-sessions';
+
+function loadSessions() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch { return []; }
+}
+
+// ── Formatters ────────────────────────────────────────────────────────────
+function formatMs(ms) {
+  if (ms < 60000) {
+    const s = Math.round(ms / 1000);
+    return s + '초';
+  }
+  const totalMin = Math.floor(ms / 60000);
+  const hours = Math.floor(totalMin / 60);
+  const mins = totalMin % 60;
+  if (hours === 0) return mins + '분';
+  if (mins === 0) return hours + '시간';
+  return hours + '시간 ' + mins + '분';
+}
+
+function formatMsShort(ms) {
+  const totalMin = Math.floor(ms / 60000);
+  const hours = Math.floor(totalMin / 60);
+  const mins = totalMin % 60;
+  if (hours === 0) return mins + '분';
+  if (mins === 0) return hours + '시간';
+  return hours + 'h ' + mins + 'm';
+}
+
+const DOW_KO = ['일', '월', '화', '수', '목', '금', '토'];
+const MON_KO = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+function formatDate(isoStr) {
+  const d = new Date(isoStr + 'T00:00:00');
+  const mon = d.getMonth() + 1;
+  const day = d.getDate();
+  const dow = DOW_KO[d.getDay()];
+  return mon + '월 ' + day + '일 (' + dow + ')';
+}
+
+function formatTime(ms) {
+  const d = new Date(ms);
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return h + ':' + m;
+}
+
+function dateStr(ts) {
+  const d = new Date(ts);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function effClass(e) {
+  if (e >= 70) return 'eff-green';
+  if (e >= 50) return 'eff-yellow';
+  return 'eff-red';
+}
+
+function effColor(e) {
+  if (e >= 70) return 'var(--green)';
+  if (e >= 50) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+// ── Distraction meta ──────────────────────────────────────────────────────
+const DIST_META = {
+  face_away:        { label: '얼굴 없음',  color: '#f87171' },
+  looking_down:     { label: '핸드폰',     color: '#fb923c' },
+  looking_sideways: { label: '시선 이탈', color: '#fbbf24' },
+  eyes_closed:      { label: '눈 감음',   color: '#a78bfa' },
+  tab_switch:       { label: '탭 전환',   color: '#60a5fa' },
+  idle:             { label: '유휴 상태', color: '#94a3b8' },
+};
+
+// ── Main Render ───────────────────────────────────────────────────────────
+const sessions = loadSessions();
+const app = document.getElementById('app');
+
+if (sessions.length === 0) {
+  renderEmpty();
+} else {
+  renderDashboard(sessions);
+}
+
+function renderEmpty() {
+  app.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">📊</div>
+      <div class="empty-title">아직 세션 기록이 없어요.</div>
+      <div class="empty-desc">집중 세션을 완료하면 여기서 통계를 볼 수 있어요.</div>
+      <a class="btn-primary" href="./focus-monitor.html" style="margin-top:8px;">집중 시작하기 →</a>
+    </div>
+  `;
+}
+
+function renderDashboard(sessions) {
+  const totalFocusMs = sessions.reduce((a, s) => a + (s.focusMs || 0), 0);
+  const avgEff = sessions.reduce((a, s) => a + (s.efficiency || 0), 0) / sessions.length;
+  const bestEff = Math.max(...sessions.map(s => s.efficiency || 0));
+
+  app.innerHTML = `
+    <!-- Section 1: Summary Cards -->
+    <div class="section-header anim-1" style="animation: fadeUp 0.6s 0.05s ease both;">
+      <span class="section-tag">Overview</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="summary-cards" id="summary-cards"></div>
+
+    <!-- Section 2: Trend -->
+    <div class="trend-section">
+      <div class="section-header" style="animation: fadeUp 0.6s 0.1s ease both;">
+        <span class="section-tag">최근 7일 효율 트렌드</span>
+        <div class="section-line"></div>
+      </div>
+      <div class="chart-card" style="animation: fadeUp 0.6s 0.15s ease both;">
+        <svg id="trend-svg" height="180"></svg>
+      </div>
+    </div>
+
+    <!-- Section 3: Two columns -->
+    <div class="two-col">
+      <div class="chart-card" style="animation: fadeUp 0.6s 0.2s ease both;">
+        <div class="chart-title">이탈 원인 분석</div>
+        <svg id="donut-svg" width="180" height="180" viewBox="0 0 180 180"></svg>
+        <div class="donut-legend" id="donut-legend"></div>
+      </div>
+      <div class="chart-card" style="animation: fadeUp 0.6s 0.25s ease both;">
+        <div class="chart-title">시간대별 집중력</div>
+        <div class="heatmap-wrap">
+          <div class="heatmap-header" id="heatmap-header"></div>
+          <div class="heatmap-grid" id="heatmap-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Calendar -->
+    <div class="calendar-section">
+      <div class="section-header" style="animation: fadeUp 0.6s 0.3s ease both;">
+        <span class="section-tag">집중 스트릭 캘린더</span>
+        <div class="section-line"></div>
+      </div>
+      <div class="chart-card" style="animation: fadeUp 0.6s 0.35s ease both;" id="calendar-card">
+      </div>
+    </div>
+
+    <!-- Section 5: History -->
+    <div class="history-section">
+      <div class="section-header" style="animation: fadeUp 0.6s 0.4s ease both;">
+        <span class="section-tag">세션 히스토리</span>
+        <div class="section-line"></div>
+      </div>
+      <div class="table-wrap" style="animation: fadeUp 0.6s 0.45s ease both;">
+        <table>
+          <thead>
+            <tr>
+              <th>날짜</th>
+              <th>시간</th>
+              <th>집중 시간</th>
+              <th>효율</th>
+              <th>이탈</th>
+              <th>최장 집중</th>
+              <th>주요 원인</th>
+            </tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="bottom-actions" style="animation: fadeUp 0.6s 0.5s ease both;">
+      <button class="btn-danger" id="clear-btn">데이터 초기화</button>
+    </div>
+  `;
+
+  // Render each section
+  renderSummaryCards(totalFocusMs, sessions.length, avgEff, bestEff);
+  renderTrendChart(sessions);
+  renderDonutChart(sessions);
+  renderHeatmap(sessions);
+  renderCalendar(sessions);
+  renderHistory(sessions);
+
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    if (confirm('모든 세션 기록을 삭제할까요? 이 작업은 되돌릴 수 없어요.')) {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+  });
+}
+
+// ── Section 1: Summary Cards ──────────────────────────────────────────────
+function renderSummaryCards(totalFocusMs, sessionCount, avgEff, bestEff) {
+  const cards = [
+    { label: '총 집중 시간', value: formatMs(totalFocusMs), sub: sessionCount + '개 세션 합산', delay: '0.05s' },
+    { label: '세션 수',      value: sessionCount + '회',    sub: '완료된 집중 세션',            delay: '0.10s' },
+    { label: '평균 효율',    value: Math.round(avgEff) + '%', sub: '전체 세션 평균',             delay: '0.15s' },
+    { label: '최고 효율',    value: Math.round(bestEff) + '%', sub: '단일 세션 최고 기록',       delay: '0.20s' },
+  ];
+  const container = document.getElementById('summary-cards');
+  container.innerHTML = cards.map(c => `
+    <div class="stat-card" style="animation: fadeUp 0.6s ${c.delay} ease both;">
+      <div class="stat-card-label">${c.label}</div>
+      <div class="stat-card-value">${c.value}</div>
+      <div class="stat-card-sub">${c.sub}</div>
+    </div>
+  `).join('');
+}
+
+// ── Section 2: Trend Bar Chart ────────────────────────────────────────────
+function renderTrendChart(sessions) {
+  const svg = document.getElementById('trend-svg');
+  const W = svg.parentElement.clientWidth || 800;
+  svg.setAttribute('width', W);
+
+  const H = 180;
+  const PAD = { top: 28, right: 12, bottom: 36, left: 12 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top - PAD.bottom;
+
+  // Build last-7-days map
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'));
+  }
+
+  const byDay = {};
+  sessions.forEach(s => {
+    const k = s.date || dateStr(s.startTime);
+    if (!byDay[k]) byDay[k] = [];
+    byDay[k].push(s.efficiency || 0);
+  });
+
+  const barW = Math.floor(chartW / 7) - 8;
+  const barGap = (chartW - barW * 7) / 6;
+
+  let svgContent = '';
+
+  // Y axis lines at 0, 50, 100
+  [0, 50, 100].forEach(pct => {
+    const y = PAD.top + chartH - (pct / 100) * chartH;
+    svgContent += `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="#2e2e33" stroke-width="1" stroke-dasharray="4,4"/>`;
+    svgContent += `<text x="${PAD.left}" y="${y - 4}" font-family="DM Mono,monospace" font-size="9" fill="#71717a">${pct}%</text>`;
+  });
+
+  days.forEach((day, i) => {
+    const effArr = byDay[day];
+    const x = PAD.left + i * (barW + barGap);
+    const labelY = H - 6;
+    const d = new Date(day + 'T00:00:00');
+    const label = (d.getMonth()+1) + '/' + d.getDate();
+
+    svgContent += `<text x="${x + barW/2}" y="${labelY}" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="#71717a">${label}</text>`;
+
+    if (!effArr || effArr.length === 0) {
+      const emptyH = 6;
+      const emptyY = PAD.top + chartH - emptyH;
+      svgContent += `<rect x="${x}" y="${emptyY}" width="${barW}" height="${emptyH}" rx="3" fill="#27272a"/>`;
+      svgContent += `<text x="${x + barW/2}" y="${emptyY - 6}" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="#71717a">—</text>`;
+    } else {
+      const avg = effArr.reduce((a,b) => a+b, 0) / effArr.length;
+      const barH = Math.max(4, (avg / 100) * chartH);
+      const barY = PAD.top + chartH - barH;
+      const color = avg >= 70 ? 'var(--green)' : avg >= 50 ? 'var(--yellow)' : 'var(--red)';
+      svgContent += `<rect x="${x}" y="${barY}" width="${barW}" height="${barH}" rx="4" fill="${color}" opacity="0.85"/>`;
+      svgContent += `<text x="${x + barW/2}" y="${barY - 6}" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="${color}">${Math.round(avg)}%</text>`;
+    }
+  });
+
+  svg.innerHTML = svgContent;
+}
+
+// ── Section 3a: Donut Chart ───────────────────────────────────────────────
+function renderDonutChart(sessions) {
+  // Aggregate all distraction types
+  const totals = {};
+  Object.keys(DIST_META).forEach(k => totals[k] = 0);
+
+  sessions.forEach(s => {
+    if (s.distractionTypes) {
+      Object.entries(s.distractionTypes).forEach(([k, v]) => {
+        if (totals[k] !== undefined) totals[k] += (v || 0);
+      });
+    }
+  });
+
+  const grand = Object.values(totals).reduce((a,b) => a+b, 0);
+
+  const svg = document.getElementById('donut-svg');
+  const legend = document.getElementById('donut-legend');
+
+  if (grand === 0) {
+    svg.innerHTML = `<text x="90" y="95" text-anchor="middle" font-family="DM Mono,monospace" font-size="12" fill="#71717a">데이터 없음</text>`;
+    legend.innerHTML = '';
+    return;
+  }
+
+  const CX = 90, CY = 90, R = 70, r = 44;
+  let startAngle = -Math.PI / 2;
+  let svgContent = '';
+  const legendItems = [];
+
+  Object.entries(DIST_META).forEach(([key, meta]) => {
+    const val = totals[key];
+    if (val === 0) return;
+    const frac = val / grand;
+    const angle = frac * 2 * Math.PI;
+    const endAngle = startAngle + angle;
+
+    const x1 = CX + R * Math.cos(startAngle);
+    const y1 = CY + R * Math.sin(startAngle);
+    const x2 = CX + R * Math.cos(endAngle);
+    const y2 = CY + R * Math.sin(endAngle);
+    const ix1 = CX + r * Math.cos(startAngle);
+    const iy1 = CY + r * Math.sin(startAngle);
+    const ix2 = CX + r * Math.cos(endAngle);
+    const iy2 = CY + r * Math.sin(endAngle);
+    const large = angle > Math.PI ? 1 : 0;
+
+    svgContent += `<path d="M${ix1},${iy1} L${x1},${y1} A${R},${R} 0 ${large},1 ${x2},${y2} L${ix2},${iy2} A${r},${r} 0 ${large},0 ${ix1},${iy1} Z" fill="${meta.color}" opacity="0.9"/>`;
+
+    legendItems.push({ label: meta.label, color: meta.color, pct: Math.round(frac * 100) });
+    startAngle = endAngle;
+  });
+
+  // Center text
+  svgContent += `<text x="${CX}" y="${CY - 6}" text-anchor="middle" font-family="DM Mono,monospace" font-size="11" fill="#a1a1aa">총</text>`;
+  svgContent += `<text x="${CX}" y="${CY + 12}" text-anchor="middle" font-family="DM Mono,monospace" font-size="18" font-weight="500" fill="#fafafa">${grand}</text>`;
+  svgContent += `<text x="${CX}" y="${CY + 26}" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="#71717a">회</text>`;
+
+  svg.innerHTML = svgContent;
+
+  legend.innerHTML = legendItems.map(item => `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${item.color}"></div>
+      <span>${item.label}</span>
+      <span class="legend-pct">${item.pct}%</span>
+    </div>
+  `).join('');
+}
+
+// ── Section 3b: Heatmap ───────────────────────────────────────────────────
+function renderHeatmap(sessions) {
+  const header = document.getElementById('heatmap-header');
+  const grid = document.getElementById('heatmap-grid');
+
+  // Build map: dayOfWeek (0=Mon..6=Sun) x hour -> [efficiency]
+  const map = {};
+  for (let d = 0; d < 7; d++) {
+    map[d] = {};
+    for (let h = 0; h < 24; h++) map[d][h] = [];
+  }
+
+  sessions.forEach(s => {
+    if (!s.startTime) return;
+    const dt = new Date(s.startTime);
+    const rawDow = dt.getDay(); // 0=Sun
+    const dow = rawDow === 0 ? 6 : rawDow - 1; // 0=Mon..6=Sun
+    const hour = dt.getHours();
+    map[dow][hour].push(s.efficiency || 0);
+  });
+
+  // Hour labels (show 0, 6, 12, 18, 23)
+  const SHOW_HOURS = new Set([0, 6, 12, 18, 23]);
+  let headerHTML = '<div></div>'; // placeholder for day label col
+  for (let h = 0; h < 24; h++) {
+    headerHTML += `<div class="heatmap-hour-label">${SHOW_HOURS.has(h) ? h : ''}</div>`;
+  }
+  header.innerHTML = headerHTML;
+
+  const DAY_LABELS = ['월','화','수','목','금','토','일'];
+  let gridHTML = '';
+
+  for (let d = 0; d < 7; d++) {
+    gridHTML += `<div class="heatmap-row-label">${DAY_LABELS[d]}</div>`;
+    for (let h = 0; h < 24; h++) {
+      const arr = map[d][h];
+      if (arr.length === 0) {
+        gridHTML += `<div class="heatmap-cell" title="${DAY_LABELS[d]} ${h}시 — 데이터 없음"></div>`;
+      } else {
+        const avg = arr.reduce((a,b) => a+b, 0) / arr.length;
+        const opacity = (0.15 + (avg / 100) * 0.85).toFixed(2);
+        gridHTML += `<div class="heatmap-cell" style="background:rgba(34,211,238,${opacity})" title="${DAY_LABELS[d]} ${h}시 — ${Math.round(avg)}% (${arr.length}세션)"></div>`;
+      }
+    }
+  }
+  grid.innerHTML = gridHTML;
+}
+
+// ── Section 4: Calendar ───────────────────────────────────────────────────
+function renderCalendar(sessions) {
+  const card = document.getElementById('calendar-card');
+
+  // Build efficiency map by date string
+  const effMap = {};
+  const durMap = {};
+  sessions.forEach(s => {
+    const k = s.date || dateStr(s.startTime);
+    if (!effMap[k]) { effMap[k] = []; durMap[k] = 0; }
+    effMap[k].push(s.efficiency || 0);
+    durMap[k] += (s.focusMs || 0);
+  });
+
+  // Last 60 days
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const days = [];
+  for (let i = 59; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    days.push(d);
+  }
+
+  // Group by week (Mon-Sun). Find Monday of the week containing days[0]
+  const firstDay = new Date(days[0]);
+  const startDow = firstDay.getDay(); // 0=Sun
+  const daysToMon = startDow === 0 ? 6 : startDow - 1;
+  const startOfFirstWeek = new Date(firstDay);
+  startOfFirstWeek.setDate(firstDay.getDate() - daysToMon);
+
+  // Build week columns
+  const endDay = new Date(today);
+  const weeks = [];
+  let cur = new Date(startOfFirstWeek);
+  while (cur <= endDay) {
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      week.push(new Date(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    weeks.push(week);
+  }
+
+  // Month markers
+  const monthLabel = {};
+  weeks.forEach((week, wi) => {
+    week.forEach(day => {
+      if (day.getDate() === 1 || wi === 0) {
+        if (!monthLabel[wi]) monthLabel[wi] = MON_KO[day.getMonth()];
+      }
+    });
+  });
+
+  // Render
+  const tooltip = document.getElementById('cal-tooltip');
+  const DAY_LABELS_SHORT = ['월','화','수','목','금','토','일'];
+
+  let html = '<div class="calendar-wrap"><div style="display:flex;gap:4px;align-items:flex-start;">';
+
+  // Day labels column
+  html += '<div class="calendar-day-labels">';
+  html += '<div style="height:18px"></div>'; // month label row spacer
+  DAY_LABELS_SHORT.forEach(l => {
+    html += `<div class="calendar-day-label">${l}</div>`;
+  });
+  html += '</div>';
+
+  // Weeks
+  html += '<div style="display:flex;flex-direction:column;gap:0;">';
+
+  // Month row
+  html += '<div style="display:flex;gap:3px;margin-bottom:6px;">';
+  weeks.forEach((week, wi) => {
+    const lbl = monthLabel[wi] || '';
+    html += `<div style="width:13px;font-family:DM Mono,monospace;font-size:9px;color:var(--text-3);white-space:nowrap;overflow:visible;flex-shrink:0;">${lbl}</div>`;
+  });
+  html += '</div>';
+
+  // Week columns container
+  html += '<div style="display:flex;gap:3px;">';
+  weeks.forEach(week => {
+    html += '<div style="display:flex;flex-direction:column;gap:3px;">';
+    week.forEach(day => {
+      const k = day.getFullYear() + '-' + String(day.getMonth()+1).padStart(2,'0') + '-' + String(day.getDate()).padStart(2,'0');
+      const inRange = day >= days[0] && day <= today;
+      const isFuture = day > today;
+      const isPast = day < days[0];
+
+      let bg = 'var(--surface-3)';
+      let opacity = 1;
+      let titleStr = '';
+
+      if (isFuture || isPast) {
+        opacity = 0.25;
+      } else if (effMap[k]) {
+        const avgE = effMap[k].reduce((a,b)=>a+b,0) / effMap[k].length;
+        const op = (0.2 + (avgE / 100) * 0.8).toFixed(2);
+        bg = `rgba(34,211,238,${op})`;
+        titleStr = `${formatDate(k)}\n효율 ${Math.round(avgE)}% · ${formatMsShort(durMap[k])}`;
+      } else {
+        titleStr = formatDate(k) + '\n기록 없음';
+      }
+
+      html += `<div class="cal-cell" data-tip="${titleStr.replace(/"/g,'&quot;')}" style="background:${bg};opacity:${opacity}"></div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div></div></div></div>';
+
+  card.innerHTML = html;
+
+  // Tooltip events
+  card.querySelectorAll('.cal-cell[data-tip]').forEach(cell => {
+    cell.addEventListener('mouseenter', e => {
+      const tip = cell.dataset.tip;
+      if (!tip) return;
+      tooltip.innerHTML = tip.replace(/\n/g, '<br>');
+      tooltip.style.display = 'block';
+      positionTooltip(e);
+    });
+    cell.addEventListener('mousemove', positionTooltip);
+    cell.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  });
+}
+
+function positionTooltip(e) {
+  const tip = document.getElementById('cal-tooltip');
+  const margin = 12;
+  let x = e.clientX + margin;
+  let y = e.clientY + margin;
+  if (x + 180 > window.innerWidth) x = e.clientX - 180 - margin;
+  if (y + 70 > window.innerHeight) y = e.clientY - 70 - margin;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+
+// ── Section 5: Session History ────────────────────────────────────────────
+function renderHistory(sessions) {
+  const sorted = [...sessions].sort((a, b) => (b.startTime || 0) - (a.startTime || 0));
+  const recent = sorted.slice(0, 20);
+  const tbody = document.getElementById('history-body');
+
+  let html = '';
+  recent.forEach((s, i) => {
+    const eff = Math.round(s.efficiency || 0);
+    const dayLabel = s.date ? formatDate(s.date) : (s.startTime ? formatDate(dateStr(s.startTime)) : '—');
+    const timeLabel = s.startTime ? formatTime(s.startTime) : '—';
+    const focusLabel = formatMs(s.focusMs || 0);
+    const longest = formatMs(s.longestFocusMs || 0);
+    const distCount = s.distractionCount || 0;
+
+    // Main distraction type
+    let mainCause = '—';
+    if (s.distractionTypes) {
+      const max = Object.entries(s.distractionTypes).sort((a,b) => b[1]-a[1])[0];
+      if (max && max[1] > 0) mainCause = DIST_META[max[0]]?.label || max[0];
+    }
+
+    html += `
+      <tr data-idx="${i}" onclick="toggleTimeline(${i})">
+        <td>${dayLabel}</td>
+        <td>${timeLabel}</td>
+        <td style="font-family:DM Mono,monospace;color:var(--accent)">${focusLabel}</td>
+        <td><span class="eff-badge ${effClass(eff)}">${eff}%</span></td>
+        <td style="color:var(--text-3)">${distCount}회</td>
+        <td style="color:var(--text-2)">${longest}</td>
+        <td style="color:var(--text-3)">${mainCause}</td>
+      </tr>
+      <tr class="timeline-row">
+        <td colspan="7">
+          <div class="timeline-inner" id="timeline-${i}">
+            ${renderTimelineInner(s)}
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
+
+function renderTimelineInner(s) {
+  if (!s.timeline || s.timeline.length === 0) {
+    return '<div style="font-family:DM Mono,monospace;font-size:11px;color:var(--text-3)">타임라인 데이터 없음</div>';
+  }
+  const sessionLen = (s.sessionMs || (s.endTime - s.startTime) || 1);
+  let bars = '';
+  let lastEnd = 0;
+
+  s.timeline.forEach(seg => {
+    const segStart = seg.startMs || 0;
+    const segEnd = seg.endMs || 0;
+    // focused gap before this distraction
+    if (segStart > lastEnd) {
+      const w = ((segStart - lastEnd) / sessionLen * 100).toFixed(2);
+      bars += `<div class="timeline-seg" style="width:${w}%;background:var(--green);opacity:0.7" title="집중: ${formatMs(segStart - lastEnd)}"></div>`;
+    }
+    const dw = ((segEnd - segStart) / sessionLen * 100).toFixed(2);
+    const reason = seg.reason || 'distracted';
+    const color = DIST_META[reason]?.color || 'var(--red)';
+    bars += `<div class="timeline-seg" style="width:${dw}%;background:${color};opacity:0.8" title="${DIST_META[reason]?.label || reason}: ${formatMs(segEnd - segStart)}"></div>`;
+    lastEnd = segEnd;
+  });
+
+  // remaining focus
+  if (lastEnd < sessionLen) {
+    const w = ((sessionLen - lastEnd) / sessionLen * 100).toFixed(2);
+    bars += `<div class="timeline-seg" style="width:${w}%;background:var(--green);opacity:0.7" title="집중: ${formatMs(sessionLen - lastEnd)}"></div>`;
+  }
+
+  return `
+    <div class="timeline-bar-wrap">${bars}</div>
+    <div class="timeline-label">집중 <span style="color:var(--green)">■</span> &nbsp; 이탈 <span style="color:var(--red)">■</span></div>
+  `;
+}
+
+function toggleTimeline(i) {
+  const el = document.getElementById('timeline-' + i);
+  if (!el) return;
+  el.classList.toggle('open');
+}
+
+// ── Resize trend chart on window resize ───────────────────────────────────
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (sessions.length > 0) renderTrendChart(sessions);
+  }, 150);
+});
+</script>
+</body>
+</html>
