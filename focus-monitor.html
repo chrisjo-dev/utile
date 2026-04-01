@@ -814,6 +814,7 @@ const CAT_MESSAGES = {
 
 let currentCatState = 'idle';
 let speechTimeout = null;
+let speechInterval = null;
 
 function setCatState(state) {
   if (currentCatState === state) return;
@@ -832,6 +833,10 @@ function setCatState(state) {
 
   // Speech bubble
   clearTimeout(speechTimeout);
+  clearInterval(speechInterval);
+  speechTimeout = null;
+  speechInterval = null;
+
   let msg = '';
   if (state === 'watching' && prevState !== 'idle') {
     msg = CAT_MESSAGES.return;
@@ -847,7 +852,7 @@ function setCatState(state) {
     speechBubble.classList.remove('visible');
     // Occasional "..." when watching
     if (state === 'watching') {
-      speechTimeout = setInterval(() => {
+      speechInterval = setInterval(() => {
         if (Math.random() < 0.15 && currentCatState === 'watching') {
           speechBubble.textContent = '...';
           speechBubble.classList.add('visible');
@@ -1157,7 +1162,6 @@ function detectLoop() {
         if (kps && kps.length >= 6) {
           const eyeMidX = (kps[0].x + kps[1].x) / 2;
           const bbox = det.boundingBox;
-          const faceCenterX = bbox.originX + bbox.width / 2;
           // Normalize by face width
           const asymmetry = Math.abs(eyeMidX - (bbox.originX + bbox.width / 2) / (videoEl.videoWidth || 640)) / (bbox.width / (videoEl.videoWidth || 640) || 0.2);
           faceFrontal = asymmetry < 0.2;
