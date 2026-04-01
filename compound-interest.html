@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>복리 계산기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --radius: 12px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+  animation: fadeUp 0.5s ease both;
+}
+
+/* Header */
+header { margin-bottom: 40px; }
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-bottom: 24px;
+  transition: color 0.15s;
+}
+.back-link:hover { color: var(--accent); }
+.back-link span { font-size: 15px; }
+
+header h1 {
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+header h1 em { color: var(--accent); font-style: normal; }
+header p {
+  font-family: 'DM Mono', monospace;
+  color: var(--text-3);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 720px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+/* Input panel */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.field label span {
+  font-family: 'DM Mono', monospace;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-wrap input,
+.input-wrap select {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+  -moz-appearance: textfield;
+}
+.input-wrap input::-webkit-outer-spin-button,
+.input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.input-wrap input:focus,
+.input-wrap select:focus { border-color: var(--accent); }
+.input-wrap select { appearance: none; cursor: pointer; }
+.input-wrap select option { background: var(--surface-2); }
+.input-unit {
+  position: absolute;
+  right: 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  pointer-events: none;
+}
+.input-wrap input.has-unit { padding-right: 36px; }
+
+/* Results area */
+.results { display: flex; flex-direction: column; gap: 20px; }
+
+/* Summary card */
+.summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  animation: fadeUp 0.35s ease both;
+}
+.summary-card .card-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+.final-amount {
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+  margin-bottom: 20px;
+  line-height: 1;
+}
+.final-amount small {
+  font-size: 14px;
+  color: var(--text-3);
+  display: block;
+  font-weight: 400;
+  margin-bottom: 6px;
+  letter-spacing: 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+}
+.stat {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+.stat-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.stat-lbl {
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+/* Chart */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+.chart-card .card-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-2);
+  font-weight: 600;
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.legend-dot.principal { background: var(--surface-3); border: 1px solid var(--border); }
+.legend-dot.interest { background: var(--accent); opacity: 0.8; }
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 140px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+.bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  height: 100%;
+  justify-content: flex-end;
+  position: relative;
+}
+.bar-group:hover .bar-tooltip {
+  opacity: 1;
+  transform: translateY(-4px);
+}
+.bar-stacked {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border-radius: 3px 3px 0 0;
+  overflow: hidden;
+  transition: opacity 0.15s;
+}
+.bar-stacked:hover { opacity: 0.85; }
+.bar-interest {
+  background: var(--accent);
+  opacity: 0.8;
+  width: 100%;
+  min-height: 0;
+  transition: height 0.4s ease;
+}
+.bar-principal {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  width: 100%;
+  min-height: 0;
+  transition: height 0.4s ease;
+}
+.bar-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text-3);
+  margin-top: 5px;
+  text-align: center;
+  white-space: nowrap;
+}
+.bar-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-2);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s, transform 0.15s;
+  z-index: 10;
+}
+.bar-tooltip strong { color: var(--accent); display: block; }
+
+/* Table */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.table-card .card-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 20px 24px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.table-scroll { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+}
+thead th {
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+  padding: 10px 16px;
+  white-space: nowrap;
+}
+thead th:first-child { text-align: center; }
+tbody tr {
+  border-top: 1px solid var(--border);
+  transition: background 0.1s;
+}
+tbody tr:hover { background: var(--accent-dim); }
+tbody td {
+  padding: 10px 16px;
+  text-align: right;
+  color: var(--text-2);
+}
+tbody td:first-child {
+  text-align: center;
+  color: var(--text-3);
+  font-weight: 500;
+}
+tbody td.total-col {
+  color: var(--accent);
+  font-weight: 500;
+}
+tbody tr:last-child td { color: var(--text); }
+tbody tr:last-child td.total-col { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <a href="./index.html" class="back-link"><span>←</span> 홈</a>
+    <h1>복리 <em>계산기</em></h1>
+    <p>// compound interest calculator</p>
+  </header>
+
+  <div class="layout">
+    <!-- Input Panel -->
+    <div class="panel">
+      <div class="panel-title">입력값</div>
+
+      <div class="field">
+        <label>초기 원금 <span>Principal</span></label>
+        <div class="input-wrap">
+          <input type="number" id="principal" value="10000000" min="0" step="100000" class="has-unit">
+          <span class="input-unit">₩</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>연 이율 <span>Annual Rate</span></label>
+        <div class="input-wrap">
+          <input type="number" id="rate" value="7" min="0" max="100" step="0.1" class="has-unit">
+          <span class="input-unit">%</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>투자 기간 <span>Years</span></label>
+        <div class="input-wrap">
+          <input type="number" id="years" value="20" min="1" max="100" step="1" class="has-unit">
+          <span class="input-unit">년</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>복리 주기 <span>Compounding</span></label>
+        <div class="input-wrap">
+          <select id="freq">
+            <option value="1">연 (Annually)</option>
+            <option value="2">반기 (Semi-annually)</option>
+            <option value="4">분기 (Quarterly)</option>
+            <option value="12" selected>월 (Monthly)</option>
+            <option value="365">일 (Daily)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>월 추가 납입액 <span>Monthly contribution</span></label>
+        <div class="input-wrap">
+          <input type="number" id="monthly" value="0" min="0" step="10000" class="has-unit">
+          <span class="input-unit">₩</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results">
+      <!-- Summary -->
+      <div class="summary-card">
+        <div class="card-label">결과 요약</div>
+        <div class="final-amount">
+          <small>최종 금액</small>
+          <span id="res-total">₩0</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-val" id="res-principal">₩0</div>
+            <div class="stat-lbl">원금 합계</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="res-interest">₩0</div>
+            <div class="stat-lbl">이자 합계</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="res-rate">0%</div>
+            <div class="stat-lbl">수익률</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-card">
+        <div class="card-label">연도별 성장</div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot principal"></div>원금</div>
+          <div class="legend-item"><div class="legend-dot interest"></div>이자</div>
+        </div>
+        <div class="chart-bars" id="chart-bars"></div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card">
+        <div class="card-label">연도별 상세 내역</div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>연도</th>
+                <th>원금 누계</th>
+                <th>이자 누계</th>
+                <th>총액</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const fmt = n => '₩' + Math.round(n).toLocaleString('ko-KR');
+const fmtNum = n => Math.round(n).toLocaleString('ko-KR');
+
+function calculate() {
+  const P = parseFloat(document.getElementById('principal').value) || 0;
+  const r = parseFloat(document.getElementById('rate').value) / 100 || 0;
+  const Y = parseInt(document.getElementById('years').value) || 1;
+  const n = parseInt(document.getElementById('freq').value) || 12;
+  const mc = parseFloat(document.getElementById('monthly').value) || 0;
+
+  // Build year-by-year data
+  const rows = [];
+  let balance = P;
+  const ratePerPeriod = r / n;
+  const periodsPerYear = n;
+
+  for (let y = 1; y <= Y; y++) {
+    for (let p = 0; p < periodsPerYear; p++) {
+      balance = balance * (1 + ratePerPeriod) + mc * (12 / n);
+    }
+    const totalPrincipal = P + mc * 12 * y;
+    const totalInterest = balance - totalPrincipal;
+    rows.push({ year: y, principal: totalPrincipal, interest: totalInterest, total: balance });
+  }
+
+  const last = rows[rows.length - 1];
+  const totalPrincipal = last.principal;
+  const totalInterest = last.interest;
+  const total = last.total;
+  const returnRate = totalPrincipal > 0 ? (totalInterest / totalPrincipal * 100) : 0;
+
+  // Update summary
+  document.getElementById('res-total').textContent = fmt(total);
+  document.getElementById('res-principal').textContent = fmt(totalPrincipal);
+  document.getElementById('res-interest').textContent = fmt(totalInterest);
+  document.getElementById('res-rate').textContent = returnRate.toFixed(1) + '%';
+
+  // Update chart
+  renderChart(rows);
+
+  // Update table
+  renderTable(rows);
+}
+
+function renderChart(rows) {
+  const container = document.getElementById('chart-bars');
+  const maxTotal = Math.max(...rows.map(r => r.total));
+
+  // Thin bars for many years
+  const maxBars = 40;
+  let displayRows = rows;
+  if (rows.length > maxBars) {
+    const step = Math.ceil(rows.length / maxBars);
+    displayRows = rows.filter((_, i) => (i + 1) % step === 0 || i === rows.length - 1);
+  }
+
+  container.innerHTML = displayRows.map(row => {
+    const principalPct = maxTotal > 0 ? (row.principal / maxTotal * 100) : 0;
+    const interestPct = maxTotal > 0 ? (row.interest / maxTotal * 100) : 0;
+    return `<div class="bar-group">
+      <div class="bar-tooltip">
+        <strong>${fmt(row.total)}</strong>
+        ${row.year}년차
+      </div>
+      <div class="bar-stacked" style="height:${principalPct + interestPct}%">
+        <div class="bar-interest" style="height:${interestPct > 0 ? (interestPct / (principalPct + interestPct) * 100) : 0}%"></div>
+        <div class="bar-principal" style="height:${principalPct > 0 ? (principalPct / (principalPct + interestPct) * 100) : 100}%"></div>
+      </div>
+      <div class="bar-label">${row.year}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = rows.map((row, i) => {
+    const isLast = i === rows.length - 1;
+    return `<tr${isLast ? ' style="font-weight:600"' : ''}>
+      <td>${row.year}년</td>
+      <td>${fmt(row.principal)}</td>
+      <td>${fmt(row.interest)}</td>
+      <td class="total-col">${fmt(row.total)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// Live update
+['principal','rate','years','freq','monthly'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calculate);
+});
+
+calculate();
+</script>
+</body>
+</html>

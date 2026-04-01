@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mermaid Renderer — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.18);
+  --success: #34d399;
+  --danger: #f87171;
+  --radius: 12px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 36px 20px 80px;
+}
+
+/* Header */
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 36px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.back-btn:hover {
+  color: var(--accent);
+  border-color: rgba(34,211,238,0.35);
+  background: var(--accent-dim);
+}
+
+.header-info { flex: 1; }
+
+.header-info h1 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.header-info h1 span { color: var(--accent); }
+
+.header-info p {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 4px;
+  letter-spacing: 0.03em;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  animation: fadeUp 0.5s 0.05s ease both;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+}
+
+.toolbar-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Syne', sans-serif;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.btn-pri {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.btn-pri:hover:not(:disabled) { opacity: 0.85; }
+
+.btn-sec {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-sec:hover:not(:disabled) {
+  border-color: rgba(34,211,238,0.35);
+  color: var(--accent);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  border-color: rgba(34,211,238,0.35);
+  color: var(--accent);
+}
+
+.btn-ghost.active {
+  background: var(--accent-dim);
+  border-color: rgba(34,211,238,0.4);
+  color: var(--accent);
+}
+
+select {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+select:focus { border-color: var(--accent); }
+select option { background: var(--surface-2); }
+
+.auto-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input { display: none; }
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  transition: background 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: var(--text-3);
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-track {
+  background: var(--accent-dim);
+  border-color: rgba(34,211,238,0.4);
+}
+
+.toggle-switch input:checked + .toggle-track::after {
+  transform: translateX(16px);
+  background: var(--accent);
+}
+
+/* Split layout */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  animation: fadeUp 0.5s 0.1s ease both;
+}
+
+@media (max-width: 768px) {
+  .split { grid-template-columns: 1fr; }
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+}
+
+.pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  border-bottom: none;
+}
+
+.pane-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.pane-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Editor pane */
+.editor-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius) var(--radius);
+  overflow: hidden;
+}
+
+.line-numbers {
+  padding: 16px 0;
+  background: var(--surface-2);
+  border-right: 1px solid var(--border);
+  min-width: 42px;
+  text-align: right;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-3);
+  user-select: none;
+  overflow: hidden;
+}
+
+.line-numbers span {
+  display: block;
+  padding: 0 10px 0 8px;
+}
+
+#editor {
+  flex: 1;
+  padding: 16px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  tab-size: 2;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+#editor::placeholder { color: var(--text-3); }
+
+/* Error bar */
+.error-bar {
+  display: none;
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: rgba(248,113,113,0.08);
+  border: 1px solid rgba(248,113,113,0.25);
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--danger);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.error-bar.show { display: block; }
+
+/* Preview pane */
+.preview-wrap {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius) var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.preview-inner {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.diagram-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.12);
+  display: inline-block;
+  min-width: 200px;
+  min-height: 100px;
+  transition: transform 0.2s;
+}
+
+.diagram-card svg {
+  display: block;
+  max-width: 100%;
+}
+
+.preview-empty {
+  text-align: center;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.preview-empty .icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+/* Zoom controls */
+.zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.zoom-btn {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.zoom-btn:hover {
+  color: var(--accent);
+  border-color: rgba(34,211,238,0.35);
+}
+
+.zoom-btn.active {
+  background: var(--accent-dim);
+  border-color: rgba(34,211,238,0.4);
+  color: var(--accent);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <a class="back-btn" href="./index.html">← 홈</a>
+    <div class="header-info">
+      <h1>Mermaid <span>Renderer</span></h1>
+      <p class="subtitle">// 다이어그램 코드를 실시간으로 렌더링합니다</p>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="toolbar-group">
+      <button class="btn btn-pri" id="btn-render">▶ 렌더링</button>
+    </div>
+    <div class="toolbar-divider"></div>
+    <div class="toolbar-group">
+      <label class="auto-toggle" title="자동 렌더링 (디바운스 600ms)">
+        <div class="toggle-switch">
+          <input type="checkbox" id="auto-render" checked>
+          <div class="toggle-track"></div>
+        </div>
+        자동 렌더링
+      </label>
+    </div>
+    <div class="toolbar-divider"></div>
+    <div class="toolbar-group">
+      <span class="toolbar-label">예제:</span>
+      <select id="example-select">
+        <option value="">-- 예제 선택 --</option>
+        <option value="flowchart">플로우차트</option>
+        <option value="sequence">시퀀스 다이어그램</option>
+        <option value="gantt">간트 차트</option>
+        <option value="class">클래스 다이어그램</option>
+        <option value="pie">파이 차트</option>
+      </select>
+    </div>
+    <div class="toolbar-divider"></div>
+    <div class="toolbar-group">
+      <button class="btn btn-sec" id="btn-download" disabled>↓ SVG 저장</button>
+    </div>
+  </div>
+
+  <div class="split">
+    <!-- Left: Editor -->
+    <div class="pane">
+      <div class="pane-header">
+        <span class="pane-title">코드 편집기</span>
+        <div class="pane-actions">
+          <button class="btn btn-ghost" id="btn-clear" style="font-size:11px;padding:5px 10px;">지우기</button>
+        </div>
+      </div>
+      <div class="editor-wrap">
+        <div class="line-numbers" id="line-numbers"></div>
+        <textarea id="editor" spellcheck="false" placeholder="Mermaid 다이어그램 코드를 입력하세요..."></textarea>
+      </div>
+      <div class="error-bar" id="error-bar"></div>
+    </div>
+
+    <!-- Right: Preview -->
+    <div class="pane">
+      <div class="pane-header">
+        <span class="pane-title">미리보기</span>
+        <div class="pane-actions">
+          <div class="zoom-group">
+            <button class="zoom-btn active" data-zoom="fit">맞춤</button>
+            <button class="zoom-btn" data-zoom="100">100%</button>
+            <button class="zoom-btn" data-zoom="150">150%</button>
+          </div>
+        </div>
+      </div>
+      <div class="preview-wrap" id="preview-wrap">
+        <div class="preview-inner" id="preview-inner">
+          <div class="preview-empty" id="preview-empty">
+            <div class="icon">◇</div>
+            <div>코드를 입력하고 렌더링 버튼을 누르세요</div>
+          </div>
+          <div class="diagram-card" id="diagram-card" style="display:none;">
+            <div id="diagram-output"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+
+mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+const editor = document.getElementById('editor');
+const lineNumbers = document.getElementById('line-numbers');
+const errorBar = document.getElementById('error-bar');
+const previewEmpty = document.getElementById('preview-empty');
+const diagramCard = document.getElementById('diagram-card');
+const diagramOutput = document.getElementById('diagram-output');
+const btnRender = document.getElementById('btn-render');
+const btnDownload = document.getElementById('btn-download');
+const btnClear = document.getElementById('btn-clear');
+const autoRenderToggle = document.getElementById('auto-render');
+const exampleSelect = document.getElementById('example-select');
+const zoomBtns = document.querySelectorAll('.zoom-btn');
+
+const EXAMPLES = {
+  flowchart: `flowchart TD
+    A[시작] --> B{조건 확인}
+    B -->|예| C[처리 A]
+    B -->|아니오| D[처리 B]
+    C --> E[결과 합산]
+    D --> E
+    E --> F[종료]`,
+
+  sequence: `sequenceDiagram
+    participant 클라이언트
+    participant 서버
+    participant DB
+    클라이언트->>서버: 로그인 요청
+    서버->>DB: 사용자 조회
+    DB-->>서버: 사용자 정보 반환
+    서버-->>클라이언트: 인증 토큰 발급
+    클라이언트->>서버: API 요청 (토큰 포함)
+    서버-->>클라이언트: 응답 데이터`,
+
+  gantt: `gantt
+    title 프로젝트 일정
+    dateFormat  YYYY-MM-DD
+    section 기획
+    요구사항 분석     :a1, 2024-01-01, 7d
+    설계 문서 작성    :a2, after a1, 5d
+    section 개발
+    백엔드 개발       :b1, after a2, 14d
+    프론트엔드 개발   :b2, after a2, 12d
+    section 테스트
+    QA 테스트         :c1, after b1, 7d
+    버그 수정         :c2, after c1, 5d`,
+
+  class: `classDiagram
+    class 사용자 {
+      +String 이름
+      +String 이메일
+      +login()
+      +logout()
+    }
+    class 관리자 {
+      +String 권한등급
+      +manageUsers()
+    }
+    class 게시글 {
+      +String 제목
+      +String 내용
+      +Date 작성일
+      +publish()
+    }
+    사용자 <|-- 관리자
+    사용자 "1" --> "*" 게시글 : 작성`,
+
+  pie: `pie title 기술 스택 비율
+    "JavaScript" : 38
+    "TypeScript" : 28
+    "Python" : 18
+    "Go" : 10
+    "기타" : 6`
+};
+
+let currentZoom = 'fit';
+let renderCounter = 0;
+
+function updateLineNumbers() {
+  const lines = editor.value.split('\n').length;
+  lineNumbers.innerHTML = Array.from({ length: lines }, (_, i) =>
+    `<span>${i + 1}</span>`
+  ).join('');
+}
+
+function syncScroll() {
+  lineNumbers.scrollTop = editor.scrollTop;
+}
+
+function showError(msg) {
+  errorBar.textContent = msg;
+  errorBar.classList.add('show');
+}
+
+function clearError() {
+  errorBar.classList.remove('show');
+  errorBar.textContent = '';
+}
+
+function applyZoom(zoom) {
+  const card = diagramCard;
+  if (zoom === 'fit') {
+    card.style.transform = '';
+    card.style.transformOrigin = '';
+    card.style.maxWidth = '100%';
+  } else {
+    const scale = parseInt(zoom) / 100;
+    card.style.transformOrigin = 'top center';
+    card.style.maxWidth = 'none';
+    card.style.transform = `scale(${scale})`;
+  }
+}
+
+zoomBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    zoomBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentZoom = btn.dataset.zoom;
+    applyZoom(currentZoom);
+  });
+});
+
+async function render() {
+  const code = editor.value.trim();
+  if (!code) {
+    previewEmpty.style.display = '';
+    diagramCard.style.display = 'none';
+    btnDownload.disabled = true;
+    clearError();
+    return;
+  }
+
+  clearError();
+  renderCounter++;
+  const id = `mermaid-${renderCounter}`;
+
+  try {
+    const { svg } = await mermaid.render(id, code);
+    diagramOutput.innerHTML = svg;
+    previewEmpty.style.display = 'none';
+    diagramCard.style.display = '';
+    applyZoom(currentZoom);
+    btnDownload.disabled = false;
+  } catch (err) {
+    const msg = err?.message || err?.str || String(err);
+    showError('오류: ' + msg.replace(/\n/g, ' ').slice(0, 300));
+    previewEmpty.style.display = '';
+    diagramCard.style.display = 'none';
+    btnDownload.disabled = true;
+  }
+}
+
+// Debounce
+let debounceTimer = null;
+function scheduleRender() {
+  if (!autoRenderToggle.checked) return;
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(render, 600);
+}
+
+editor.addEventListener('input', () => {
+  updateLineNumbers();
+  scheduleRender();
+});
+
+editor.addEventListener('scroll', syncScroll);
+
+btnRender.addEventListener('click', render);
+
+btnClear.addEventListener('click', () => {
+  editor.value = '';
+  updateLineNumbers();
+  previewEmpty.style.display = '';
+  diagramCard.style.display = 'none';
+  btnDownload.disabled = true;
+  clearError();
+});
+
+exampleSelect.addEventListener('change', () => {
+  const val = exampleSelect.value;
+  if (!val) return;
+  editor.value = EXAMPLES[val] || '';
+  exampleSelect.value = '';
+  updateLineNumbers();
+  render();
+});
+
+btnDownload.addEventListener('click', () => {
+  const svgEl = diagramOutput.querySelector('svg');
+  if (!svgEl) return;
+  const serializer = new XMLSerializer();
+  const svgStr = serializer.serializeToString(svgEl);
+  const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'diagram.svg';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// Tab key in editor
+editor.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    editor.value = editor.value.slice(0, start) + '  ' + editor.value.slice(end);
+    editor.selectionStart = editor.selectionEnd = start + 2;
+    updateLineNumbers();
+    scheduleRender();
+  }
+});
+
+// Init
+updateLineNumbers();
+
+// Load flowchart example on start
+editor.value = EXAMPLES.flowchart;
+updateLineNumbers();
+render();
+</script>
+</body>
+</html>

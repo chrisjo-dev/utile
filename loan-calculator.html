@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>대출 계산기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --radius: 12px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 36px 20px 64px;
+}
+
+/* fadeUp animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  animation: fadeUp 0.5s ease both;
+}
+.fade-up:nth-child(1) { animation-delay: 0s; }
+.fade-up:nth-child(2) { animation-delay: 0.08s; }
+.fade-up:nth-child(3) { animation-delay: 0.16s; }
+.fade-up:nth-child(4) { animation-delay: 0.24s; }
+.fade-up:nth-child(5) { animation-delay: 0.32s; }
+
+/* Header */
+header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  text-decoration: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  margin-bottom: 20px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  transition: color 0.2s, border-color 0.2s;
+}
+.back-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+header h1 {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+header h1 span { color: var(--accent); }
+header p {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 6px;
+}
+
+/* Main layout */
+.main-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+
+/* Panels */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 20px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* Form inputs */
+.field { margin-bottom: 18px; }
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 7px;
+}
+
+.field input[type="text"],
+.field input[type="number"],
+.field select {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.field input:focus,
+.field select:focus {
+  border-color: var(--accent);
+  background: var(--surface-3);
+}
+.field select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2371717a' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.input-with-addon {
+  display: flex;
+  gap: 0;
+}
+.input-with-addon input {
+  border-radius: 8px 0 0 8px;
+  flex: 1;
+}
+.input-addon {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  padding: 0 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* Term toggle */
+.term-row { display: flex; gap: 8px; align-items: center; }
+.term-row input[type="number"] {
+  flex: 1;
+  border-radius: 8px 0 0 8px;
+}
+.toggle-group {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.toggle-group button {
+  background: var(--surface-2);
+  border: none;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.toggle-group button.active {
+  background: var(--accent);
+  color: #0e0e10;
+  font-weight: 600;
+}
+
+/* Repayment type */
+.repay-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.repay-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-2);
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 9px 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  line-height: 1.3;
+}
+.repay-btn:hover { border-color: var(--accent); color: var(--accent); }
+.repay-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Results panel */
+.results-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.stat-card.featured {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+.stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 6px;
+}
+.stat-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text);
+}
+.stat-card.featured .stat-value { color: var(--accent); }
+.stat-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  margin-top: 3px;
+}
+
+/* Donut chart */
+.chart-wrap {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.donut-svg { flex-shrink: 0; }
+.donut-svg circle { transition: stroke-dashoffset 0.6s ease, stroke-dasharray 0.6s ease; }
+
+.chart-legend { flex: 1; }
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.legend-item:last-child { margin-bottom: 0; }
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.legend-info { flex: 1; }
+.legend-name {
+  font-size: 11px;
+  color: var(--text-2);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.legend-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+.legend-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  text-align: right;
+}
+
+/* Amortization table */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.table-header h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.expand-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.expand-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+.amort-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+}
+.amort-table thead th {
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 16px;
+  text-align: right;
+}
+.amort-table thead th:first-child { text-align: center; }
+.amort-table tbody tr { border-bottom: 1px solid var(--border); }
+.amort-table tbody tr:last-child { border-bottom: none; }
+.amort-table tbody tr:hover { background: var(--surface-2); }
+.amort-table tbody td {
+  padding: 9px 16px;
+  text-align: right;
+  color: var(--text-2);
+}
+.amort-table tbody td:first-child {
+  text-align: center;
+  color: var(--text-3);
+  font-size: 11px;
+}
+.amort-table tbody td.principal-col { color: var(--text); }
+.amort-table tbody td.interest-col { color: #f87171; }
+.amort-table tbody td.payment-col { color: var(--accent); font-weight: 500; }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-3);
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header class="fade-up">
+    <div>
+      <a href="./index.html" class="back-btn">← 홈</a>
+    </div>
+    <h1>대출 <span>계산기</span></h1>
+    <p class="mono">loan-mortgage-calculator // pure js</p>
+  </header>
+
+  <div class="main-grid">
+    <!-- Input Panel -->
+    <div class="panel fade-up">
+      <div class="panel-title">입력 조건</div>
+
+      <div class="field">
+        <label>대출 금액 (₩)</label>
+        <div class="input-with-addon">
+          <input type="text" id="loanAmount" value="300,000,000" inputmode="numeric">
+          <span class="input-addon">원</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>연 이율 (%)</label>
+        <div class="input-with-addon">
+          <input type="number" id="annualRate" value="4.5" step="0.1" min="0" max="100">
+          <span class="input-addon">%</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>대출 기간</label>
+        <div class="term-row">
+          <input type="number" id="termValue" value="30" min="1" style="border-radius:8px;">
+          <div class="toggle-group">
+            <button id="btnYears" class="active" onclick="setTermUnit('years')">년</button>
+            <button id="btnMonths" onclick="setTermUnit('months')">개월</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>상환 방식</label>
+        <div class="repay-group">
+          <button class="repay-btn active" id="rEqualPayment" onclick="setRepayType('equal-payment')">
+            원리금균등<br>상환
+          </button>
+          <button class="repay-btn" id="rEqualPrincipal" onclick="setRepayType('equal-principal')">
+            원금균등<br>상환
+          </button>
+          <button class="repay-btn" id="rBullet" onclick="setRepayType('bullet')">
+            만기일시<br>상환
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-panel">
+
+      <!-- Summary cards -->
+      <div class="panel fade-up" style="padding:20px;">
+        <div class="panel-title">계산 결과</div>
+        <div class="summary-grid">
+          <div class="stat-card featured">
+            <div class="stat-label" id="monthlyLabel">월 납입액</div>
+            <div class="stat-value" id="monthlyPayment">—</div>
+            <div class="stat-sub" id="monthlyNote"> </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">총 상환액</div>
+            <div class="stat-value" id="totalPayment">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">총 이자액</div>
+            <div class="stat-value" id="totalInterest">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">이자 비율</div>
+            <div class="stat-value" id="interestRatio">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Donut chart -->
+      <div class="chart-wrap fade-up">
+        <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110">
+          <circle id="donutBg" cx="55" cy="55" r="42" fill="none" stroke="var(--surface-3)" stroke-width="16"/>
+          <circle id="donutInterest" cx="55" cy="55" r="42" fill="none" stroke="#f87171" stroke-width="16"
+            stroke-dasharray="0 264" stroke-dashoffset="66" stroke-linecap="butt"
+            transform="rotate(-90 55 55)"/>
+          <circle id="donutPrincipal" cx="55" cy="55" r="42" fill="none" stroke="var(--accent)" stroke-width="16"
+            stroke-dasharray="0 264" stroke-dashoffset="66" stroke-linecap="butt"
+            transform="rotate(-90 55 55)"/>
+        </svg>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--accent)"></div>
+            <div class="legend-info">
+              <div class="legend-name">납입 원금</div>
+              <div class="legend-val" id="legendPrincipal">—</div>
+            </div>
+            <div class="legend-pct" id="legendPrincipalPct">—</div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#f87171"></div>
+            <div class="legend-info">
+              <div class="legend-name">납입 이자</div>
+              <div class="legend-val" id="legendInterest">—</div>
+            </div>
+            <div class="legend-pct" id="legendInterestPct">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Amortization table -->
+      <div class="table-wrap fade-up">
+        <div class="table-header">
+          <h3>상환 일정표</h3>
+          <button class="expand-btn" id="expandBtn" onclick="toggleExpand()">전체 보기</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="amort-table">
+            <thead>
+              <tr>
+                <th>회차</th>
+                <th>납입원금</th>
+                <th>납입이자</th>
+                <th>월납입액</th>
+                <th>잔여원금</th>
+              </tr>
+            </thead>
+            <tbody id="amortBody">
+              <tr><td colspan="5" class="empty-state">조건을 입력하면 상환 일정이 표시됩니다</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// State
+let termUnit = 'years';
+let repayType = 'equal-payment';
+let expanded = false;
+
+// Formatting
+function fmt(n) {
+  if (isNaN(n) || !isFinite(n)) return '—';
+  return '₩' + Math.round(n).toLocaleString('ko-KR');
+}
+function fmtPct(n) {
+  if (isNaN(n) || !isFinite(n)) return '—';
+  return n.toFixed(1) + '%';
+}
+
+// Loan amount: comma format on input
+const loanAmountInput = document.getElementById('loanAmount');
+loanAmountInput.addEventListener('input', function() {
+  let raw = this.value.replace(/[^0-9]/g, '');
+  if (raw === '') { this.value = ''; calculate(); return; }
+  this.value = parseInt(raw, 10).toLocaleString('ko-KR');
+  calculate();
+});
+
+function getLoanAmount() {
+  let raw = loanAmountInput.value.replace(/[^0-9]/g, '');
+  return raw === '' ? 0 : parseInt(raw, 10);
+}
+
+// Rate / term live update
+document.getElementById('annualRate').addEventListener('input', calculate);
+document.getElementById('termValue').addEventListener('input', calculate);
+
+function setTermUnit(unit) {
+  termUnit = unit;
+  document.getElementById('btnYears').classList.toggle('active', unit === 'years');
+  document.getElementById('btnMonths').classList.toggle('active', unit === 'months');
+  calculate();
+}
+
+function setRepayType(type) {
+  repayType = type;
+  document.querySelectorAll('.repay-btn').forEach(b => b.classList.remove('active'));
+  const map = { 'equal-payment': 'rEqualPayment', 'equal-principal': 'rEqualPrincipal', 'bullet': 'rBullet' };
+  document.getElementById(map[type]).classList.add('active');
+  calculate();
+}
+
+function toggleExpand() {
+  expanded = !expanded;
+  document.getElementById('expandBtn').textContent = expanded ? '간략히 보기' : '전체 보기';
+  renderTable(lastSchedule);
+}
+
+let lastSchedule = [];
+
+// Core calculation
+function buildSchedule(principal, annualRate, months, type) {
+  const r = annualRate / 100 / 12;
+  const schedule = [];
+
+  if (type === 'equal-payment') {
+    // 원리금균등
+    let payment;
+    if (r === 0) {
+      payment = principal / months;
+    } else {
+      payment = principal * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+    }
+    let balance = principal;
+    for (let i = 1; i <= months; i++) {
+      const interest = balance * r;
+      const princ = payment - interest;
+      balance = Math.max(0, balance - princ);
+      schedule.push({ month: i, principal: princ, interest, payment, balance });
+    }
+
+  } else if (type === 'equal-principal') {
+    // 원금균등
+    const princPerMonth = principal / months;
+    let balance = principal;
+    for (let i = 1; i <= months; i++) {
+      const interest = balance * r;
+      const payment = princPerMonth + interest;
+      balance = Math.max(0, balance - princPerMonth);
+      schedule.push({ month: i, principal: princPerMonth, interest, payment, balance });
+    }
+
+  } else {
+    // 만기일시 (bullet)
+    const interest = principal * r;
+    for (let i = 1; i <= months; i++) {
+      const isLast = i === months;
+      const payment = isLast ? principal + interest : interest;
+      const princ = isLast ? principal : 0;
+      const balance = isLast ? 0 : principal;
+      schedule.push({ month: i, principal: princ, interest, payment, balance });
+    }
+  }
+  return schedule;
+}
+
+function calculate() {
+  const principal = getLoanAmount();
+  const annualRate = parseFloat(document.getElementById('annualRate').value) || 0;
+  const termVal = parseInt(document.getElementById('termValue').value) || 0;
+  const months = termUnit === 'years' ? termVal * 12 : termVal;
+
+  if (principal <= 0 || months <= 0 || annualRate < 0) {
+    clearResults();
+    return;
+  }
+
+  const schedule = buildSchedule(principal, annualRate, months, repayType);
+  lastSchedule = schedule;
+
+  const totalPayment = schedule.reduce((s, r) => s + r.payment, 0);
+  const totalInterest = schedule.reduce((s, r) => s + r.interest, 0);
+  const interestRatio = totalPayment > 0 ? (totalInterest / totalPayment) * 100 : 0;
+
+  // Summary labels
+  const monthlyLabel = document.getElementById('monthlyLabel');
+  const monthlyPaymentEl = document.getElementById('monthlyPayment');
+  const monthlyNoteEl = document.getElementById('monthlyNote');
+
+  if (repayType === 'equal-payment') {
+    monthlyLabel.textContent = '월 납입액';
+    monthlyPaymentEl.textContent = fmt(schedule[0].payment);
+    monthlyNoteEl.textContent = '매월 동일';
+  } else if (repayType === 'equal-principal') {
+    monthlyLabel.textContent = '1회차 납입액';
+    monthlyPaymentEl.textContent = fmt(schedule[0].payment);
+    monthlyNoteEl.textContent = `최종 ${fmt(schedule[months-1].payment)}`;
+  } else {
+    monthlyLabel.textContent = '매월 이자';
+    monthlyPaymentEl.textContent = fmt(schedule[0].payment);
+    monthlyNoteEl.textContent = `만기 ${fmt(schedule[months-1].payment)}`;
+  }
+
+  document.getElementById('totalPayment').textContent = fmt(totalPayment);
+  document.getElementById('totalInterest').textContent = fmt(totalInterest);
+  document.getElementById('interestRatio').textContent = fmtPct(interestRatio);
+
+  // Donut chart
+  updateDonut(principal, totalInterest);
+
+  // Legend
+  document.getElementById('legendPrincipal').textContent = fmt(principal);
+  document.getElementById('legendInterest').textContent = fmt(totalInterest);
+  const total = principal + totalInterest;
+  document.getElementById('legendPrincipalPct').textContent = total > 0 ? fmtPct(principal / total * 100) : '—';
+  document.getElementById('legendInterestPct').textContent = total > 0 ? fmtPct(totalInterest / total * 100) : '—';
+
+  renderTable(schedule);
+}
+
+function updateDonut(principal, totalInterest) {
+  const CIRCUM = 2 * Math.PI * 42; // ~263.9
+  const total = principal + totalInterest;
+  if (total <= 0) return;
+
+  const principalArc = (principal / total) * CIRCUM;
+  const interestArc = (totalInterest / total) * CIRCUM;
+  const gap = 0;
+
+  // Principal: starts at top (offset 0 after rotation)
+  const pd = document.getElementById('donutPrincipal');
+  pd.setAttribute('stroke-dasharray', `${principalArc} ${CIRCUM - principalArc}`);
+  pd.setAttribute('stroke-dashoffset', '0');
+
+  // Interest: starts after principal
+  const id = document.getElementById('donutInterest');
+  id.setAttribute('stroke-dasharray', `${interestArc} ${CIRCUM - interestArc}`);
+  id.setAttribute('stroke-dashoffset', `${CIRCUM - principalArc}`);
+}
+
+function renderTable(schedule) {
+  const tbody = document.getElementById('amortBody');
+  const rows = expanded ? schedule : schedule.slice(0, 12);
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">조건을 입력하면 상환 일정이 표시됩니다</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.month}</td>
+      <td class="principal-col">${fmt(r.principal)}</td>
+      <td class="interest-col">${fmt(r.interest)}</td>
+      <td class="payment-col">${fmt(r.payment)}</td>
+      <td>${fmt(r.balance)}</td>
+    </tr>
+  `).join('');
+
+  // Expand button visibility
+  document.getElementById('expandBtn').style.display = schedule.length <= 12 ? 'none' : '';
+}
+
+function clearResults() {
+  document.getElementById('monthlyPayment').textContent = '—';
+  document.getElementById('totalPayment').textContent = '—';
+  document.getElementById('totalInterest').textContent = '—';
+  document.getElementById('interestRatio').textContent = '—';
+  document.getElementById('legendPrincipal').textContent = '—';
+  document.getElementById('legendInterest').textContent = '—';
+  document.getElementById('legendPrincipalPct').textContent = '—';
+  document.getElementById('legendInterestPct').textContent = '—';
+  lastSchedule = [];
+  document.getElementById('amortBody').innerHTML =
+    '<tr><td colspan="5" class="empty-state">조건을 입력하면 상환 일정이 표시됩니다</td></tr>';
+}
+
+// Initial calculation on load
+calculate();
+</script>
+</body>
+</html>
