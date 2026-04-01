@@ -755,7 +755,7 @@ for (let i = 0; i < MOLECULE_COUNT; i++) {
   el.style.left = randomBetween(5, 90) + 'vw';
   el.style.top = randomBetween(10, 85) + 'vh';
   moleculeLayer.appendChild(el);
-  molecules.push({ el, size, active: false, label: null });
+  molecules.push({ el, size, active: false, label: null, timeoutId: null });
 }
 
 // Label pool for party mode
@@ -797,9 +797,9 @@ function setMoleculeMode(distractedSec) {
     } else if (!shouldShow && m.active) {
       m.active = false;
       m.el.classList.remove('visible');
-      // Defer animation clear until after opacity transition (1s)
+      if (m.timeoutId) clearTimeout(m.timeoutId);
       const capturedEl = m.el;
-      setTimeout(() => { capturedEl.style.animation = ''; }, 1100);
+      m.timeoutId = setTimeout(() => { capturedEl.style.animation = ''; m.timeoutId = null; }, 1100);
       if (m.label) { m.label.remove(); m.label = null; }
     }
   });
@@ -901,6 +901,7 @@ let tickInterval = null;
 
 // Score state
 let scoreHistory = []; // last N scores
+let avgScore = 0;
 let focusHeldMs = 0;
 let distractHeldMs = 0;
 
@@ -913,6 +914,7 @@ function formatTime(ms) {
 }
 
 const timerDisplay = document.getElementById('timer-display');
+const timerLabel = document.querySelector('.timer-label');
 const effStat = document.getElementById('eff-stat');
 const distStat = document.getElementById('dist-stat');
 const statusBadge = document.getElementById('status-badge');
@@ -930,6 +932,12 @@ function updateTimerUI() {
 }
 
 function updateStatusUI(state) {
+  if (state === 'loading') {
+    statusBadge.className = 'status-badge';
+    statusText.textContent = 'LOADING...';
+    timerDisplay.className = 'timer-display';
+    return;
+  }
   statusBadge.className = 'status-badge ' + (state === 'focused' ? 'focused' : state === 'distracted' ? 'distracted' : '');
   statusText.textContent = state === 'focused' ? 'FOCUSED' : state === 'distracted' ? 'DISTRACTED' : 'IDLE';
   timerDisplay.className = 'timer-display ' + (state === 'focused' ? 'focused' : state === 'distracted' ? 'distracted' : '');
@@ -1026,7 +1034,7 @@ function applyFocusState(newState) {
     updateStatusUI('focused');
     setCatState('watching');
     setMoleculeMode(0);
-    document.querySelector('.timer-label').textContent = '집중 시간';
+    timerLabel.textContent = '집중 시간';
   } else if (newState === 'distracted') {
     // End focus streak
     if (currentFocusStart !== null) {
@@ -1039,6 +1047,12 @@ function applyFocusState(newState) {
     distractionCount++;
     focusState = 'distracted';
     updateStatusUI('distracted');
+    const reasons = [];
+    if (!tabVisible) reasons.push('탭 전환');
+    if (!faceDetected) reasons.push('얼굴 없음');
+    else if (!faceFrontal) reasons.push('시선 이탈');
+    if (userIdle) reasons.push('유휴 상태');
+    timerLabel.textContent = reasons.length ? reasons.join(' · ') : '집중 시간';
   }
 }
 
@@ -1066,7 +1080,7 @@ function tick() {
   const score = computeFocusScore();
   scoreHistory.push(score);
   if (scoreHistory.length > 30) scoreHistory.shift(); // ~3s at 100ms
-  const avgScore = scoreHistory.reduce((a, b) => a + b, 0) / scoreHistory.length;
+  avgScore = scoreHistory.reduce((a, b) => a + b, 0) / scoreHistory.length;
 
   if (avgScore >= 70) {
     focusHeldMs += dt;
@@ -1086,13 +1100,6 @@ function tick() {
   } else if (distractHeldMs >= 3000 && focusState !== 'distracted') {
     applyFocusState('distracted');
     distractHeldMs = 0;
-    // Show why distracted
-    const reasons = [];
-    if (!tabVisible) reasons.push('탭 전환');
-    if (!faceDetected) reasons.push('얼굴 없음');
-    else if (!faceFrontal) reasons.push('시선 이탈');
-    if (userIdle) reasons.push('유휴 상태');
-    document.querySelector('.timer-label').textContent = reasons.length ? reasons.join(' · ') : '집중 시간';
   }
 
   // Cat state based on distraction duration
@@ -1229,8 +1236,7 @@ btnStart.addEventListener('click', async () => {
 
   setCatState('watching');
   setMoleculeMode(0);
-  statusBadge.className = 'status-badge';
-  statusText.textContent = 'LOADING...';
+  updateStatusUI('loading');
   updateTimerUI();
 
   // Stop any existing camera stream before starting a new one
