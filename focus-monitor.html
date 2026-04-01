@@ -1082,16 +1082,12 @@ function tick() {
   if (scoreHistory.length > 30) scoreHistory.shift(); // ~3s at 100ms
   avgScore = scoreHistory.reduce((a, b) => a + b, 0) / scoreHistory.length;
 
-  if (avgScore >= 70) {
+  if (avgScore >= 75) {
     focusHeldMs += dt;
     distractHeldMs = 0;
-  } else if (avgScore < 40) {
+  } else {
     distractHeldMs += dt;
     focusHeldMs = 0;
-  } else {
-    // neutral zone: slight decay
-    focusHeldMs = Math.max(0, focusHeldMs - dt * 0.3);
-    distractHeldMs = Math.max(0, distractHeldMs - dt * 0.3);
   }
 
   if (focusHeldMs >= 2000 && focusState !== 'focused') {
