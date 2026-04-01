@@ -225,6 +225,17 @@ body::before {
 .zz-text { display: none; }
 .cat-svg.state-idle .zz-text { display: block; animation: float-zz 2s ease-in-out infinite; }
 
+/* Cat sub-element visibility via CSS class (not inline style) */
+.cat-svg .idle-eyes { display: none; }
+.cat-svg.state-idle .idle-eyes { display: block; }
+.cat-svg .eye-group { display: block; }
+.cat-svg.state-idle .eye-group { display: none; }
+.cat-svg .eyebrows { display: none; }
+.cat-svg.state-annoyed .eyebrows,
+.cat-svg.state-exasperated .eyebrows { display: block; }
+.cat-svg .paw-face { display: none; }
+.cat-svg.state-exasperated .paw-face { display: block; }
+
 /* ── Center timer ── */
 .timer-wrap {
   text-align: center;
@@ -563,19 +574,19 @@ body::before {
         </g>
 
         <!-- Idle closed eyes (shown with CSS when state-idle) -->
-        <g class="idle-eyes" style="display:none">
+        <g class="idle-eyes">
           <path d="M59 92 Q67 98 75 92" stroke="#888" stroke-width="2" fill="none" stroke-linecap="round"/>
           <path d="M85 92 Q93 98 101 92" stroke="#888" stroke-width="2" fill="none" stroke-linecap="round"/>
         </g>
 
         <!-- Annoyed eyebrows (hidden by default) -->
-        <g class="eyebrows" style="display:none">
+        <g class="eyebrows">
           <line x1="58" y1="80" x2="76" y2="84" stroke="#888" stroke-width="2.5" stroke-linecap="round"/>
           <line x1="102" y1="80" x2="84" y2="84" stroke="#888" stroke-width="2.5" stroke-linecap="round"/>
         </g>
 
         <!-- Exasperated paw-over-face (hidden by default) -->
-        <g class="paw-face" style="display:none">
+        <g class="paw-face">
           <ellipse cx="80" cy="95" rx="22" ry="14" fill="#3a3a4a"/>
           <ellipse cx="72" cy="97" rx="6" ry="4" fill="#454558"/>
           <ellipse cx="80" cy="96" rx="6" ry="4" fill="#454558"/>
@@ -786,7 +797,9 @@ function setMoleculeMode(distractedSec) {
     } else if (!shouldShow && m.active) {
       m.active = false;
       m.el.classList.remove('visible');
-      m.el.style.animation = '';
+      // Defer animation clear until after opacity transition (1s)
+      const capturedEl = m.el;
+      setTimeout(() => { capturedEl.style.animation = ''; }, 1100);
       if (m.label) { m.label.remove(); m.label = null; }
     }
   });
@@ -797,11 +810,6 @@ function setMoleculeMode(distractedSec) {
 // ─────────────────────────────────────────────
 const catSvg = document.getElementById('cat-svg');
 const speechBubble = document.getElementById('speech-bubble');
-const idleEyes = catSvg.querySelector('.idle-eyes');
-const eyeGroup = catSvg.querySelector('.eye-group');
-const eyebrows = catSvg.querySelector('.eyebrows');
-const pawFace = catSvg.querySelector('.paw-face');
-
 const CAT_STATES = ['idle','watching','suspicious','annoyed','exasperated'];
 const CAT_MESSAGES = {
   idle: '',
@@ -824,12 +832,6 @@ function setCatState(state) {
   // Remove all state classes
   CAT_STATES.forEach(s => catSvg.classList.remove('state-' + s));
   catSvg.classList.add('state-' + state);
-
-  // Toggle sub-elements
-  idleEyes.style.display = state === 'idle' ? 'block' : 'none';
-  eyeGroup.style.display = state === 'idle' ? 'none' : 'block';
-  eyebrows.style.display = (state === 'annoyed' || state === 'exasperated') ? 'block' : 'none';
-  pawFace.style.display = state === 'exasperated' ? 'block' : 'none';
 
   // Speech bubble
   clearTimeout(speechTimeout);
@@ -891,7 +893,6 @@ let distractionEvents = []; // {start, end, type}
 let currentDistStart = null;
 let currentFocusStart = null; // track streak
 let longestFocusMs = 0;
-let currentStreakMs = 0;
 
 let sessionRunning = false;
 let focusState = 'idle'; // 'idle' | 'focused' | 'distracted'
@@ -899,7 +900,6 @@ let lastTick = null;
 let tickInterval = null;
 
 // Score state
-let focusScore = 0;
 let scoreHistory = []; // last N scores
 let focusHeldMs = 0;
 let distractHeldMs = 0;
@@ -1026,11 +1026,11 @@ function applyFocusState(newState) {
     updateStatusUI('focused');
     setCatState('watching');
     setMoleculeMode(0);
+    document.querySelector('.timer-label').textContent = '집중 시간';
   } else if (newState === 'distracted') {
     // End focus streak
     if (currentFocusStart !== null) {
       const streak = now - currentFocusStart;
-      currentStreakMs = streak;
       if (streak > longestFocusMs) longestFocusMs = streak;
       currentFocusStart = null;
     }
@@ -1065,7 +1065,7 @@ function tick() {
   // Score evaluation
   const score = computeFocusScore();
   scoreHistory.push(score);
-  if (scoreHistory.length > 6) scoreHistory.shift(); // ~3s at 500ms
+  if (scoreHistory.length > 30) scoreHistory.shift(); // ~3s at 100ms
   const avgScore = scoreHistory.reduce((a, b) => a + b, 0) / scoreHistory.length;
 
   if (avgScore >= 70) {
@@ -1086,13 +1086,18 @@ function tick() {
   } else if (distractHeldMs >= 3000 && focusState !== 'distracted') {
     applyFocusState('distracted');
     distractHeldMs = 0;
+    // Show why distracted
+    const reasons = [];
+    if (!tabVisible) reasons.push('탭 전환');
+    if (!faceDetected) reasons.push('얼굴 없음');
+    else if (!faceFrontal) reasons.push('시선 이탈');
+    if (userIdle) reasons.push('유휴 상태');
+    document.querySelector('.timer-label').textContent = reasons.length ? reasons.join(' · ') : '집중 시간';
   }
 
   // Cat state based on distraction duration
   if (focusState === 'distracted') {
-    if (distractedSec < 3) {
-      setCatState('suspicious');
-    } else if (distractedSec < 10) {
+    if (distractedSec < 10) {
       setCatState('suspicious');
     } else if (distractedSec < 30) {
       setCatState('annoyed');
@@ -1116,6 +1121,13 @@ let detectionRunning = false;
 let mpFailed = false;
 
 async function initMediaPipe() {
+  // Reuse existing detector if already initialized
+  if (faceDetector) {
+    detectionRunning = true;
+    requestAnimationFrame(detectLoop);
+    return;
+  }
+
   try {
     const { FaceDetector, FilesetResolver } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.mjs');
 
@@ -1206,20 +1218,30 @@ btnStart.addEventListener('click', async () => {
   // Reset state
   focusMs = 0; sessionMs = 0; distractionCount = 0;
   distractionEvents = []; currentDistStart = null; currentFocusStart = null;
-  longestFocusMs = 0; currentStreakMs = 0;
-  focusState = 'idle'; focusScore = 0; scoreHistory = [];
+  longestFocusMs = 0;
+  focusState = 'idle'; scoreHistory = [];
   focusHeldMs = 0; distractHeldMs = 0; distractedSec = 0;
   lastTick = null;
 
   btnStart.disabled = true;
+  btnStart.textContent = '연결 중...';
   btnEnd.disabled = false;
 
   setCatState('watching');
   setMoleculeMode(0);
-  updateStatusUI('idle');
+  statusBadge.className = 'status-badge';
+  statusText.textContent = 'LOADING...';
   updateTimerUI();
 
+  // Stop any existing camera stream before starting a new one
+  if (videoEl && videoEl.srcObject) {
+    videoEl.srcObject.getTracks().forEach(t => t.stop());
+    videoEl.srcObject = null;
+  }
+
   await startCamera();
+
+  btnStart.textContent = '시작';
 
   sessionRunning = true;
   lastTick = performance.now();
@@ -1290,6 +1312,24 @@ function showSummary() {
 // ─────────────────────────────────────────────
 const ro = new ResizeObserver(() => drawTimeline());
 ro.observe(timelineCanvas);
+
+// ─────────────────────────────────────────────
+//  Keyboard shortcuts
+// ─────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && !sessionRunning && !btnStart.disabled) {
+    e.preventDefault();
+    btnStart.click();
+  } else if (e.code === 'Escape') {
+    if (summaryOverlay.classList.contains('visible')) {
+      summaryOverlay.classList.remove('visible');
+      btnStart.disabled = false;
+      btnEnd.disabled = true;
+    } else if (sessionRunning) {
+      endSession();
+    }
+  }
+});
 
 // ─────────────────────────────────────────────
 //  Initial cat state
