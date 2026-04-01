@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design Advisor — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --purple: #a78bfa;
+  --orange: #fb923c;
+  --radius: 12px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+.app { position:relative; z-index:1; max-width:1200px; margin:0 auto; padding:36px 20px 80px; }
+
+/* Header */
+header {
+  display:flex; align-items:center; gap:16px;
+  margin-bottom:36px;
+  animation: fadeUp 0.5s ease both;
+}
+.back-btn {
+  display:flex; align-items:center; gap:6px;
+  color:var(--text-3); text-decoration:none;
+  font-family:'DM Mono',monospace; font-size:12px;
+  padding:6px 10px; border:1px solid var(--border);
+  border-radius:6px; background:var(--surface);
+  transition:all 0.2s;
+}
+.back-btn:hover { color:var(--accent); border-color:rgba(34,211,238,0.3); }
+.header-info { flex:1; }
+h1 { font-size:28px; font-weight:800; letter-spacing:-0.02em; }
+h1 span { color:var(--accent); }
+.header-sub { font-family:'DM Mono',monospace; font-size:12px; color:var(--text-3); margin-top:4px; }
+
+/* Layout */
+.layout {
+  display:grid;
+  grid-template-columns:360px 1fr;
+  gap:20px;
+  animation: fadeUp 0.5s 0.05s ease both;
+}
+@media (max-width:900px) { .layout { grid-template-columns:1fr; } }
+
+/* Input Panel */
+.panel {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.panel-header {
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
+  font-family:'DM Mono',monospace;
+  font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--text-3);
+  display:flex; align-items:center; gap:8px;
+}
+.panel-header span { color:var(--accent); }
+.panel-body { padding:18px; display:flex; flex-direction:column; gap:16px; }
+
+/* Form elements */
+.field { display:flex; flex-direction:column; gap:6px; }
+.field label {
+  font-family:'DM Mono',monospace; font-size:11px;
+  letter-spacing:0.06em; text-transform:uppercase;
+  color:var(--text-3);
+}
+.field select, .field input[type=range] {
+  background:var(--surface-2); border:1px solid var(--border);
+  border-radius:8px; color:var(--text);
+  font-family:'DM Mono',monospace; font-size:13px;
+  padding:9px 12px; width:100%; cursor:pointer;
+  transition:border-color 0.2s;
+}
+.field select:focus { outline:none; border-color:var(--accent); }
+
+/* Slider */
+.slider-wrap { display:flex; flex-direction:column; gap:6px; }
+.slider-val {
+  font-family:'DM Mono',monospace; font-size:13px;
+  color:var(--accent); text-align:right;
+}
+input[type=range] {
+  -webkit-appearance:none; appearance:none;
+  height:4px; border-radius:2px; padding:0 !important;
+  background:var(--surface-3);
+  border:none !important;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none;
+  width:14px; height:14px; border-radius:50%;
+  background:var(--accent); cursor:pointer;
+  border:2px solid var(--bg);
+}
+
+/* Toggle group */
+.toggle-group { display:flex; gap:4px; flex-wrap:wrap; }
+.toggle-btn {
+  flex:1; min-width:60px;
+  padding:7px 10px;
+  background:var(--surface-2); border:1px solid var(--border);
+  border-radius:6px; color:var(--text-3);
+  font-family:'DM Mono',monospace; font-size:11px;
+  cursor:pointer; transition:all 0.15s; text-align:center;
+}
+.toggle-btn:hover { color:var(--text-2); }
+.toggle-btn.active {
+  color:var(--accent); background:var(--accent-dim);
+  border-color:rgba(34,211,238,0.3);
+}
+
+/* Analyze button */
+.analyze-btn {
+  width:100%; padding:13px;
+  background:var(--accent); border:none; border-radius:8px;
+  color:#000; font-family:'Syne',sans-serif;
+  font-size:14px; font-weight:700; cursor:pointer;
+  transition:all 0.2s; letter-spacing:0.02em;
+  margin-top:4px;
+}
+.analyze-btn:hover { filter:brightness(1.1); transform:translateY(-1px); }
+
+/* Output Panel */
+.output-panel {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+  display:flex; flex-direction:column;
+}
+
+/* Empty state */
+.empty-state {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:60px 24px; text-align:center; gap:12px;
+}
+.empty-icon { font-size:40px; opacity:0.3; }
+.empty-text { font-family:'DM Mono',monospace; font-size:13px; color:var(--text-3); }
+
+/* Result */
+.result { padding:20px; display:flex; flex-direction:column; gap:20px; overflow-y:auto; }
+
+/* Scale badge */
+.scale-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 14px;
+  background:var(--accent-dim); border:1px solid rgba(34,211,238,0.2);
+  border-radius:8px;
+}
+.scale-badge .scale-label { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:0.06em; }
+.scale-badge .scale-val { font-family:'DM Mono',monospace; font-size:13px; color:var(--accent); font-weight:500; }
+
+/* Architecture diagram */
+.arch-diagram {
+  background:var(--surface-2); border:1px solid var(--border);
+  border-radius:10px; padding:20px;
+  overflow-x:auto;
+}
+.arch-title {
+  font-family:'DM Mono',monospace; font-size:11px;
+  letter-spacing:0.08em; text-transform:uppercase;
+  color:var(--text-3); margin-bottom:16px;
+}
+
+/* Component layers */
+.layers { display:flex; flex-direction:column; gap:8px; }
+.layer {
+  display:flex; flex-direction:column; gap:6px;
+}
+.layer-label {
+  font-family:'DM Mono',monospace; font-size:10px;
+  color:var(--text-3); letter-spacing:0.08em;
+  text-transform:uppercase; padding-left:2px;
+}
+.layer-items { display:flex; gap:8px; flex-wrap:wrap; }
+
+/* Component chip */
+.comp {
+  display:flex; align-items:center; gap:6px;
+  padding:7px 12px;
+  background:var(--surface-3); border-radius:6px;
+  border:1px solid var(--border);
+  font-family:'DM Mono',monospace; font-size:12px;
+  color:var(--text-2); white-space:nowrap;
+  position:relative; cursor:default;
+  transition:border-color 0.15s;
+}
+.comp:hover { border-color:var(--accent); }
+.comp .comp-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.comp-tooltip {
+  display:none;
+  position:absolute; bottom:calc(100% + 6px); left:50%;
+  transform:translateX(-50%);
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:6px; padding:8px 10px;
+  font-size:11px; color:var(--text-2);
+  width:200px; white-space:normal;
+  z-index:10; pointer-events:none;
+  line-height:1.5;
+}
+.comp:hover .comp-tooltip { display:block; }
+
+.layer-arrow {
+  text-align:center; color:var(--text-3);
+  font-size:16px; line-height:1;
+}
+
+/* Decisions section */
+.decisions { display:flex; flex-direction:column; gap:10px; }
+.section-title {
+  font-family:'DM Mono',monospace; font-size:11px;
+  letter-spacing:0.08em; text-transform:uppercase;
+  color:var(--text-3); margin-bottom:4px;
+}
+
+.decision-card {
+  background:var(--surface-2); border:1px solid var(--border);
+  border-radius:8px; padding:14px 16px;
+  border-left:3px solid transparent;
+}
+.decision-card.tier-critical { border-left-color:var(--accent); }
+.decision-card.tier-important { border-left-color:var(--warning); }
+.decision-card.tier-optional { border-left-color:var(--text-3); }
+
+.decision-header { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.decision-comp { font-size:13px; font-weight:600; }
+.decision-tag {
+  font-family:'DM Mono',monospace; font-size:10px;
+  padding:2px 7px; border-radius:4px;
+  background:var(--surface-3); color:var(--text-3);
+}
+.decision-why { font-family:'DM Mono',monospace; font-size:12px; color:var(--text-2); line-height:1.6; }
+.decision-alt { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-3); margin-top:5px; }
+
+/* Tradeoffs */
+.tradeoffs {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+}
+.tradeoff-card {
+  background:var(--surface-2); border:1px solid var(--border);
+  border-radius:8px; padding:12px 14px;
+}
+.tradeoff-label {
+  font-family:'DM Mono',monospace; font-size:10px;
+  letter-spacing:0.06em; text-transform:uppercase;
+  margin-bottom:8px;
+}
+.tradeoff-card.pros .tradeoff-label { color:var(--success); }
+.tradeoff-card.cons .tradeoff-label { color:var(--danger); }
+.tradeoff-item {
+  font-family:'DM Mono',monospace; font-size:11px;
+  color:var(--text-2); line-height:1.8;
+  display:flex; gap:6px;
+}
+.tradeoff-item::before { color:var(--text-3); flex-shrink:0; }
+.tradeoff-card.pros .tradeoff-item::before { content:'↑'; color:var(--success); }
+.tradeoff-card.cons .tradeoff-item::before { content:'↓'; color:var(--danger); }
+
+/* Interview points */
+.interview-points {
+  background:var(--accent-dim); border:1px solid rgba(34,211,238,0.15);
+  border-radius:8px; padding:14px 16px;
+}
+.interview-title {
+  font-family:'DM Mono',monospace; font-size:11px;
+  letter-spacing:0.06em; text-transform:uppercase;
+  color:var(--accent); margin-bottom:10px;
+}
+.interview-item {
+  font-family:'DM Mono',monospace; font-size:12px;
+  color:var(--text-2); line-height:1.8;
+  display:flex; gap:8px;
+}
+.interview-item::before { content:'→'; color:var(--accent); flex-shrink:0; }
+
+@keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes resultIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.result { animation: resultIn 0.3s ease both; }
+
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--surface); }
+::-webkit-scrollbar-thumb { background:var(--surface-3); border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <a href="./index.html" class="back-btn">← 홈</a>
+    <div class="header-info">
+      <h1>System Design <span>Advisor</span></h1>
+      <div class="header-sub">// 요구사항 입력 → 아키텍처 추천 + 면접 포인트</div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Input Panel -->
+    <div class="panel">
+      <div class="panel-header">// <span>요구사항</span> 설정</div>
+      <div class="panel-body">
+
+        <div class="field">
+          <label>서비스 유형</label>
+          <select id="svc-type">
+            <option value="web">일반 웹 서비스</option>
+            <option value="sns">SNS / 소셜 플랫폼</option>
+            <option value="ecommerce">이커머스 / 결제</option>
+            <option value="streaming">동영상 스트리밍</option>
+            <option value="realtime">실시간 채팅 / 게임</option>
+            <option value="search">검색 엔진</option>
+            <option value="api">API / B2B 플랫폼</option>
+            <option value="iot">IoT / 데이터 수집</option>
+          </select>
+        </div>
+
+        <div class="field slider-wrap">
+          <label>동시 접속자 수</label>
+          <div class="slider-val" id="ccu-val">10,000명</div>
+          <input type="range" id="ccu" min="0" max="7" value="3" step="1">
+          <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:10px;color:var(--text-3);margin-top:2px;">
+            <span>100</span><span>1K</span><span>10K</span><span>100K</span><span>1M</span><span>10M</span><span>100M</span><span>1B+</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>읽기 : 쓰기 비율</label>
+          <select id="rw-ratio">
+            <option value="read-heavy">읽기 많음 (90:10)</option>
+            <option value="balanced">균형 (70:30)</option>
+            <option value="write-heavy">쓰기 많음 (50:50 이상)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>데이터 특성</label>
+          <select id="data-type">
+            <option value="relational">정형 데이터 (관계형)</option>
+            <option value="document">비정형 문서 (JSON 등)</option>
+            <option value="timeseries">시계열 데이터</option>
+            <option value="graph">그래프 / 관계 중심</option>
+            <option value="blob">파일 / 미디어</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>서비스 지역</label>
+          <div class="toggle-group" id="region-group">
+            <div class="toggle-btn active" data-val="single">단일 지역</div>
+            <div class="toggle-btn" data-val="multi">멀티 리전</div>
+            <div class="toggle-btn" data-val="global">글로벌</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>일관성 요구사항</label>
+          <div class="toggle-group" id="consistency-group">
+            <div class="toggle-btn active" data-val="strong">강한 일관성</div>
+            <div class="toggle-btn" data-val="eventual">최종 일관성</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>응답 시간 목표</label>
+          <select id="latency">
+            <option value="normal">일반 (< 500ms)</option>
+            <option value="fast">빠름 (< 100ms)</option>
+            <option value="realtime">실시간 (< 50ms)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>가용성 목표</label>
+          <div class="toggle-group" id="availability-group">
+            <div class="toggle-btn active" data-val="standard">99.9%</div>
+            <div class="toggle-btn" data-val="high">99.99%</div>
+            <div class="toggle-btn" data-val="extreme">99.999%</div>
+          </div>
+        </div>
+
+        <button class="analyze-btn" id="analyze-btn">아키텍처 분석하기 →</button>
+      </div>
+    </div>
+
+    <!-- Output Panel -->
+    <div class="output-panel" id="output-panel">
+      <div class="panel-header">// <span>추천 아키텍처</span></div>
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">🏗</div>
+        <div class="empty-text">요구사항을 설정하고<br>분석 버튼을 눌러주세요</div>
+      </div>
+      <div class="result" id="result" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ───
+const CCU_LABELS = ['100명','1,000명','10,000명','100,000명','1,000,000명','10,000,000명','100,000,000명','10억+'];
+const CCU_VALS   = [100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000];
+
+let state = {
+  svcType: 'web',
+  ccu: 3,
+  rwRatio: 'read-heavy',
+  dataType: 'relational',
+  region: 'single',
+  consistency: 'strong',
+  latency: 'normal',
+  availability: 'standard'
+};
+
+// ─── UI bindings ───
+document.getElementById('ccu').addEventListener('input', function() {
+  state.ccu = +this.value;
+  document.getElementById('ccu-val').textContent = CCU_LABELS[state.ccu];
+});
+document.getElementById('svc-type').addEventListener('change', function() { state.svcType = this.value; });
+document.getElementById('rw-ratio').addEventListener('change', function() { state.rwRatio = this.value; });
+document.getElementById('data-type').addEventListener('change', function() { state.dataType = this.value; });
+document.getElementById('latency').addEventListener('change', function() { state.latency = this.value; });
+
+function bindToggleGroup(id, key) {
+  document.getElementById(id).querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById(id).querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state[key] = btn.dataset.val;
+    });
+  });
+}
+bindToggleGroup('region-group', 'region');
+bindToggleGroup('consistency-group', 'consistency');
+bindToggleGroup('availability-group', 'availability');
+
+document.getElementById('analyze-btn').addEventListener('click', analyze);
+
+// ─── Scale tier ───
+function getScaleTier(ccu) {
+  if (ccu <= 1) return { tier: 'XS', label: '소규모', color: 'var(--text-3)' };
+  if (ccu <= 2) return { tier: 'S',  label: '중소규모', color: 'var(--success)' };
+  if (ccu <= 3) return { tier: 'M',  label: '중규모', color: 'var(--warning)' };
+  if (ccu <= 4) return { tier: 'L',  label: '대규모', color: 'var(--orange)' };
+  if (ccu <= 5) return { tier: 'XL', label: '초대규모', color: 'var(--danger)' };
+  return { tier: 'XXL', label: '하이퍼스케일', color: 'var(--purple)' };
+}
+
+// ─── Component definitions ───
+const COMPS = {
+  client:      { name: 'Client',          color: '#71717a', tip: '웹/앱 클라이언트' },
+  cdn:         { name: 'CDN',             color: '#22d3ee', tip: '정적 자산 및 엣지 캐싱. CloudFront, Cloudflare 등. 전세계 사용자에게 빠른 응답 제공' },
+  dns:         { name: 'GeoDNS',          color: '#22d3ee', tip: '지역별 가장 가까운 서버로 라우팅. 글로벌 서비스 필수' },
+  lb:          { name: 'Load Balancer',   color: '#60a5fa', tip: 'L7 로드밸런서. NGINX/HAProxy/AWS ALB. 트래픽 분산 및 헬스체크' },
+  lb_global:   { name: 'Global LB',       color: '#60a5fa', tip: '글로벌 로드밸런서. AWS Global Accelerator, Google Cloud LB. 리전 간 트래픽 분산' },
+  api_gw:      { name: 'API Gateway',     color: '#a78bfa', tip: '인증/인가, 요청 제한(Rate Limiting), 라우팅. Kong, AWS API Gateway 등' },
+  app:         { name: 'App Server',      color: '#34d399', tip: '비즈니스 로직 처리. 수평 확장 가능하도록 stateless 설계 필수' },
+  app_x3:      { name: 'App Server ×3+',  color: '#34d399', tip: '오토스케일링 그룹. 트래픽에 따라 자동 확장/축소. 최소 3대 이상 권장' },
+  cache_l1:    { name: 'L1 Cache',        color: '#fbbf24', tip: '애플리케이션 내부 인메모리 캐시. Caffeine, Guava. 극도로 빠르지만 서버별 독립' },
+  redis:       { name: 'Redis',           color: '#fbbf24', tip: '분산 캐시 및 세션 스토어. 읽기 집약적 서비스의 DB 부하를 90% 이상 감소 가능' },
+  redis_cluster: { name: 'Redis Cluster', color: '#fbbf24', tip: 'Redis 클러스터 모드. 샤딩으로 수평 확장. 수억 건 이상의 캐시 처리 가능' },
+  db_primary:  { name: 'DB Primary',      color: '#f87171', tip: '주 데이터베이스. 쓰기 전담. PostgreSQL/MySQL 권장' },
+  db_replica:  { name: 'DB Replica ×N',   color: '#f87171', tip: '읽기 전용 복제본. 읽기 트래픽 분산. 최소 2개 이상 권장' },
+  db_shard:    { name: 'DB Sharding',     color: '#f87171', tip: '수평 파티셔닝. User ID 기반 샤딩 등. 단일 DB의 한계 돌파. 복잡도 높음' },
+  nosql:       { name: 'NoSQL DB',        color: '#fb923c', tip: 'MongoDB/DynamoDB/Cassandra. 스키마 유연성, 수평 확장 용이. 강한 일관성 포기' },
+  timeseries:  { name: 'TimeSeries DB',   color: '#fb923c', tip: 'InfluxDB/TimescaleDB. 시계열 데이터에 특화된 압축 및 쿼리 최적화' },
+  graph_db:    { name: 'Graph DB',        color: '#fb923c', tip: 'Neo4j/Amazon Neptune. 복잡한 관계 쿼리에 특화. SNS 친구 추천, 경로 탐색' },
+  mq:          { name: 'Message Queue',   color: '#e879f9', tip: 'RabbitMQ/SQS. 비동기 처리로 응답 속도 향상 및 서비스 간 결합도 감소' },
+  kafka:       { name: 'Kafka',           color: '#e879f9', tip: '고처리량 이벤트 스트리밍. 초당 수백만 이벤트 처리. 이벤트 소싱 패턴' },
+  s3:          { name: 'Object Storage',  color: '#a3e635', tip: 'AWS S3/GCS. 이미지, 동영상, 파일 저장. 무제한 확장, 저렴한 비용' },
+  es:          { name: 'Elasticsearch',   color: '#a3e635', tip: '전문 검색 엔진. 역인덱스 기반. 복잡한 검색 쿼리, 자동완성, 로그 분석' },
+  ws:          { name: 'WebSocket',       color: '#22d3ee', tip: '양방향 실시간 통신. Socket.io, AWS API Gateway WebSocket. 채팅, 알림, 게임' },
+  worker:      { name: 'Worker',          color: '#60a5fa', tip: '백그라운드 작업 처리. 이메일 발송, 이미지 처리, 배치 작업 등 비동기 처리' },
+  monitor:     { name: 'Monitoring',      color: '#71717a', tip: 'Prometheus + Grafana. 메트릭 수집 및 알림. SLA 준수 확인 필수' },
+  waf:         { name: 'WAF',             color: '#22d3ee', tip: '웹 애플리케이션 방화벽. DDoS 방어, SQL Injection 차단. AWS WAF, Cloudflare' },
+};
+
+// ─── Decision engine ───
+function buildArchitecture(s) {
+  const ccu = CCU_VALS[s.ccu];
+  const scale = getScaleTier(s.ccu);
+  const isGlobal = s.region === 'global';
+  const isMulti = s.region === 'multi' || isGlobal;
+  const isReadHeavy = s.rwRatio === 'read-heavy';
+  const isWriteHeavy = s.rwRatio === 'write-heavy';
+  const isRealtime = s.latency === 'realtime' || s.svcType === 'realtime';
+  const isHighAvail = s.availability !== 'standard';
+  const needSearch = s.svcType === 'search' || s.svcType === 'sns' || s.svcType === 'ecommerce';
+  const hasMedia = s.svcType === 'streaming' || s.dataType === 'blob';
+
+  // Build layers
+  const layers = [];
+  const decisions = [];
+  const pros = [];
+  const cons = [];
+  const interviewPoints = [];
+
+  // Layer: Client / Edge
+  const edgeItems = [COMPS.client];
+  if (isGlobal) edgeItems.push(COMPS.dns);
+  if (ccu >= 10000 || isGlobal || hasMedia) edgeItems.push(COMPS.cdn);
+  if (isHighAvail || ccu >= 100000) edgeItems.push(COMPS.waf);
+  layers.push({ label: '클라이언트 / 엣지', items: edgeItems });
+
+  // Layer: Gateway
+  const gwItems = [];
+  if (isGlobal) gwItems.push(COMPS.lb_global);
+  gwItems.push(ccu >= 100000 ? COMPS.lb : COMPS.lb);
+  if (ccu >= 10000) gwItems.push(COMPS.api_gw);
+  layers.push({ label: '게이트웨이', items: gwItems });
+
+  // Layer: App
+  const appItems = [ccu >= 10000 ? COMPS.app_x3 : COMPS.app];
+  if (isRealtime) appItems.push(COMPS.ws);
+  layers.push({ label: '애플리케이션', items: appItems });
+
+  // Layer: Cache
+  const cacheItems = [];
+  if (isReadHeavy || ccu >= 1000) cacheItems.push(ccu >= 1000000 ? COMPS.redis_cluster : COMPS.redis);
+  if (ccu >= 100000) cacheItems.push(COMPS.cache_l1);
+  if (cacheItems.length) layers.push({ label: '캐시', items: cacheItems });
+
+  // Layer: Queue/Worker
+  const queueItems = [];
+  if (isWriteHeavy || ccu >= 10000) queueItems.push(ccu >= 1000000 ? COMPS.kafka : COMPS.mq);
+  if (queueItems.length) {
+    queueItems.push(COMPS.worker);
+    layers.push({ label: '비동기 처리', items: queueItems });
+  }
+
+  // Layer: DB
+  const dbItems = [];
+  if (s.dataType === 'relational') {
+    dbItems.push(COMPS.db_primary);
+    if (isReadHeavy || ccu >= 10000) dbItems.push(COMPS.db_replica);
+    if (ccu >= 10000000) dbItems.push(COMPS.db_shard);
+  } else if (s.dataType === 'document') {
+    dbItems.push(COMPS.nosql);
+    if (ccu >= 10000) dbItems.push(COMPS.db_replica);
+  } else if (s.dataType === 'timeseries') {
+    dbItems.push(COMPS.timeseries);
+  } else if (s.dataType === 'graph') {
+    dbItems.push(COMPS.graph_db);
+  } else if (s.dataType === 'blob') {
+    dbItems.push(COMPS.db_primary);
+    dbItems.push(COMPS.s3);
+  }
+  if (needSearch && ccu >= 10000) dbItems.push(COMPS.es);
+  if (hasMedia) dbItems.push(COMPS.s3);
+  layers.push({ label: '데이터 저장소', items: dbItems });
+
+  // Layer: Observability
+  if (ccu >= 10000 || isHighAvail) {
+    layers.push({ label: '모니터링', items: [COMPS.monitor] });
+  }
+
+  // ─── Decisions ───
+  // Load Balancer
+  decisions.push({
+    tier: 'critical',
+    comp: ccu >= 100000 ? 'Global Load Balancer + L7 LB' : 'Load Balancer (L7)',
+    tag: '트래픽 분산',
+    why: ccu >= 100000
+      ? `${CCU_LABELS[s.ccu]} 규모에서는 단일 리전 LB만으로 부족. Global Accelerator로 리전 간 분산 후 각 리전의 L7 LB로 서버별 분산.`
+      : `${CCU_LABELS[s.ccu]} 규모부터 단일 서버로 감당 불가. L7 로드밸런서로 앱 서버 수평 확장. Round Robin 또는 Least Connection 알고리즘 사용.`,
+    alt: '소규모(< 1,000): 로드밸런서 없이 단일 서버로 시작 가능'
+  });
+
+  // DB decision
+  if (s.dataType === 'relational') {
+    decisions.push({
+      tier: 'critical',
+      comp: ccu >= 1000000 ? 'DB Primary + Replica + Sharding' : isReadHeavy ? 'DB Primary + Read Replica' : 'DB Primary',
+      tag: '데이터베이스',
+      why: isReadHeavy
+        ? `읽기 90% 비율이므로 Primary에서 쓰기만 처리하고, Read Replica ${ccu >= 100000 ? '3개 이상' : '1~2개'}로 읽기 분산. DB 부하 70%+ 감소 효과.`
+        : ccu >= 1000000
+        ? '초대규모 쓰기 트래픽. User ID 기반 수평 샤딩으로 각 샤드의 부하 분산. 샤딩 키 설계가 핵심.'
+        : '쓰기 비율이 높아 Read Replica 효과 제한적. 쓰기 최적화에 집중.',
+      alt: '대안: CQRS 패턴으로 쓰기/읽기 모델 완전 분리'
+    });
+  }
+
+  // Cache decision
+  if (isReadHeavy || ccu >= 1000) {
+    decisions.push({
+      tier: 'critical',
+      comp: ccu >= 1000000 ? 'Redis Cluster' : 'Redis',
+      tag: '캐싱',
+      why: isReadHeavy
+        ? `읽기 집약적 서비스에서 캐시는 필수. DB 쿼리 결과를 Redis에 저장하면 응답 속도 10~100배 향상. TTL 전략과 Cache Invalidation 정책 설계 필요.`
+        : `${CCU_LABELS[s.ccu]} 규모에서 세션 저장소 및 자주 조회되는 데이터 캐싱용 Redis 도입.`,
+      alt: '단순 경우: 애플리케이션 내 Caffeine(L1 캐시)으로 시작, 분산 환경에서 Redis로 전환'
+    });
+  }
+
+  // Queue decision
+  if (isWriteHeavy || ccu >= 10000) {
+    decisions.push({
+      tier: 'important',
+      comp: ccu >= 1000000 ? 'Kafka (Event Streaming)' : 'Message Queue',
+      tag: '비동기 처리',
+      why: ccu >= 1000000
+        ? '하이퍼스케일 이벤트 처리에는 Kafka. 초당 수백만 메시지 처리, 이벤트 재처리 가능, 마이크로서비스 간 결합도 분리.'
+        : '쓰기 트래픽 버퍼링. 이메일/알림 발송, 이미지 처리 등 비동기 처리로 API 응답 속도 향상. DB 쓰기 부하 평탄화.',
+      alt: isWriteHeavy ? '대안: DB 쓰기 최적화 (배치 인서트, Write-Behind 캐시)' : undefined
+    });
+  }
+
+  // CDN decision
+  if (ccu >= 10000 || isGlobal || hasMedia) {
+    decisions.push({
+      tier: isGlobal ? 'critical' : 'important',
+      comp: 'CDN',
+      tag: '엣지 캐싱',
+      why: isGlobal
+        ? '글로벌 사용자에게 정적 자산(JS/CSS/이미지) 및 캐시 가능한 API 응답을 가장 가까운 엣지에서 제공. 레이턴시 50~200ms 감소.'
+        : '정적 자산 CDN 오프로딩으로 오리진 서버 트래픽 80%+ 감소. CloudFront/Cloudflare 추천.',
+      alt: hasMedia ? '동영상 스트리밍: HLS/DASH 프로토콜 + CDN 조합 필수' : undefined
+    });
+  }
+
+  if (isRealtime) {
+    decisions.push({
+      tier: 'critical',
+      comp: 'WebSocket + Pub/Sub',
+      tag: '실시간 통신',
+      why: `실시간 서비스에서 HTTP Polling은 불가. WebSocket 연결 유지로 지연 < 50ms 달성. Redis Pub/Sub 또는 Kafka로 서버 간 이벤트 전파 필요.`,
+      alt: '대안: Server-Sent Events (단방향 실시간), Long Polling (레거시 환경)'
+    });
+  }
+
+  if (needSearch && ccu >= 10000) {
+    decisions.push({
+      tier: 'important',
+      comp: 'Elasticsearch',
+      tag: '검색',
+      why: 'RDBMS의 LIKE 쿼리는 대규모 검색에 부적합 (풀 테이블 스캔). ES의 역인덱스로 수억 건 데이터에서 밀리초 단위 검색. 자동완성, 오타 교정, 관련도 랭킹 지원.',
+      alt: '소규모: PostgreSQL Full-Text Search로 시작, 성능 한계 시 ES 도입'
+    });
+  }
+
+  // ─── Pros/Cons ───
+  if (isReadHeavy) { pros.push('캐시 효율 극대화 가능'); }
+  if (ccu >= 10000) { pros.push('수평 확장으로 무중단 스케일업'); }
+  if (isMulti || isGlobal) { pros.push('지역 장애 시 페일오버 가능'); }
+  if (ccu < 10000) { pros.push('구조 단순 → 운영 비용 낮음'); }
+  if (s.availability === 'extreme') { pros.push('연간 다운타임 5분 이내 달성 가능'); }
+
+  if (isWriteHeavy && s.consistency === 'strong') { cons.push('강한 일관성 + 쓰기 집약 → 병목 발생 가능'); }
+  if (ccu >= 100000) { cons.push('운영 복잡도 높음 → 전담 SRE 필요'); }
+  if (s.dataType === 'relational' && ccu >= 10000000) { cons.push('샤딩 이후 JOIN 쿼리 불가'); }
+  if (isMulti || isGlobal) { cons.push('멀티 리전 데이터 동기화 비용'); }
+  if (isRealtime) { cons.push('WebSocket 연결 유지 → 서버 메모리 부담'); }
+  if (ccu < 1000) { cons.push('오버엔지니어링 주의 — 단순하게 시작할 것'); }
+
+  // ─── Interview Points ───
+  interviewPoints.push(`"왜 ${s.dataType === 'relational' ? 'RDBMS' : 'NoSQL'}를 선택했나요?" → ${s.dataType === 'relational' ? 'ACID 트랜잭션이 필요하고 데이터 구조가 명확해서' : '스키마 유연성과 수평 확장이 필요해서'}`);
+
+  if (isReadHeavy) interviewPoints.push('"캐시 무효화는 어떻게?" → TTL + 이벤트 기반 Invalidation, Write-Through vs Write-Behind 트레이드오프 설명');
+  if (ccu >= 10000) interviewPoints.push('"단일 장애점(SPOF)은 어디?" → LB, DB Primary가 SPOF. HA 구성(Active-Passive/Active-Active) 설명');
+  if (isWriteHeavy) interviewPoints.push('"쓰기 병목 해결은?" → 메시지 큐 버퍼링, 배치 처리, 이벤트 소싱 패턴 언급');
+  if (isGlobal || isMulti) interviewPoints.push('"데이터 일관성은?" → CAP 정리. 네트워크 파티션 상황에서 CP vs AP 선택 기준 설명');
+  if (ccu >= 1000000) interviewPoints.push('"처음부터 이 구조로 시작했나요?" → No. 단순하게 시작 → 병목 발견 → 점진적 스케일 설명 (진화적 아키텍처)');
+  interviewPoints.push('"모니터링은?" → Prometheus + Grafana, 핵심 SLI(응답시간/에러율/처리량) 정의, SLO/SLA 차이 설명');
+
+  return { scale, layers, decisions, pros, cons, interviewPoints };
+}
+
+// ─── Render ───
+function analyze() {
+  const arch = buildArchitecture(state);
+  const result = document.getElementById('result');
+  const empty = document.getElementById('empty-state');
+
+  empty.style.display = 'none';
+  result.style.display = 'flex';
+
+  let html = '';
+
+  // Scale badge
+  html += `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <div class="scale-badge">
+      <span class="scale-label">규모 등급</span>
+      <span class="scale-val" style="color:${arch.scale.color}">${arch.scale.tier} — ${arch.scale.label}</span>
+    </div>
+    <div class="scale-badge">
+      <span class="scale-label">동시 접속</span>
+      <span class="scale-val">${CCU_LABELS[state.ccu]}</span>
+    </div>
+  </div>`;
+
+  // Architecture diagram
+  html += `<div class="arch-diagram">
+    <div class="arch-title">// 아키텍처 다이어그램</div>
+    <div class="layers">`;
+
+  arch.layers.forEach((layer, i) => {
+    if (i > 0) html += `<div class="layer-arrow">↓</div>`;
+    html += `<div class="layer">
+      <div class="layer-label">${layer.label}</div>
+      <div class="layer-items">`;
+    layer.items.forEach(comp => {
+      html += `<div class="comp">
+        <div class="comp-dot" style="background:${comp.color}"></div>
+        ${comp.name}
+        <div class="comp-tooltip">${comp.tip}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  html += `</div></div>`;
+
+  // Decisions
+  html += `<div class="decisions">
+    <div class="section-title">// 핵심 의사결정 근거</div>`;
+
+  arch.decisions.forEach(d => {
+    html += `<div class="decision-card tier-${d.tier}">
+      <div class="decision-header">
+        <span class="decision-comp">${d.comp}</span>
+        <span class="decision-tag">${d.tag}</span>
+      </div>
+      <div class="decision-why">${d.why}</div>
+      ${d.alt ? `<div class="decision-alt">// ${d.alt}</div>` : ''}
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Tradeoffs
+  if (arch.pros.length || arch.cons.length) {
+    html += `<div class="tradeoffs">
+      <div class="tradeoff-card pros">
+        <div class="tradeoff-label">장점</div>`;
+    arch.pros.forEach(p => { html += `<div class="tradeoff-item">${p}</div>`; });
+    html += `</div>
+      <div class="tradeoff-card cons">
+        <div class="tradeoff-label">주의사항</div>`;
+    arch.cons.forEach(c => { html += `<div class="tradeoff-item">${c}</div>`; });
+    html += `</div></div>`;
+  }
+
+  // Interview points
+  html += `<div class="interview-points">
+    <div class="interview-title">// 면접에서 언급할 포인트</div>`;
+  arch.interviewPoints.forEach(p => {
+    html += `<div class="interview-item">${p}</div>`;
+  });
+  html += `</div>`;
+
+  result.innerHTML = html;
+}
+</script>
+</body>
+</html>
