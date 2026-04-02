@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture Advisor — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.15);
+  --green: #4ade80;
+  --green-dim: rgba(74,222,128,0.1);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.1);
+  --yellow: #fbbf24;
+  --red: #f87171;
+  --radius: 14px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Layout ── */
+.app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top Bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background: rgba(14,14,16,0.95);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--accent); }
+.back-link svg { width: 16px; height: 16px; }
+
+.topbar-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.topbar-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.08em;
+}
+
+/* ── Main content ── */
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  grid-template-rows: auto 1fr;
+  gap: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 32px 24px;
+  gap: 24px;
+}
+
+/* ── Hero ── */
+.hero {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 24px 8px;
+}
+
+.hero-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.hero h1 {
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 12px;
+}
+
+.hero h1 span {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 15px;
+  color: var(--text-2);
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ── Left column (questionnaire + result) ── */
+.left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Right column (live score + comparison) ── */
+.right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-header-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--accent-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.card-subtitle {
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  margin-left: auto;
+}
+
+.card-body {
+  padding: 22px;
+}
+
+/* ── Questionnaire ── */
+.questions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.question-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.question-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.q-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  padding: 2px 7px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.q-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.q-desc {
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  margin-left: 36px;
+  line-height: 1.5;
+}
+
+/* Radio options */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-left: 36px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  position: relative;
+}
+
+.radio-option:hover {
+  border-color: rgba(34,211,238,0.3);
+  background: var(--surface-3);
+}
+
+.radio-option input[type="radio"] {
+  display: none;
+}
+
+.radio-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radio-dot::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.radio-option input[type="radio"]:checked ~ .radio-dot {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.radio-option input[type="radio"]:checked ~ .radio-dot::after {
+  opacity: 1;
+}
+
+.radio-option:has(input:checked) {
+  border-color: rgba(34,211,238,0.35);
+  background: var(--accent-dim);
+}
+
+.radio-label {
+  font-size: 13px;
+  color: var(--text-2);
+  flex: 1;
+}
+
+.radio-option:has(input:checked) .radio-label {
+  color: var(--text);
+}
+
+.radio-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  margin-left: auto;
+}
+
+/* Slider */
+.slider-wrap {
+  margin-left: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.slider-value-display {
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-3);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 2px var(--accent);
+  transition: box-shadow 0.15s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 4px rgba(34,211,238,0.25);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* ── Live Score Bar ── */
+.score-display {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.score-vs {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.score-side {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.score-side.right { text-align: right; }
+
+.score-arch-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.score-arch-name.mono { color: var(--green); }
+.score-arch-name.micro { color: var(--purple); }
+
+.score-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.score-pct.mono { color: var(--green); }
+.score-pct.micro { color: var(--purple); }
+
+.score-vs-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  text-align: center;
+}
+
+.score-bar-track {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--surface-3);
+  overflow: hidden;
+  position: relative;
+}
+
+.score-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--accent));
+  border-radius: 5px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 50%;
+}
+
+.score-needle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 8px rgba(0,0,0,0.5);
+  transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  left: 50%;
+  z-index: 2;
+}
+
+.score-zones {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.05em;
+}
+
+.answered-count {
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.answered-count span {
+  color: var(--accent);
+}
+
+.progress-dots {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.prog-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.prog-dot.answered {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── Result Panel ── */
+.result-panel {
+  display: none;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.result-panel.visible {
+  display: flex;
+}
+
+.result-arch-badge {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 10px;
+  border: 1px solid;
+}
+
+.result-arch-badge.mono {
+  background: var(--green-dim);
+  border-color: rgba(74,222,128,0.25);
+}
+
+.result-arch-badge.micro {
+  background: var(--purple-dim);
+  border-color: rgba(167,139,250,0.25);
+}
+
+.result-arch-badge.hybrid {
+  background: var(--accent-dim);
+  border-color: rgba(34,211,238,0.25);
+}
+
+.result-arch-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.result-arch-badge.mono .result-arch-icon { background: rgba(74,222,128,0.15); }
+.result-arch-badge.micro .result-arch-icon { background: rgba(167,139,250,0.15); }
+.result-arch-badge.hybrid .result-arch-icon { background: var(--accent-dim); }
+
+.result-arch-name {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.result-arch-badge.mono .result-arch-name { color: var(--green); }
+.result-arch-badge.micro .result-arch-name { color: var(--purple); }
+.result-arch-badge.hybrid .result-arch-name { color: var(--accent); }
+
+.result-arch-sub {
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  margin-top: 2px;
+}
+
+.confidence-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.confidence-label {
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  white-space: nowrap;
+}
+
+.confidence-bar-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.confidence-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 0.6s ease;
+}
+
+.confidence-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--accent);
+  min-width: 36px;
+  text-align: right;
+}
+
+/* Reasons list */
+.reasons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reason-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.reason-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.reason-icon.pro { background: rgba(74,222,128,0.15); color: var(--green); }
+.reason-icon.warn { background: rgba(251,191,36,0.15); color: var(--yellow); }
+
+/* Migration path */
+.migration-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.migration-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.migration-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.migration-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  line-height: 1.5;
+}
+
+.step-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+/* Hybrid options */
+.hybrid-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hybrid-chip {
+  padding: 6px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text-2);
+  font-family: 'DM Mono', monospace;
+  transition: border-color 0.15s, color 0.15s;
+  cursor: default;
+}
+
+.hybrid-chip.highlight {
+  border-color: rgba(34,211,238,0.35);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* ── Comparison Table ── */
+.comparison-table-wrap {
+  grid-column: 1 / -1;
+  overflow-x: auto;
+}
+
+table.comp {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+table.comp th {
+  padding: 10px 16px;
+  text-align: left;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
+table.comp th:not(:first-child) { text-align: center; }
+
+table.comp td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  color: var(--text-2);
+}
+
+table.comp td:not(:first-child) { text-align: center; }
+
+table.comp tr:last-child td { border-bottom: none; }
+
+table.comp tr:hover td { background: var(--surface-2); }
+
+.comp-criterion {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.comp-sub {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  margin-top: 2px;
+}
+
+.check { color: var(--green); font-size: 16px; }
+.cross { color: var(--red); font-size: 16px; }
+.partial { color: var(--yellow); font-size: 16px; }
+
+.arch-col-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.arch-col-icon {
+  font-size: 20px;
+}
+
+.arch-col-name {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.col-mono { color: var(--green); }
+.col-micro { color: var(--purple); }
+.col-modmono { color: var(--accent); }
+
+/* ── Famous Examples ── */
+.examples-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.example-col-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.example-col-title .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-mono { background: var(--green); }
+.dot-micro { background: var(--purple); }
+
+.example-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.example-item {
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 0.15s;
+}
+
+.example-item:hover { border-color: rgba(34,211,238,0.2); }
+
+.example-company {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.example-reason {
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  line-height: 1.5;
+}
+
+.example-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 5px;
+  letter-spacing: 0.05em;
+}
+
+.tag-mono { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+.tag-micro { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+.tag-switched { background: rgba(251,191,36,0.1); color: var(--yellow); border: 1px solid rgba(251,191,36,0.2); }
+
+/* ── Section divider ── */
+.section-label {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 2px;
+}
+
+.section-label span {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Reset button ── */
+.reset-btn {
+  align-self: flex-start;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reset-btn:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* ── Tooltip ── */
+.tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  font-family: 'DM Mono', monospace;
+  flex-shrink: 0;
+}
+
+.tooltip-popup {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text-2);
+  font-family: 'DM Mono', monospace;
+  white-space: nowrap;
+  z-index: 200;
+  pointer-events: none;
+}
+
+.tooltip-wrap:hover .tooltip-popup {
+  display: block;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .main {
+    grid-template-columns: 1fr;
+  }
+  .right-col {
+    order: -1;
+  }
+  .examples-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .topbar { padding: 12px 16px; }
+  .main { padding: 16px 12px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <a href="index.html" class="back-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      utile
+    </a>
+    <span class="topbar-title">Architecture Advisor</span>
+    <span class="topbar-badge">ADVISOR</span>
+  </header>
+
+  <div class="main">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-label">Architecture Decision Tool</div>
+      <h1>Monolith vs <span>Microservices</span></h1>
+      <p class="hero-sub">Answer 9 questions about your project. Get a data-driven recommendation with migration paths and confidence scoring.</p>
+    </div>
+
+    <!-- Left column -->
+    <div class="left-col">
+
+      <!-- Questionnaire card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <span class="card-title">Project Questionnaire</span>
+          <span class="card-subtitle" id="progress-label">0 / 9 answered</span>
+        </div>
+        <div class="card-body">
+          <div class="questions-list" id="questions-list">
+
+            <!-- Q1: Team size -->
+            <div class="question-block" data-q="1">
+              <div class="question-header">
+                <span class="q-num">Q1</span>
+                <span class="q-text">What is your current (or projected) engineering team size?</span>
+              </div>
+              <span class="q-desc">Larger teams benefit from independent deployment ownership</span>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="q1" value="1" data-weight="mono:3">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">1 – 5 engineers</span>
+                  <span class="radio-meta">solo / small</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q1" value="2" data-weight="mono:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">5 – 20 engineers</span>
+                  <span class="radio-meta">startup</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q1" value="3" data-weight="micro:1">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">20 – 100 engineers</span>
+                  <span class="radio-meta">scale-up</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q1" value="4" data-weight="micro:3">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">100+ engineers</span>
+                  <span class="radio-meta">enterprise</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Q2: Product stage -->
+            <div class="question-block" data-q="2">
+              <div class="question-header">
+                <span class="q-num">Q2</span>
+                <span class="q-text">What is your product stage?</span>
+              </div>
+              <span class="q-desc">Early stages benefit from iteration speed; mature products from reliability</span>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="q2" value="1" data-weight="mono:3">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">MVP / Prototype</span>
+                  <span class="radio-meta">pre-market fit</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q2" value="2" data-weight="mono:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Growth</span>
+                  <span class="radio-meta">0→1 scaling</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q2" value="3" data-weight="micro:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Scale</span>
+                  <span class="radio-meta">rapid user growth</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q2" value="4" data-weight="micro:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Mature / Enterprise</span>
+                  <span class="radio-meta">established product</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Q3: Deployment frequency -->
+            <div class="question-block" data-q="3">
+              <div class="question-header">
+                <span class="q-num">Q3</span>
+                <span class="q-text">How frequently do you deploy to production?</span>
+              </div>
+              <span class="q-desc">High deployment frequency requires independent service pipelines</span>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="q3" value="1" data-weight="mono:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Monthly or less</span>
+                  <span class="radio-meta">traditional</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q3" value="2" data-weight="mono:1">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Weekly</span>
+                  <span class="radio-meta">standard</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q3" value="3" data-weight="micro:1">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Daily</span>
+                  <span class="radio-meta">CI/CD pipeline</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q3" value="4" data-weight="micro:3">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Multiple times per day</span>
+                  <span class="radio-meta">continuous deployment</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Q4: Domain complexity -->
+            <div class="question-block" data-q="4">
+              <div class="question-header">
+                <span class="q-num">Q4</span>
+                <span class="q-text">How complex is your business domain?</span>
+              </div>
+              <span class="q-desc">Complex domains with clear boundaries are ideal microservice candidates</span>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="q4" value="1" data-weight="mono:3">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Simple CRUD / basic operations</span>
+                  <span class="radio-meta">low complexity</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q4" value="2" data-weight="mono:1">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Moderate — some domain logic</span>
+                  <span class="radio-meta">medium complexity</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q4" value="3" data-weight="micro:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Complex with clear bounded contexts</span>
+                  <span class="radio-meta">DDD territory</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q4" value="4" data-weight="micro:3">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Highly complex, distinct domains</span>
+                  <span class="radio-meta">enterprise scale</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Q5: Scaling requirements -->
+            <div class="question-block" data-q="5">
+              <div class="question-header">
+                <span class="q-num">Q5</span>
+                <span class="q-text">What are your scaling requirements?</span>
+              </div>
+              <span class="q-desc">Independent component scaling justifies the microservices overhead</span>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="q5" value="1" data-weight="mono:3">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Scale everything uniformly</span>
+                  <span class="radio-meta">uniform load</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q5" value="2" data-weight="mono:1">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Some parts scale more than others</span>
+                  <span class="radio-meta">mixed load</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q5" value="3" data-weight="micro:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Independent component scaling needed</span>
+                  <span class="radio-meta">variable load</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q5" value="4" data-weight="micro:3">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Massive scale, extreme traffic spikes</span>
+                  <span class="radio-meta">hyper-scale</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Q6: Org structure -->
+            <div class="question-block" data-q="6">
+              <div class="question-header">
+                <span class="q-num">Q6</span>
+                <span class="q-text">How is your engineering organization structured?</span>
+              </div>
+              <span class="q-desc">Conway's Law: your architecture will mirror your communication structure</span>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="q6" value="1" data-weight="mono:3">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Single team, everyone works on everything</span>
+                  <span class="radio-meta">flat structure</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q6" value="2" data-weight="mono:1">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Small number of teams with overlap</span>
+                  <span class="radio-meta">loose ownership</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q6" value="3" data-weight="micro:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Multiple independent teams</span>
+                  <span class="radio-meta">team autonomy</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q6" value="4" data-weight="micro:3">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Separate teams per domain / product</span>
+                  <span class="radio-meta">product teams</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Q7: Technical expertise -->
+            <div class="question-block" data-q="7">
+              <div class="question-header">
+                <span class="q-num">Q7</span>
+                <span class="q-text">What is the overall technical expertise level of your team?</span>
+              </div>
+              <span class="q-desc">Microservices add operational complexity; senior teams manage it better</span>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="q7" value="1" data-weight="mono:3">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Mostly junior engineers</span>
+                  <span class="radio-meta">0–2 yrs avg</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q7" value="2" data-weight="mono:1">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Mixed — juniors and seniors</span>
+                  <span class="radio-meta">2–5 yrs avg</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q7" value="3" data-weight="micro:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Mostly senior engineers</span>
+                  <span class="radio-meta">5–8 yrs avg</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q7" value="4" data-weight="micro:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Staff / Principal engineers, deep infra expertise</span>
+                  <span class="radio-meta">8+ yrs avg</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Q8: Budget / infra -->
+            <div class="question-block" data-q="8">
+              <div class="question-header">
+                <span class="q-num">Q8</span>
+                <span class="q-text">What are your infrastructure budget constraints?</span>
+              </div>
+              <span class="q-desc">Microservices require significantly higher infra and tooling investment</span>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="q8" value="1" data-weight="mono:3">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Very limited — cost is critical</span>
+                  <span class="radio-meta">bootstrapped</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q8" value="2" data-weight="mono:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Moderate — some budget flexibility</span>
+                  <span class="radio-meta">seed / series A</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q8" value="3" data-weight="micro:1">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Comfortable — infra spend is fine</span>
+                  <span class="radio-meta">series B+</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q8" value="4" data-weight="micro:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Large — dedicated platform team</span>
+                  <span class="radio-meta">enterprise</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Q9: Existing codebase -->
+            <div class="question-block" data-q="9">
+              <div class="question-header">
+                <span class="q-num">Q9</span>
+                <span class="q-text">Do you have an existing codebase or are you starting fresh?</span>
+              </div>
+              <span class="q-desc">Migrating from a monolith to microservices is costly; greenfield is easier</span>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="q9" value="1" data-weight="none:0">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Greenfield — starting from scratch</span>
+                  <span class="radio-meta">no legacy</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q9" value="2" data-weight="mono:2">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Existing monolith, not planning to migrate</span>
+                  <span class="radio-meta">stay put</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q9" value="3" data-weight="micro:1">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Existing monolith, want to extract services</span>
+                  <span class="radio-meta">strangler fig</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q9" value="4" data-weight="micro:1">
+                  <span class="radio-dot"></span>
+                  <span class="radio-label">Already have some microservices</span>
+                  <span class="radio-meta">partial migration</span>
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Result Panel -->
+      <div class="card" id="result-card" style="display:none;">
+        <div class="card-header">
+          <div class="card-header-icon" style="background: rgba(74,222,128,0.1); color: var(--green);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <span class="card-title">Recommendation</span>
+          <button class="reset-btn" id="reset-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.17"/>
+            </svg>
+            Reset
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="result-panel visible" id="result-panel">
+
+            <!-- Architecture badge -->
+            <div class="result-arch-badge" id="result-badge">
+              <div class="result-arch-icon" id="result-icon">🏗️</div>
+              <div>
+                <div class="result-arch-name" id="result-name">—</div>
+                <div class="result-arch-sub" id="result-sub">—</div>
+              </div>
+            </div>
+
+            <!-- Confidence -->
+            <div class="confidence-row">
+              <span class="confidence-label">Confidence</span>
+              <div class="confidence-bar-track">
+                <div class="confidence-bar-fill" id="conf-bar" style="width: 0%;"></div>
+              </div>
+              <span class="confidence-pct" id="conf-pct">0%</span>
+            </div>
+
+            <!-- Key reasons -->
+            <div>
+              <div style="font-size:12px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Key Reasons</div>
+              <div class="reasons-list" id="reasons-list"></div>
+            </div>
+
+            <!-- Migration path -->
+            <div class="migration-box" id="migration-box" style="display:none;">
+              <div class="migration-title">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+                Migration Path
+              </div>
+              <div class="migration-steps" id="migration-steps"></div>
+            </div>
+
+            <!-- Hybrid options -->
+            <div>
+              <div style="font-size:12px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Also Consider</div>
+              <div class="hybrid-chips" id="hybrid-chips"></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right column -->
+    <div class="right-col">
+
+      <!-- Live Score -->
+      <div class="card" style="position: sticky; top: 80px;">
+        <div class="card-header">
+          <div class="card-header-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </div>
+          <span class="card-title">Live Score</span>
+        </div>
+        <div class="card-body">
+          <div class="score-display">
+            <div class="score-vs">
+              <div class="score-side left">
+                <span class="score-arch-name mono">Monolith</span>
+                <span class="score-pct mono" id="mono-pct">—</span>
+              </div>
+              <div class="score-vs-label">vs</div>
+              <div class="score-side right">
+                <span class="score-arch-name micro">Microservices</span>
+                <span class="score-pct micro" id="micro-pct">—</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="score-bar-track">
+                <div class="score-bar-fill" id="score-bar"></div>
+                <div class="score-needle" id="score-needle"></div>
+              </div>
+              <div class="score-zones" style="margin-top:6px;">
+                <span>Monolith</span>
+                <span>Neutral</span>
+                <span>Microservices</span>
+              </div>
+            </div>
+
+            <div class="answered-count">
+              <span id="answered-num">0</span> of 9 questions answered
+            </div>
+
+            <div class="progress-dots" id="progress-dots"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Divider -->
+    <div class="section-label" style="grid-column: 1 / -1;">
+      <div class="section-line"></div>
+      <span>Comparison Table</span>
+      <div class="section-line"></div>
+    </div>
+
+    <!-- Comparison Table -->
+    <div class="card comparison-table-wrap">
+      <div class="card-header">
+        <div class="card-header-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
+          </svg>
+        </div>
+        <span class="card-title">Architecture Comparison</span>
+        <span class="card-subtitle">12 criteria</span>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="comp">
+          <thead>
+            <tr>
+              <th style="width: 35%;">Criterion</th>
+              <th>
+                <div class="arch-col-header">
+                  <span class="arch-col-icon">🧱</span>
+                  <span class="arch-col-name col-mono">Monolith</span>
+                </div>
+              </th>
+              <th>
+                <div class="arch-col-header">
+                  <span class="arch-col-icon">🔷</span>
+                  <span class="arch-col-name col-micro">Microservices</span>
+                </div>
+              </th>
+              <th>
+                <div class="arch-col-header">
+                  <span class="arch-col-icon">🧩</span>
+                  <span class="arch-col-name col-modmono">Modular Monolith</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="comp-criterion">Development Speed (early)</div>
+                <div class="comp-sub">iteration velocity in first 6 months</div>
+              </td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="comp-criterion">Independent Deployability</div>
+                <div class="comp-sub">deploy one component without touching others</div>
+              </td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="partial">~</span></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="comp-criterion">Granular Scaling</div>
+                <div class="comp-sub">scale individual hot paths independently</div>
+              </td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="comp-criterion">Fault Isolation</div>
+                <div class="comp-sub">one failure doesn't cascade to the whole system</div>
+              </td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="partial">~</span></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="comp-criterion">Operational Simplicity</div>
+                <div class="comp-sub">low infra overhead, easier local dev</div>
+              </td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="comp-criterion">Technology Heterogeneity</div>
+                <div class="comp-sub">use different languages / DBs per component</div>
+              </td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="comp-criterion">Data Consistency</div>
+                <div class="comp-sub">strong ACID transactions across domains</div>
+              </td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="comp-criterion">Team Autonomy</div>
+                <div class="comp-sub">teams ship without coordinating deployments</div>
+              </td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="partial">~</span></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="comp-criterion">Debugging & Tracing</div>
+                <div class="comp-sub">follow a request through the system easily</div>
+              </td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="comp-criterion">Infra Cost (at low scale)</div>
+                <div class="comp-sub">monthly cloud bill for a small product</div>
+              </td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="comp-criterion">Organizational Scaling</div>
+                <div class="comp-sub">support growing to 100+ engineers without bottlenecks</div>
+              </td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="partial">~</span></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="comp-criterion">Refactoring / Code Sharing</div>
+                <div class="comp-sub">reuse code across features without API contracts</div>
+              </td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="padding: 12px 22px; border-top: 1px solid var(--border); display:flex; gap: 20px; font-family:'DM Mono',monospace; font-size:11px; color:var(--text-3);">
+        <span><span class="check" style="font-size:13px;">✓</span> Strong advantage</span>
+        <span><span class="partial" style="font-size:13px;">~</span> Partial / with effort</span>
+        <span><span class="cross" style="font-size:13px;">✗</span> Weak / not applicable</span>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="section-label" style="grid-column: 1 / -1;">
+      <div class="section-line"></div>
+      <span>Famous Examples</span>
+      <div class="section-line"></div>
+    </div>
+
+    <!-- Famous examples -->
+    <div class="card" style="grid-column: 1 / -1;">
+      <div class="card-header">
+        <div class="card-header-icon" style="background: rgba(251,191,36,0.1); color: var(--yellow);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </div>
+        <span class="card-title">Real-World Decisions</span>
+        <span class="card-subtitle">what the industry chose — and why</span>
+      </div>
+      <div class="card-body">
+        <div class="examples-grid">
+
+          <div>
+            <div class="example-col-title">
+              <span class="dot dot-mono"></span>
+              Chose Monolith / Modular Monolith
+            </div>
+            <div class="example-items">
+              <div class="example-item">
+                <span class="example-tag tag-mono">MONOLITH</span>
+                <div class="example-company">Basecamp (37signals)</div>
+                <div class="example-reason">Intentionally kept a Rails monolith. Small team, high developer productivity, rejected microservices complexity. Powers a profitable multi-million user product.</div>
+              </div>
+              <div class="example-item">
+                <span class="example-tag tag-mono">MONOLITH</span>
+                <div class="example-company">Stack Overflow</div>
+                <div class="example-reason">Runs on a few powerful servers with a .NET monolith. Handles millions of requests/day with extreme efficiency. Proof that hardware can outperform distributed complexity.</div>
+              </div>
+              <div class="example-item">
+                <span class="example-tag tag-switched">REVERTED TO MONO</span>
+                <div class="example-company">Segment</div>
+                <div class="example-reason">Migrated from monolith → 140 microservices → back to a monolith ("Centrifuge"). Found the overhead of 140 services worse than the original problem. Classic over-engineering case.</div>
+              </div>
+              <div class="example-item">
+                <span class="example-tag tag-switched">REVERTED TO MONO</span>
+                <div class="example-company">Prime Video (Amazon)</div>
+                <div class="example-reason">Their video monitoring tool was microservices-first. Migrating to a monolith reduced infrastructure cost by 90% and improved performance. Made waves in 2023.</div>
+              </div>
+              <div class="example-item">
+                <span class="example-tag tag-mono">MODULAR MONO</span>
+                <div class="example-company">Shopify</div>
+                <div class="example-reason">A famously large Rails monolith ("Shopify Core"). Instead of microservices, they invested in component isolation within the monolith and strict module boundaries.</div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="example-col-title">
+              <span class="dot dot-micro"></span>
+              Chose Microservices
+            </div>
+            <div class="example-items">
+              <div class="example-item">
+                <span class="example-tag tag-micro">MICROSERVICES</span>
+                <div class="example-company">Netflix</div>
+                <div class="example-reason">Pioneered microservices after a 2008 database corruption took them offline. Moved 100% to AWS with 700+ services. Invented Hystrix, Eureka, Zuul — the microservices toolchain.</div>
+              </div>
+              <div class="example-item">
+                <span class="example-tag tag-micro">MICROSERVICES</span>
+                <div class="example-company">Amazon</div>
+                <div class="example-reason">Jeff Bezos' "Two-Pizza Teams" mandate in 2002 forced service boundaries. Each team owns their API. Enabled AWS itself — S3, EC2, etc. are each independent services.</div>
+              </div>
+              <div class="example-item">
+                <span class="example-tag tag-micro">MICROSERVICES</span>
+                <div class="example-company">Uber</div>
+                <div class="example-reason">Scaled from a monolith to 2,200+ microservices to support global operations. Different teams own ride-hailing, payments, maps, surge pricing, etc. independently.</div>
+              </div>
+              <div class="example-item">
+                <span class="example-tag tag-switched">MIGRATED FROM MONO</span>
+                <div class="example-company">Twitter / X</div>
+                <div class="example-reason">Started as a Ruby on Rails monolith ("the Fail Whale" era). Migrated critical paths (timelines, tweets) to JVM microservices to handle 500M tweets/day at scale.</div>
+              </div>
+              <div class="example-item">
+                <span class="example-tag tag-micro">MICROSERVICES</span>
+                <div class="example-company">Spotify</div>
+                <div class="example-reason">Organized around "squads" owning their own services (playlists, search, recommendations, payments). Each squad deploys independently — enabling 10+ releases per day per squad.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.main -->
+</div><!-- /.app -->
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const answers = {};
+const TOTAL_Q = 9;
+
+// Weight map: each answer has a data-weight like "mono:3" or "micro:2" or "none:0"
+// Positive = lean mono, Negative = lean micro
+// We compute a normalized score 0..100 where 0=full mono, 100=full micro
+
+// ── DOM refs ──────────────────────────────────────────────────────────────
+const progressLabel = document.getElementById('progress-label');
+const answeredNum   = document.getElementById('answered-num');
+const monoPane      = document.getElementById('mono-pct');
+const microPane     = document.getElementById('micro-pct');
+const scoreBar      = document.getElementById('score-bar');
+const scoreNeedle   = document.getElementById('score-needle');
+const progressDots  = document.getElementById('progress-dots');
+const resultCard    = document.getElementById('result-card');
+const resultBadge   = document.getElementById('result-badge');
+const resultIcon    = document.getElementById('result-icon');
+const resultName    = document.getElementById('result-name');
+const resultSub     = document.getElementById('result-sub');
+const confBar       = document.getElementById('conf-bar');
+const confPct       = document.getElementById('conf-pct');
+const reasonsList   = document.getElementById('reasons-list');
+const migrationBox  = document.getElementById('migration-box');
+const migrationSteps= document.getElementById('migration-steps');
+const hybridChips   = document.getElementById('hybrid-chips');
+const resetBtn      = document.getElementById('reset-btn');
+
+// ── Build progress dots ────────────────────────────────────────────────────
+function buildDots() {
+  progressDots.innerHTML = '';
+  for (let i = 1; i <= TOTAL_Q; i++) {
+    const d = document.createElement('div');
+    d.className = 'prog-dot' + (answers[i] !== undefined ? ' answered' : '');
+    d.id = 'dot-' + i;
+    progressDots.appendChild(d);
+  }
+}
+buildDots();
+
+// ── Listen for radio changes ───────────────────────────────────────────────
+document.getElementById('questions-list').addEventListener('change', (e) => {
+  if (e.target.type !== 'radio') return;
+  const name = e.target.name;          // "q1".."q9"
+  const qNum = parseInt(name.replace('q', ''));
+  const weight = e.target.dataset.weight; // "mono:3" | "micro:2" | "none:0"
+  answers[qNum] = parseWeight(weight);
+  updateUI();
+});
+
+function parseWeight(w) {
+  const [side, val] = w.split(':');
+  const n = parseInt(val);
+  if (side === 'mono')  return -n;   // negative = lean monolith
+  if (side === 'micro') return +n;   // positive = lean microservices
+  return 0;
+}
+
+// ── Update UI ──────────────────────────────────────────────────────────────
+function updateUI() {
+  const count = Object.keys(answers).length;
+
+  // Progress
+  progressLabel.textContent = `${count} / ${TOTAL_Q} answered`;
+  answeredNum.textContent = count;
+
+  // Dots
+  for (let i = 1; i <= TOTAL_Q; i++) {
+    const d = document.getElementById('dot-' + i);
+    if (d) d.className = 'prog-dot' + (answers[i] !== undefined ? ' answered' : '');
+  }
+
+  if (count === 0) {
+    monoPane.textContent = '—';
+    microPane.textContent = '—';
+    scoreBar.style.width = '50%';
+    scoreNeedle.style.left = '50%';
+    return;
+  }
+
+  // Score computation
+  // Raw sum: negative = mono, positive = micro
+  const rawSum = Object.values(answers).reduce((a, b) => a + b, 0);
+
+  // Theoretical max (if all answers were micro:3 = +3 each, 9 questions = +27)
+  // Theoretical min = -27
+  const MAX = TOTAL_Q * 3;
+  const normalized = (rawSum + MAX) / (2 * MAX); // 0..1 where 0=mono, 1=micro
+  const pct = Math.round(normalized * 100);
+  const monoScore = 100 - pct;
+  const microScore = pct;
+
+  monoPane.textContent  = monoScore + '%';
+  microPane.textContent = microScore + '%';
+
+  // Bar: fill represents monolith side (green) width
+  const fillPct = 100 - pct;
+  scoreBar.style.width = fillPct + '%';
+  scoreNeedle.style.left = fillPct + '%';
+
+  // Show result only after all questions answered
+  if (count >= TOTAL_Q) {
+    resultCard.style.display = 'block';
+    renderResult(pct, rawSum);
+  } else {
+    resultCard.style.display = 'none';
+  }
+}
+
+// ── Render result ──────────────────────────────────────────────────────────
+function renderResult(microPct, rawSum) {
+  // Determine architecture
+  let arch, badgeClass, icon, subtitle;
+  const distance = Math.abs(microPct - 50); // 0=neutral, 50=strong lean
+  const confidence = Math.min(100, Math.round((distance / 50) * 100));
+
+  if (microPct >= 62) {
+    arch = 'Microservices';
+    badgeClass = 'micro';
+    icon = '🔷';
+    subtitle = 'Distributed, independently deployable services';
+  } else if (microPct <= 38) {
+    arch = 'Monolithic';
+    badgeClass = 'mono';
+    icon = '🧱';
+    subtitle = 'Single deployable unit, simpler operations';
+  } else {
+    arch = 'Modular Monolith';
+    badgeClass = 'hybrid';
+    icon = '🧩';
+    subtitle = 'Structured monolith with clear module boundaries';
+  }
+
+  // Update badge
+  resultBadge.className = 'result-arch-badge ' + badgeClass;
+  resultIcon.className  = 'result-arch-icon';
+  resultIcon.textContent = icon;
+  resultName.textContent = arch;
+  resultSub.textContent  = subtitle;
+
+  // Confidence
+  confBar.style.width = confidence + '%';
+  confPct.textContent = confidence + '%';
+
+  // Build reasons
+  const reasons = buildReasons(arch, badgeClass);
+  reasonsList.innerHTML = '';
+  reasons.forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'reason-item';
+    el.innerHTML = `
+      <div class="reason-icon ${r.type}">
+        ${r.type === 'pro' ? '✓' : '!'}
+      </div>
+      <span>${r.text}</span>`;
+    reasonsList.appendChild(el);
+  });
+
+  // Migration path
+  const q9val = answers[9];
+  const fromMonolith = q9val !== undefined && (q9val === 0 || q9val === -2 || q9val === 1); // existing monolith
+  const hasExistingMonolith = answers[9] !== undefined && (answers[9] === -2 || answers[9] === 1);
+
+  if (arch === 'Microservices' && hasExistingMonolith) {
+    migrationBox.style.display = 'flex';
+    migrationSteps.innerHTML = `
+      <div class="migration-step"><div class="step-num">1</div>Identify bounded contexts — map domain areas that rarely communicate</div>
+      <div class="migration-step"><div class="step-num">2</div>Apply the Strangler Fig pattern — new features in new services alongside the monolith</div>
+      <div class="migration-step"><div class="step-num">3</div>Extract the most independently scalable components first (e.g. auth, notifications)</div>
+      <div class="migration-step"><div class="step-num">4</div>Add an API Gateway as a seam between monolith and new services</div>
+      <div class="migration-step"><div class="step-num">5</div>Invest in observability early — distributed tracing (Jaeger/Zipkin) and centralized logging</div>
+    `;
+  } else if (arch === 'Monolithic' && answers[9] === 1) {
+    migrationBox.style.display = 'flex';
+    migrationSteps.innerHTML = `
+      <div class="migration-step"><div class="step-num">1</div>Consolidate extracted services back — identify services with high coupling to the monolith</div>
+      <div class="migration-step"><div class="step-num">2</div>Use the "strangler fig in reverse" — route traffic back through monolith endpoints</div>
+      <div class="migration-step"><div class="step-num">3</div>Merge shared data stores first to restore ACID transactions</div>
+      <div class="migration-step"><div class="step-num">4</div>Invest in module boundaries inside the monolith to prevent big-ball-of-mud regression</div>
+    `;
+  } else if (arch === 'Modular Monolith') {
+    migrationBox.style.display = 'flex';
+    migrationSteps.innerHTML = `
+      <div class="migration-step"><div class="step-num">1</div>Define strict module interfaces — no direct cross-module database access</div>
+      <div class="migration-step"><div class="step-num">2</div>Enforce module boundaries with linting rules or package-private visibility</div>
+      <div class="migration-step"><div class="step-num">3</div>Design modules as if they could become services — clean APIs between them</div>
+      <div class="migration-step"><div class="step-num">4</div>Extract modules to services only when there's a real, measurable scaling need</div>
+    `;
+  } else {
+    migrationBox.style.display = 'none';
+  }
+
+  // Hybrid options
+  const chips = getHybridOptions(arch, microPct);
+  hybridChips.innerHTML = '';
+  chips.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'hybrid-chip' + (c.highlight ? ' highlight' : '');
+    el.textContent = c.label;
+    hybridChips.appendChild(el);
+  });
+}
+
+function buildReasons(arch, badgeClass) {
+  const reasons = [];
+  const a = answers;
+
+  if (badgeClass === 'mono' || badgeClass === 'hybrid') {
+    if (a[1] !== undefined && a[1] < 0) reasons.push({ type: 'pro', text: 'Small team size favors a shared codebase and fast iteration' });
+    if (a[2] !== undefined && a[2] < 0) reasons.push({ type: 'pro', text: 'Early product stage requires tight feedback loops and frequent pivots' });
+    if (a[4] !== undefined && a[4] < 0) reasons.push({ type: 'pro', text: 'Simple domain logic doesn\'t justify distributed system overhead' });
+    if (a[7] !== undefined && a[7] < 0) reasons.push({ type: 'pro', text: 'Junior-heavy team will struggle with distributed systems complexity' });
+    if (a[8] !== undefined && a[8] < 0) reasons.push({ type: 'pro', text: 'Budget constraints make microservices infra overhead impractical' });
+    if (a[5] !== undefined && a[5] < 0) reasons.push({ type: 'pro', text: 'Uniform scaling needs don\'t justify the overhead of separate services' });
+    if (reasons.length < 3) reasons.push({ type: 'pro', text: 'Monoliths are simpler to develop, test, debug, and deploy' });
+    if (reasons.length < 4) reasons.push({ type: 'warn', text: 'Revisit if team grows beyond 20 or you need independent scaling' });
+  }
+
+  if (badgeClass === 'micro') {
+    if (a[1] !== undefined && a[1] > 0) reasons.push({ type: 'pro', text: 'Large team benefits from independent ownership and deployment autonomy' });
+    if (a[3] !== undefined && a[3] > 0) reasons.push({ type: 'pro', text: 'High deployment frequency needs independent service pipelines' });
+    if (a[4] !== undefined && a[4] > 0) reasons.push({ type: 'pro', text: 'Complex domain with clear bounded contexts maps naturally to services' });
+    if (a[5] !== undefined && a[5] > 0) reasons.push({ type: 'pro', text: 'Independent scaling requirements justify distributed architecture' });
+    if (a[6] !== undefined && a[6] > 0) reasons.push({ type: 'pro', text: 'Multiple autonomous teams align with microservice ownership model' });
+    if (a[7] !== undefined && a[7] > 0) reasons.push({ type: 'pro', text: 'Senior team can manage distributed systems complexity effectively' });
+    if (reasons.length < 3) reasons.push({ type: 'pro', text: 'Microservices enable fault isolation and technology flexibility' });
+    if (reasons.length < 4) reasons.push({ type: 'warn', text: 'Invest heavily in observability, service mesh, and CI/CD pipelines from day 1' });
+  }
+
+  return reasons.slice(0, 5);
+}
+
+function getHybridOptions(arch, microPct) {
+  if (arch === 'Modular Monolith') {
+    return [
+      { label: 'Modular Monolith ✓', highlight: true },
+      { label: 'Vertical Slice Architecture', highlight: false },
+      { label: 'Monolith + BFF', highlight: false },
+      { label: 'Event-Driven Monolith', highlight: false },
+    ];
+  }
+  if (arch === 'Microservices') {
+    return [
+      { label: 'Service Mesh (Istio)', highlight: false },
+      { label: 'API Gateway Pattern', highlight: true },
+      { label: 'Event-Driven (Kafka)', highlight: false },
+      { label: 'BFF Pattern', highlight: false },
+      { label: 'Saga Pattern (distributed tx)', highlight: false },
+    ];
+  }
+  // Monolith
+  return [
+    { label: 'Modular Monolith', highlight: true },
+    { label: 'Monolith + Queue', highlight: false },
+    { label: 'Monolith + CDN Edge', highlight: false },
+    { label: 'Extract one service (strangler)', highlight: false },
+  ];
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────
+resetBtn.addEventListener('click', () => {
+  // Clear all radio inputs
+  document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+  for (const k in answers) delete answers[k];
+  resultCard.style.display = 'none';
+  updateUI();
+  buildDots();
+});
+</script>
+</body>
+</html>

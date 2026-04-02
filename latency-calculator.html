@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Latency Calculator — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.18);
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --purple: #a78bfa;
+  --orange: #fb923c;
+  --pink: #f472b6;
+  --radius: 12px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app { position:relative; z-index:1; max-width:1100px; margin:0 auto; padding:36px 20px 80px; }
+
+/* Header */
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 36px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  text-decoration: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  white-space: nowrap;
+}
+.back-btn:hover { color: var(--accent); border-color: rgba(34,211,238,0.3); }
+
+.header-info { flex:1; }
+
+h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+h1 span { color: var(--accent); }
+
+.header-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  animation: fadeUp 0.5s 0.05s ease both;
+  width: fit-content;
+}
+
+.tab-btn {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn.active {
+  background: var(--surface-3);
+  color: var(--accent);
+  border: 1px solid rgba(34,211,238,0.2);
+}
+.tab-btn:hover:not(.active) { color: var(--text-2); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  overflow: hidden;
+  animation: fadeUp 0.4s ease both;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.card-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.card-body { padding: 20px; }
+
+/* Presets */
+.preset-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  animation: fadeUp 0.5s 0.05s ease both;
+}
+
+.preset-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.preset-btn:hover { color: var(--accent); border-color: rgba(34,211,238,0.3); background: var(--accent-dim); }
+
+/* Budget bar */
+.budget-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.budget-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.budget-input {
+  width: 100px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  text-align: right;
+}
+.budget-input:focus { border-color: var(--accent); }
+
+.budget-track {
+  flex: 1;
+  min-width: 120px;
+  height: 8px;
+  background: var(--surface-3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.budget-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s, background 0.3s;
+}
+
+.budget-info {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Chain list */
+.chain-list {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chain-item {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.2s, opacity 0.2s;
+  position: relative;
+}
+.chain-item:hover { border-color: rgba(34,211,238,0.2); }
+.chain-item.dragging { opacity: 0.4; }
+.chain-item.drag-over { border-color: var(--accent); border-style: dashed; }
+
+.drag-handle {
+  color: var(--text-3);
+  cursor: grab;
+  font-size: 14px;
+  line-height: 1;
+  user-select: none;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.drag-handle:active { cursor: grabbing; }
+
+.item-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.item-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  min-width: 160px;
+  flex-shrink: 0;
+}
+
+.item-desc {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  outline: none;
+  padding: 2px 4px;
+  min-width: 80px;
+  transition: border-color 0.2s;
+}
+.item-desc:focus { border-bottom-color: var(--border); color: var(--text-2); }
+.item-desc::placeholder { color: var(--text-3); opacity: 0.5; }
+
+.latency-inputs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.latency-inputs label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+}
+
+.ms-input {
+  width: 60px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  text-align: right;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.ms-input:focus { border-color: var(--accent); }
+
+.ms-unit {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.item-remove {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.item-remove:hover { color: var(--danger); border-color: var(--danger); background: rgba(248,113,113,0.08); }
+
+/* Add component */
+.add-row {
+  padding: 12px;
+  padding-top: 4px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.component-select {
+  flex: 1;
+  min-width: 180px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text-2);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.component-select:focus { border-color: var(--accent); }
+.component-select option { background: #1f1f23; }
+
+.add-btn {
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.3);
+  border-radius: 6px;
+  padding: 8px 16px;
+  color: var(--accent);
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.add-btn:hover { background: rgba(34,211,238,0.14); }
+
+/* Waterfall */
+.waterfall-wrap {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.waterfall-header {
+  display: grid;
+  grid-template-columns: 180px 1fr 80px;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.wf-col-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.waterfall-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 80px;
+  gap: 8px;
+  padding: 6px 16px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.waterfall-row:last-child { border-bottom: none; }
+.waterfall-row:hover { background: var(--surface-2); }
+
+.wf-name {
+  font-size: 12px;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.wf-name-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.wf-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wf-bar-track {
+  height: 20px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  position: relative;
+  overflow: visible;
+}
+
+.wf-bar-segment {
+  height: 100%;
+  border-radius: 3px;
+  position: absolute;
+  transition: width 0.3s, left 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 4px;
+  min-width: 2px;
+}
+
+.wf-bar-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.7);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.wf-ms {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-2);
+  text-align: right;
+}
+
+.wf-empty {
+  padding: 32px;
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+/* Totals */
+.totals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 20px;
+}
+
+.total-cell {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-align: center;
+}
+
+.total-cell-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+
+.total-cell-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.total-cell-unit {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-left: 2px;
+}
+
+/* Optimization suggestions */
+.suggestions-list {
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suggestion-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  border-left: 3px solid var(--warning);
+}
+
+.suggestion-item.ok {
+  border-left-color: var(--success);
+}
+
+.suggestion-rank {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--warning);
+  font-weight: 500;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.suggestion-item.ok .suggestion-rank { color: var(--success); }
+
+.suggestion-body { flex: 1; }
+
+.suggestion-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.suggestion-tip {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
+.suggestion-ms {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--warning);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.suggestion-item.ok .suggestion-ms { color: var(--success); }
+
+/* Compare view */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media(max-width: 700px) {
+  .compare-grid { grid-template-columns: 1fr; }
+}
+
+.compare-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.compare-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.compare-label {
+  font-size: 12px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.compare-total {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.compare-wf {
+  padding: 12px 16px;
+}
+
+.compare-wf-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.compare-wf-name {
+  width: 130px;
+  font-size: 11px;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.compare-bar-track {
+  flex: 1;
+  height: 14px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.compare-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.compare-ms {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  width: 50px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.compare-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-top: 1px solid var(--border);
+}
+
+.compare-stat {
+  background: var(--surface);
+  padding: 10px 14px;
+  text-align: center;
+}
+
+.compare-stat-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 3px;
+}
+
+.compare-stat-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Copy to compare buttons */
+.copy-to-compare {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.copy-compare-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 12px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.copy-compare-btn:hover { color: var(--accent); border-color: rgba(34,211,238,0.3); }
+
+/* Inputs inside compare */
+.compare-panel .compare-wf input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 8px;
+  color: var(--text-2);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  width: 100%;
+  outline: none;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+.compare-panel .compare-wf input:focus { border-color: var(--accent); }
+
+/* Misc utils */
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+
+.highlight-item {
+  border-color: rgba(251,191,36,0.4) !important;
+  background: rgba(251,191,36,0.04) !important;
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+@media(max-width: 640px) {
+  .waterfall-row, .waterfall-header {
+    grid-template-columns: 120px 1fr 60px;
+  }
+  .item-name { min-width: 110px; }
+  .latency-inputs label { display: none; }
+  .ms-input { width: 50px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <a class="back-btn" href="./index.html">← Home</a>
+    <div class="header-info">
+      <h1>Latency <span>Calculator</span></h1>
+      <div class="header-sub">Network request chain latency estimator · P50/P95/P99 · Budget mode · Compare</div>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('builder')">Chain Builder</button>
+    <button class="tab-btn" onclick="switchTab('compare')">Compare</button>
+  </div>
+
+  <!-- ===== BUILDER TAB ===== -->
+  <div class="tab-panel active" id="tab-builder">
+
+    <!-- Presets -->
+    <div class="preset-row">
+      <button class="preset-btn" onclick="loadPreset('basic')">Basic Web Request</button>
+      <button class="preset-btn" onclick="loadPreset('microservices')">Microservices Chain</button>
+      <button class="preset-btn" onclick="loadPreset('mobile')">Mobile API Call</button>
+      <button class="preset-btn" onclick="clearChain()">Clear</button>
+    </div>
+
+    <!-- Chain card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Request Chain</span>
+        <span class="card-tag">Builder</span>
+      </div>
+
+      <!-- Budget -->
+      <div class="budget-section">
+        <span class="budget-label">Budget</span>
+        <input class="budget-input" id="budgetInput" type="number" value="200" min="1" max="10000"> <span class="budget-label">ms</span>
+        <div class="budget-track">
+          <div class="budget-fill" id="budgetFill"></div>
+        </div>
+        <span class="budget-info" id="budgetInfo"></span>
+      </div>
+
+      <!-- Chain items -->
+      <div class="chain-list" id="chainList"></div>
+
+      <!-- Add component -->
+      <div class="add-row">
+        <select class="component-select" id="componentSelect"></select>
+        <button class="add-btn" onclick="addComponent()">+ Add</button>
+      </div>
+    </div>
+
+    <!-- Waterfall chart -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Waterfall</span>
+        <span class="card-tag">Timeline</span>
+      </div>
+      <div class="waterfall-wrap" id="waterfallWrap">
+        <div class="wf-empty">Add components to see the waterfall chart</div>
+      </div>
+    </div>
+
+    <!-- Totals -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Latency Estimates</span>
+        <span class="card-tag">Stats</span>
+      </div>
+      <div class="totals-grid" id="totalsGrid">
+        <div class="total-cell">
+          <div class="total-cell-label">P50</div>
+          <div class="total-cell-value" id="p50val">—</div>
+        </div>
+        <div class="total-cell">
+          <div class="total-cell-label">P95</div>
+          <div class="total-cell-value" id="p95val">—</div>
+        </div>
+        <div class="total-cell">
+          <div class="total-cell-label">P99</div>
+          <div class="total-cell-value" id="p99val">—</div>
+        </div>
+        <div class="total-cell">
+          <div class="total-cell-label">Best Case</div>
+          <div class="total-cell-value" id="bestval">—</div>
+        </div>
+        <div class="total-cell">
+          <div class="total-cell-label">Worst Case</div>
+          <div class="total-cell-value" id="worstval">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Optimization suggestions -->
+    <div class="card" id="suggestionsCard">
+      <div class="card-header">
+        <span class="card-title">Optimization Suggestions</span>
+        <span class="card-tag">Insights</span>
+      </div>
+      <div class="suggestions-list" id="suggestionsList">
+        <div style="padding:8px 0; font-family:'DM Mono',monospace; font-size:12px; color:var(--text-3)">Add components to see suggestions</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== COMPARE TAB ===== -->
+  <div class="tab-panel" id="tab-compare">
+
+    <div class="copy-to-compare">
+      <button class="copy-compare-btn" onclick="copyBuilderToSlot(0)">Copy Builder → Chain A</button>
+      <button class="copy-compare-btn" onclick="copyBuilderToSlot(1)">Copy Builder → Chain B</button>
+      <button class="copy-compare-btn" onclick="loadComparePresets()">Load Example Comparison</button>
+    </div>
+
+    <div class="compare-grid" id="compareGrid">
+      <!-- Built by JS -->
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ─── Component definitions ───────────────────────────────────────────────────
+
+const COMPONENT_TYPES = [
+  { id: 'dns',        label: 'DNS Resolution',          min: 2,  typ: 20,  max: 120, color: '#22d3ee', group: 'network',  tip: 'Use a faster DNS resolver (1.1.1.1, 8.8.8.8) or DNS prefetch hints. Consider DNS TTL tuning.' },
+  { id: 'tcp',        label: 'TCP Handshake',           min: 1,  typ: 10,  max: 60,  color: '#38bdf8', group: 'network',  tip: 'Enable TCP Fast Open, keep-alive connections, or HTTP/2 multiplexing to amortize handshake cost.' },
+  { id: 'tls',        label: 'TLS Handshake',           min: 5,  typ: 30,  max: 150, color: '#818cf8', group: 'security', tip: 'Use TLS 1.3 (1-RTT), session resumption, or OCSP stapling to reduce handshake overhead.' },
+  { id: 'cdn_hit',    label: 'CDN Edge Hit',            min: 1,  typ: 5,   max: 20,  color: '#34d399', group: 'cdn',      tip: 'Increase cache TTL, use stale-while-revalidate, and ensure correct Cache-Control headers.' },
+  { id: 'cdn_miss',   label: 'CDN Miss + Origin',       min: 30, typ: 80,  max: 300, color: '#fb923c', group: 'cdn',      tip: 'Improve cache hit ratio via cache keys, Vary headers, and origin shield. Pre-warm caches for known content.' },
+  { id: 'lb',         label: 'Load Balancer',           min: 0,  typ: 1,   max: 5,   color: '#a78bfa', group: 'infra',    tip: 'Layer-4 LBs (HAProxy, IPVS) are faster than Layer-7. Minimize health check intervals on unhealthy backends.' },
+  { id: 'app',        label: 'App Server Processing',   min: 5,  typ: 50,  max: 500, color: '#f472b6', group: 'app',      tip: 'Profile hot code paths, reduce allocations, use connection pooling, add response caching.' },
+  { id: 'db',         label: 'Database Query',          min: 1,  typ: 20,  max: 200, color: '#fbbf24', group: 'data',     tip: 'Add indexes for slow queries, use read replicas, batch queries, or introduce a query cache layer.' },
+  { id: 'cache_hit',  label: 'Cache Hit (Redis/Memcached)', min: 0, typ: 1, max: 5, color: '#34d399', group: 'data',     tip: 'Cache is already fast. Ensure consistent serialization to minimize hit latency further.' },
+  { id: 'cache_miss', label: 'Cache Miss + DB',         min: 5,  typ: 30,  max: 250, color: '#fb7185', group: 'data',     tip: 'Increase cache TTL, warm caches on startup, use probabilistic early expiration to reduce stampedes.' },
+  { id: 'ext_api',    label: 'External API Call',       min: 20, typ: 100, max: 800, color: '#e879f9', group: 'external', tip: 'Cache external API responses where possible. Use async/parallel calls. Add circuit breakers and timeouts.' },
+  { id: 'mq_enqueue', label: 'Message Queue Enqueue',   min: 0,  typ: 2,   max: 15,  color: '#94a3b8', group: 'queue',    tip: 'Use fire-and-forget for non-critical enqueues. Batch messages to reduce round-trips.' },
+  { id: 'mq_process', label: 'Message Queue Processing', min: 10, typ: 100, max: 1000, color: '#64748b', group: 'queue',   tip: 'Run consumers in parallel, optimize consumer logic, and tune prefetch counts for your broker.' },
+];
+
+const COMPONENT_MAP = Object.fromEntries(COMPONENT_TYPES.map(c => [c.id, c]));
+
+// ─── State ───────────────────────────────────────────────────────────────────
+
+let chain = []; // Array of { id, instanceId, min, typ, max, desc }
+let nextInstanceId = 1;
+
+let compareChains = [
+  { name: 'Chain A', items: [] },
+  { name: 'Chain B', items: [] },
+];
+
+// ─── Presets ─────────────────────────────────────────────────────────────────
+
+const PRESETS = {
+  basic: [
+    { id: 'dns',      desc: '' },
+    { id: 'tcp',      desc: '' },
+    { id: 'tls',      desc: '' },
+    { id: 'cdn_hit',  desc: 'Static assets' },
+    { id: 'lb',       desc: '' },
+    { id: 'app',      desc: 'Render HTML', min: 10, typ: 40, max: 200 },
+    { id: 'db',       desc: 'Fetch page data', min: 2, typ: 15, max: 80 },
+  ],
+  microservices: [
+    { id: 'tcp',      desc: 'Ingress' },
+    { id: 'tls',      desc: 'mTLS service mesh' },
+    { id: 'lb',       desc: 'Service A LB' },
+    { id: 'app',      desc: 'Service A', min: 5, typ: 20, max: 100 },
+    { id: 'lb',       desc: 'Service B LB' },
+    { id: 'app',      desc: 'Service B', min: 5, typ: 30, max: 150 },
+    { id: 'ext_api',  desc: 'Payment processor', min: 50, typ: 150, max: 600 },
+    { id: 'cache_miss', desc: 'User profile', min: 8, typ: 25, max: 120 },
+    { id: 'mq_enqueue', desc: 'Audit log' },
+  ],
+  mobile: [
+    { id: 'dns',      desc: '4G/LTE DNS' },
+    { id: 'tcp',      desc: '4G/LTE TCP', min: 20, typ: 50, max: 200 },
+    { id: 'tls',      desc: 'TLS 1.3', min: 20, typ: 50, max: 150 },
+    { id: 'cdn_miss', desc: 'API not cached', min: 40, typ: 120, max: 400 },
+    { id: 'lb',       desc: '' },
+    { id: 'app',      desc: 'API handler', min: 5, typ: 30, max: 150 },
+    { id: 'db',       desc: 'User data', min: 3, typ: 25, max: 150 },
+    { id: 'cache_hit', desc: 'Config cache' },
+  ],
+};
+
+// ─── Populate select ─────────────────────────────────────────────────────────
+
+function buildComponentSelect() {
+  const sel = document.getElementById('componentSelect');
+  const groups = {};
+  for (const c of COMPONENT_TYPES) {
+    if (!groups[c.group]) groups[c.group] = [];
+    groups[c.group].push(c);
+  }
+  sel.innerHTML = '';
+  for (const [grp, items] of Object.entries(groups)) {
+    const og = document.createElement('optgroup');
+    og.label = grp.charAt(0).toUpperCase() + grp.slice(1);
+    for (const c of items) {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.label;
+      og.appendChild(opt);
+    }
+    sel.appendChild(og);
+  }
+}
+
+// ─── Chain manipulation ──────────────────────────────────────────────────────
+
+function makeChainItem(typeId, overrides = {}) {
+  const def = COMPONENT_MAP[typeId];
+  return {
+    id: typeId,
+    instanceId: nextInstanceId++,
+    min: overrides.min !== undefined ? overrides.min : def.min,
+    typ: overrides.typ !== undefined ? overrides.typ : def.typ,
+    max: overrides.max !== undefined ? overrides.max : def.max,
+    desc: overrides.desc || '',
+  };
+}
+
+function loadPreset(name) {
+  const preset = PRESETS[name];
+  if (!preset) return;
+  chain = preset.map(p => makeChainItem(p.id, p));
+  renderChain();
+  renderAll();
+}
+
+function clearChain() {
+  chain = [];
+  renderChain();
+  renderAll();
+}
+
+function addComponent() {
+  const sel = document.getElementById('componentSelect');
+  const typeId = sel.value;
+  if (!typeId) return;
+  chain.push(makeChainItem(typeId));
+  renderChain();
+  renderAll();
+}
+
+function removeItem(instanceId) {
+  chain = chain.filter(i => i.instanceId !== instanceId);
+  renderChain();
+  renderAll();
+}
+
+function getItem(instanceId) {
+  return chain.find(i => i.instanceId === instanceId);
+}
+
+// ─── Render chain list ───────────────────────────────────────────────────────
+
+let dragSrcIndex = null;
+
+function renderChain() {
+  const list = document.getElementById('chainList');
+  if (chain.length === 0) {
+    list.innerHTML = '<div style="padding:16px; text-align:center; font-family:\'DM Mono\',monospace; font-size:12px; color:var(--text-3)">No components yet. Use a preset or add components below.</div>';
+    return;
+  }
+
+  list.innerHTML = chain.map((item, idx) => {
+    const def = COMPONENT_MAP[item.id];
+    return `<div class="chain-item" draggable="true"
+          data-iid="${item.instanceId}"
+          data-idx="${idx}"
+          ondragstart="onDragStart(event,${idx})"
+          ondragover="onDragOver(event)"
+          ondrop="onDrop(event,${idx})"
+          ondragend="onDragEnd(event)">
+      <span class="drag-handle" title="Drag to reorder">⠿</span>
+      <span class="item-color-dot" style="background:${def.color}"></span>
+      <span class="item-name">${def.label}</span>
+      <input class="item-desc"
+        placeholder="optional note…"
+        value="${escHtml(item.desc)}"
+        oninput="updateField(${item.instanceId},'desc',this.value)">
+      <div class="latency-inputs">
+        <label>min</label>
+        <input class="ms-input" type="number" min="0" max="99999" value="${item.min}"
+          oninput="updateField(${item.instanceId},'min',+this.value)">
+        <label style="margin-left:4px">typ</label>
+        <input class="ms-input" type="number" min="0" max="99999" value="${item.typ}"
+          oninput="updateField(${item.instanceId},'typ',+this.value)">
+        <label style="margin-left:4px">max</label>
+        <input class="ms-input" type="number" min="0" max="99999" value="${item.max}"
+          oninput="updateField(${item.instanceId},'max',+this.value)">
+        <span class="ms-unit">ms</span>
+      </div>
+      <button class="item-remove" title="Remove" onclick="removeItem(${item.instanceId})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function updateField(instanceId, field, value) {
+  const item = getItem(instanceId);
+  if (!item) return;
+  item[field] = value;
+  renderAll();
+}
+
+// ─── Drag and drop ───────────────────────────────────────────────────────────
+
+function onDragStart(e, idx) {
+  dragSrcIndex = idx;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.chain-item').forEach(el => el.classList.remove('drag-over'));
+  e.currentTarget.classList.add('drag-over');
+}
+
+function onDrop(e, toIdx) {
+  e.preventDefault();
+  if (dragSrcIndex === null || dragSrcIndex === toIdx) return;
+  const [moved] = chain.splice(dragSrcIndex, 1);
+  chain.splice(toIdx, 0, moved);
+  renderChain();
+  renderAll();
+}
+
+function onDragEnd(e) {
+  dragSrcIndex = null;
+  document.querySelectorAll('.chain-item').forEach(el => {
+    el.classList.remove('dragging', 'drag-over');
+  });
+}
+
+// ─── Stats model ─────────────────────────────────────────────────────────────
+
+// Simple model: treat each component as independently triangularly distributed
+// sum of n triangular(min,mode,max): use CLT approximation for P95/P99
+
+function triangularMean(min, mode, max) {
+  return (min + mode + max) / 3;
+}
+
+function triangularVariance(min, mode, max) {
+  return (min*min + mode*mode + max*max - min*mode - min*max - mode*max) / 18;
+}
+
+function calcStats(items) {
+  if (items.length === 0) return null;
+
+  let totalMin = 0, totalMax = 0, totalMean = 0, totalVar = 0;
+  for (const item of items) {
+    const mn = Math.max(0, item.min);
+    const ty = Math.max(mn, item.typ);
+    const mx = Math.max(ty, item.max);
+    totalMin  += mn;
+    totalMax  += mx;
+    totalMean += triangularMean(mn, ty, mx);
+    totalVar  += triangularVariance(mn, ty, mx);
+  }
+
+  const stdDev = Math.sqrt(totalVar);
+
+  // Using normal approximation (CLT) for percentiles
+  // P50 ≈ mean, P95 ≈ mean + 1.645*σ, P99 ≈ mean + 2.326*σ
+  const p50 = Math.round(totalMean);
+  const p95 = Math.round(totalMean + 1.645 * stdDev);
+  const p99 = Math.round(totalMean + 2.326 * stdDev);
+
+  return { p50, p95, p99, best: Math.round(totalMin), worst: Math.round(totalMax), mean: totalMean };
+}
+
+// ─── Waterfall render ─────────────────────────────────────────────────────────
+
+function renderWaterfall(items) {
+  const wrap = document.getElementById('waterfallWrap');
+  if (items.length === 0) {
+    wrap.innerHTML = '<div class="wf-empty">Add components to see the waterfall chart</div>';
+    return;
+  }
+
+  const totalTyp = items.reduce((s, i) => s + Math.max(0, i.typ), 0) || 1;
+
+  let offset = 0;
+  let html = `<div class="waterfall-header">
+    <div class="wf-col-label">Component</div>
+    <div class="wf-col-label">Timeline (typical)</div>
+    <div class="wf-col-label" style="text-align:right">ms</div>
+  </div>`;
+
+  for (const item of items) {
+    const def = COMPONENT_MAP[item.id];
+    const typ = Math.max(0, item.typ);
+    const pctStart = (offset / totalTyp * 100).toFixed(2);
+    const pctWidth = (typ / totalTyp * 100).toFixed(2);
+    offset += typ;
+
+    const barLabel = typ >= 10 ? typ + 'ms' : '';
+
+    html += `<div class="waterfall-row">
+      <div class="wf-name">
+        <span class="wf-name-dot" style="background:${def.color}"></span>
+        <span class="wf-name-text">${def.label}${item.desc ? ' <span style="color:var(--text-3);font-size:10px">('+escHtml(item.desc)+')</span>' : ''}</span>
+      </div>
+      <div class="wf-bar-track">
+        <div class="wf-bar-segment" style="left:${pctStart}%;width:${pctWidth}%;background:${def.color};opacity:0.85">
+          <span class="wf-bar-label">${barLabel}</span>
+        </div>
+      </div>
+      <div class="wf-ms">${typ}</div>
+    </div>`;
+  }
+
+  wrap.innerHTML = html;
+}
+
+// ─── Budget render ────────────────────────────────────────────────────────────
+
+function renderBudget(stats) {
+  const budget = parseInt(document.getElementById('budgetInput').value, 10) || 200;
+  const fill = document.getElementById('budgetFill');
+  const info = document.getElementById('budgetInfo');
+
+  if (!stats) {
+    fill.style.width = '0%';
+    info.style.color = 'var(--text-3)';
+    info.textContent = '— / ' + budget + 'ms';
+    return;
+  }
+
+  const pct = Math.min((stats.p50 / budget) * 100, 100);
+  fill.style.width = pct + '%';
+
+  if (stats.p50 <= budget * 0.7) {
+    fill.style.background = 'var(--success)';
+    info.style.color = 'var(--success)';
+    info.textContent = '+' + (budget - stats.p50) + 'ms headroom (P50: ' + stats.p50 + 'ms)';
+  } else if (stats.p50 <= budget) {
+    fill.style.background = 'var(--warning)';
+    info.style.color = 'var(--warning)';
+    info.textContent = '+' + (budget - stats.p50) + 'ms left (P50: ' + stats.p50 + 'ms)';
+  } else {
+    fill.style.background = 'var(--danger)';
+    info.style.color = 'var(--danger)';
+    info.textContent = '−' + (stats.p50 - budget) + 'ms over budget!';
+  }
+}
+
+// ─── Totals render ────────────────────────────────────────────────────────────
+
+function renderTotals(stats) {
+  const fmt = v => v === undefined || v === null ? '—' : v;
+  document.getElementById('p50val').textContent   = stats ? stats.p50  + '' : '—';
+  document.getElementById('p95val').textContent   = stats ? stats.p95  + '' : '—';
+  document.getElementById('p99val').textContent   = stats ? stats.p99  + '' : '—';
+  document.getElementById('bestval').textContent  = stats ? stats.best + '' : '—';
+  document.getElementById('worstval').textContent = stats ? stats.worst + '' : '—';
+
+  // Color P95/P99 if concerning
+  const budget = parseInt(document.getElementById('budgetInput').value, 10) || 200;
+  document.getElementById('p50val').style.color = !stats ? 'var(--text-3)' : stats.p50 > budget ? 'var(--danger)' : 'var(--accent)';
+  document.getElementById('p95val').style.color = !stats ? 'var(--text-3)' : stats.p95 > budget * 1.5 ? 'var(--danger)' : stats.p95 > budget ? 'var(--warning)' : 'var(--accent)';
+  document.getElementById('p99val').style.color = !stats ? 'var(--text-3)' : stats.p99 > budget * 2 ? 'var(--danger)' : stats.p99 > budget ? 'var(--warning)' : 'var(--accent)';
+  document.getElementById('bestval').style.color = 'var(--success)';
+  document.getElementById('worstval').style.color = !stats ? 'var(--text-3)' : 'var(--danger)';
+}
+
+// ─── Suggestions render ───────────────────────────────────────────────────────
+
+function renderSuggestions(items, stats) {
+  const list = document.getElementById('suggestionsList');
+  if (!items || items.length === 0) {
+    list.innerHTML = '<div style="padding:8px 0; font-family:\'DM Mono\',monospace; font-size:12px; color:var(--text-3)">Add components to see suggestions.</div>';
+    return;
+  }
+
+  const budget = parseInt(document.getElementById('budgetInput').value, 10) || 200;
+  const overBudget = stats && stats.p50 > budget;
+
+  // Sort by typical latency descending
+  const sorted = [...items]
+    .map((item, i) => ({ item, origIdx: i, def: COMPONENT_MAP[item.id] }))
+    .sort((a, b) => b.item.typ - a.item.typ);
+
+  const top3 = sorted.slice(0, 3);
+
+  if (!overBudget) {
+    // Under budget — just show top contributors
+    list.innerHTML = `<div style="padding:4px 0 8px; font-family:'DM Mono',monospace; font-size:11px; color:var(--success)">
+      P50 (${stats.p50}ms) is within budget (${budget}ms). Top contributors shown below.
+    </div>` + top3.map((entry, rank) => `
+      <div class="suggestion-item ok">
+        <span class="suggestion-rank">#${rank + 1}</span>
+        <div class="suggestion-body">
+          <div class="suggestion-name">${entry.def.label}${entry.item.desc ? ' — ' + escHtml(entry.item.desc) : ''}</div>
+          <div class="suggestion-tip">${entry.def.tip}</div>
+        </div>
+        <span class="suggestion-ms">${entry.item.typ}ms</span>
+      </div>`).join('');
+    return;
+  }
+
+  const overBy = stats.p50 - budget;
+  list.innerHTML = `<div style="padding:4px 0 8px; font-family:'DM Mono',monospace; font-size:11px; color:var(--danger)">
+    P50 (${stats.p50}ms) exceeds budget by ${overBy}ms. Optimize the top contributors:
+  </div>` + top3.map((entry, rank) => `
+    <div class="suggestion-item">
+      <span class="suggestion-rank">#${rank + 1}</span>
+      <div class="suggestion-body">
+        <div class="suggestion-name">${entry.def.label}${entry.item.desc ? ' — ' + escHtml(entry.item.desc) : ''}</div>
+        <div class="suggestion-tip">${entry.def.tip}</div>
+      </div>
+      <span class="suggestion-ms">${entry.item.typ}ms</span>
+    </div>`).join('');
+}
+
+// ─── Master render ────────────────────────────────────────────────────────────
+
+function renderAll() {
+  const stats = calcStats(chain);
+  renderWaterfall(chain);
+  renderBudget(stats);
+  renderTotals(stats);
+  renderSuggestions(chain, stats);
+}
+
+// ─── Compare tab ─────────────────────────────────────────────────────────────
+
+function renderCompare() {
+  const grid = document.getElementById('compareGrid');
+  grid.innerHTML = compareChains.map((ch, slotIdx) => {
+    const stats = calcStats(ch.items);
+    const totalTyp = ch.items.reduce((s, i) => s + Math.max(0, i.typ), 0) || 1;
+
+    const barRows = ch.items.map(item => {
+      const def = COMPONENT_MAP[item.id];
+      const pct = ((item.typ / totalTyp) * 100).toFixed(1);
+      return `<div class="compare-wf-row">
+        <span class="compare-wf-name">${def.label}${item.desc ? ' <span style="color:var(--text-3)">(' + escHtml(item.desc) + ')</span>' : ''}</span>
+        <div class="compare-bar-track">
+          <div class="compare-bar-fill" style="width:${pct}%;background:${def.color};opacity:0.8"></div>
+        </div>
+        <span class="compare-ms">${item.typ}ms</span>
+      </div>`;
+    }).join('');
+
+    const emptyMsg = '<div style="padding:16px; text-align:center; font-family:\'DM Mono\',monospace; font-size:11px; color:var(--text-3)">No components. Use "Copy Builder" above.</div>';
+
+    return `<div class="compare-panel">
+      <div class="compare-panel-header">
+        <input style="background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;outline:none;flex:1;padding:2px 4px;"
+          value="${escHtml(ch.name)}"
+          oninput="compareChains[${slotIdx}].name=this.value">
+        <span class="compare-total">${stats ? stats.p50 + 'ms' : '—'}</span>
+      </div>
+      <div class="compare-wf">
+        ${ch.items.length > 0 ? barRows : emptyMsg}
+      </div>
+      <div class="compare-stats">
+        <div class="compare-stat">
+          <div class="compare-stat-label">P50</div>
+          <div class="compare-stat-value" style="color:var(--accent)">${stats ? stats.p50 : '—'}</div>
+        </div>
+        <div class="compare-stat">
+          <div class="compare-stat-label">P95</div>
+          <div class="compare-stat-value" style="color:var(--warning)">${stats ? stats.p95 : '—'}</div>
+        </div>
+        <div class="compare-stat">
+          <div class="compare-stat-label">P99</div>
+          <div class="compare-stat-value" style="color:var(--danger)">${stats ? stats.p99 : '—'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function copyBuilderToSlot(slot) {
+  compareChains[slot] = {
+    name: slot === 0 ? 'Chain A' : 'Chain B',
+    items: chain.map(i => ({ ...i })),
+  };
+  renderCompare();
+}
+
+function loadComparePresets() {
+  compareChains[0] = {
+    name: 'With CDN',
+    items: PRESETS.basic.map(p => makeChainItem(p.id, p)),
+  };
+  compareChains[1] = {
+    name: 'Without CDN (origin direct)',
+    items: [
+      makeChainItem('dns',   {}),
+      makeChainItem('tcp',   {}),
+      makeChainItem('tls',   {}),
+      makeChainItem('lb',    {}),
+      makeChainItem('app',   { min: 10, typ: 40, max: 200, desc: 'Render HTML' }),
+      makeChainItem('db',    { min: 2, typ: 15, max: 80, desc: 'Fetch page data' }),
+    ],
+  };
+  renderCompare();
+}
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.textContent.toLowerCase().includes(name === 'builder' ? 'builder' : 'compare')) {
+      b.classList.add('active');
+    }
+  });
+  if (name === 'compare') renderCompare();
+}
+
+// ─── Budget input listener ─────────────────────────────────────────────────
+
+document.getElementById('budgetInput').addEventListener('input', renderAll);
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+buildComponentSelect();
+loadPreset('basic');
+renderCompare();
+</script>
+</body>
+</html>

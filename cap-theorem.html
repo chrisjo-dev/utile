@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAP Theorem — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.15);
+  --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --purple: #a78bfa;
+  --orange: #fb923c;
+  --radius: 14px;
+
+  --ca-color: #4ade80;
+  --ca-dim: rgba(74,222,128,0.12);
+  --cp-color: #22d3ee;
+  --cp-dim: rgba(34,211,238,0.12);
+  --ap-color: #a78bfa;
+  --ap-dim: rgba(167,139,250,0.12);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top Bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--accent); }
+.back-link svg { width:16px; height:16px; }
+
+.topbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-2);
+  letter-spacing: 0.02em;
+}
+
+.topbar-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+}
+
+/* ── Main layout ── */
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  grid-template-rows: auto 1fr;
+  gap: 0;
+  min-height: 0;
+}
+
+/* ── Left: triangle area ── */
+.triangle-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px 24px;
+  border-right: 1px solid var(--border);
+}
+
+.triangle-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.triangle-header h1 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.triangle-header p {
+  font-size: 13px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.04em;
+}
+
+.svg-container {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  flex-shrink: 0;
+}
+
+#cap-svg {
+  width: 100%;
+  height: auto;
+  cursor: pointer;
+  overflow: visible;
+}
+
+/* zone regions */
+.zone-region {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.zone-region:hover { opacity: 0.85; }
+
+/* vertex labels */
+.vertex-label {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  fill: var(--text);
+  dominant-baseline: middle;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.vertex-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  fill: var(--text-3);
+  dominant-baseline: middle;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.zone-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  dominant-baseline: middle;
+  text-anchor: middle;
+  pointer-events: none;
+  letter-spacing: 0.08em;
+}
+
+/* ── Partition toggle ── */
+.partition-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  margin-top: 24px;
+  padding: 16px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 520px;
+}
+
+.partition-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.partition-label svg {
+  width: 16px;
+  height: 16px;
+  color: var(--red);
+  flex-shrink: 0;
+}
+
+.partition-status {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  transition: all 0.3s;
+}
+.partition-status.off {
+  background: rgba(74,222,128,0.1);
+  color: var(--green);
+  border: 1px solid rgba(74,222,128,0.2);
+}
+.partition-status.on {
+  background: rgba(248,113,113,0.1);
+  color: var(--red);
+  border: 1px solid rgba(248,113,113,0.2);
+  animation: pulse-red 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0); }
+  50% { box-shadow: 0 0 0 4px rgba(248,113,113,0.15); }
+}
+
+/* Toggle switch */
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggle {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  cursor: pointer;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 13px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.toggle input:checked ~ .toggle-track {
+  background: rgba(248,113,113,0.2);
+  border-color: rgba(248,113,113,0.4);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-3);
+  transition: transform 0.3s, background 0.3s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.toggle input:checked ~ .toggle-thumb {
+  transform: translateX(22px);
+  background: var(--red);
+}
+
+.toggle-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  min-width: 80px;
+}
+
+/* Animated demo button */
+.demo-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  color: var(--accent);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.demo-btn:hover {
+  background: rgba(34,211,238,0.15);
+  border-color: rgba(34,211,238,0.35);
+}
+.demo-btn svg { width:14px; height:14px; }
+.demo-btn.running {
+  background: rgba(251,191,36,0.1);
+  border-color: rgba(251,191,36,0.3);
+  color: var(--yellow);
+}
+
+/* ── Right: database panels ── */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: calc(100vh - 57px);
+}
+
+/* ── Zone tabs ── */
+.zone-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.zone-tab {
+  flex: 1;
+  padding: 14px 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  cursor: pointer;
+  color: var(--text-3);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.zone-tab:hover { color: var(--text-2); }
+
+.zone-tab.active-ca {
+  color: var(--ca-color);
+  border-bottom-color: var(--ca-color);
+  background: rgba(74,222,128,0.04);
+}
+.zone-tab.active-cp {
+  color: var(--cp-color);
+  border-bottom-color: var(--cp-color);
+  background: rgba(34,211,238,0.04);
+}
+.zone-tab.active-ap {
+  color: var(--ap-color);
+  border-bottom-color: var(--ap-color);
+  background: rgba(167,139,250,0.04);
+}
+
+/* ── Tradeoff panel ── */
+.tradeoff-panel {
+  padding: 24px 20px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tradeoff-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 16px;
+}
+
+.tradeoff-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.tradeoff-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.tradeoff-card-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.tradeoff-card-label.gain { color: var(--green); }
+.tradeoff-card-label.sacrifice { color: var(--red); }
+.tradeoff-card-label.when { color: var(--yellow); }
+.tradeoff-card-label.note { color: var(--text-3); }
+
+.tradeoff-card-value {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.tradeoff-desc {
+  font-size: 13px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  line-height: 1.6;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+/* ── DB list ── */
+.db-list-section {
+  padding: 20px;
+  flex: 1;
+}
+
+.db-list-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 14px;
+}
+
+.db-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.db-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.db-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.db-card:hover { border-color: var(--accent); }
+.db-card:hover::before { opacity: 0.6; }
+.db-card.selected { border-color: var(--accent); background: var(--surface-2); }
+.db-card.selected::before { opacity: 1; }
+
+.db-card.partition-down {
+  border-color: rgba(248,113,113,0.4) !important;
+  background: rgba(248,113,113,0.05) !important;
+}
+.db-card.partition-down::before {
+  background: var(--red) !important;
+  opacity: 1 !important;
+}
+
+.db-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.db-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.db-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.06em;
+}
+
+.db-badge.ca {
+  background: rgba(74,222,128,0.1);
+  color: var(--ca-color);
+  border: 1px solid rgba(74,222,128,0.2);
+}
+.db-badge.cp {
+  background: rgba(34,211,238,0.1);
+  color: var(--cp-color);
+  border: 1px solid rgba(34,211,238,0.2);
+}
+.db-badge.ap {
+  background: rgba(167,139,250,0.1);
+  color: var(--ap-color);
+  border: 1px solid rgba(167,139,250,0.2);
+}
+
+.db-badge.down {
+  background: rgba(248,113,113,0.1);
+  color: var(--red);
+  border: 1px solid rgba(248,113,113,0.3);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.db-usecase {
+  font-size: 12px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  line-height: 1.5;
+}
+
+.db-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.db-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.db-status-dot.down { background: var(--red); animation: blink 1s step-end infinite; }
+
+.db-status-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  transition: color 0.3s;
+}
+.db-status-text.down { color: var(--red); }
+
+/* ── Animation overlay ── */
+.anim-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.anim-overlay.active { opacity: 1; }
+
+.anim-msg {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 32px;
+  text-align: center;
+  z-index: 101;
+  min-width: 320px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+}
+
+.anim-msg.visible { opacity: 1; }
+
+.anim-msg-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--red);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.anim-msg-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  line-height: 1.6;
+}
+
+/* ── Scenario bar at top of right panel ── */
+.scenario-bar {
+  padding: 14px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.scenario-bar-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+
+.scenario-bar-desc {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+/* Fade transitions */
+.fade-in {
+  animation: fadeIn 0.25s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+/* ── Node network canvas (animation) ── */
+#anim-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+#anim-canvas.active { opacity: 1; }
+
+@media (max-width: 900px) {
+  .main {
+    grid-template-columns: 1fr;
+  }
+  .triangle-area {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 24px 16px;
+  }
+  .right-panel {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <a href="index.html" class="back-link">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M10 12L6 8l4-4"/>
+      </svg>
+      utile
+    </a>
+    <span class="topbar-title">CAP Theorem</span>
+    <span class="topbar-badge">INTERACTIVE</span>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Left: Triangle -->
+    <div class="triangle-area">
+      <div class="triangle-header">
+        <h1>CAP Theorem</h1>
+        <p>Pick any two of three guarantees in a distributed system</p>
+      </div>
+
+      <div class="svg-container">
+        <svg id="cap-svg" viewBox="0 0 520 460" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="glow-ca">
+              <feGaussianBlur stdDeviation="6" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+            <filter id="glow-cp">
+              <feGaussianBlur stdDeviation="6" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+            <filter id="glow-ap">
+              <feGaussianBlur stdDeviation="6" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+            <filter id="vertex-glow">
+              <feGaussianBlur stdDeviation="8" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+          </defs>
+
+          <!-- Triangle outline -->
+          <polygon
+            id="triangle-outline"
+            points="260,30 30,420 490,420"
+            fill="none"
+            stroke="#2e2e33"
+            stroke-width="1.5"
+          />
+
+          <!-- Zone regions: subdivide triangle into 3 sections via medians -->
+          <!-- centroid: (260, 290) -->
+          <!-- CA zone: bottom-left region (between C=top, A=bottom-left, centroid) -->
+          <!-- CP zone: bottom-right region (between C=top, P=bottom-right, centroid) -->
+          <!-- AP zone: bottom region (between A=bottom-left, P=bottom-right, centroid) -->
+
+          <polygon
+            id="zone-ca"
+            class="zone-region"
+            points="260,30 30,420 260,290"
+            fill="rgba(74,222,128,0.10)"
+            stroke="rgba(74,222,128,0.25)"
+            stroke-width="1"
+            data-zone="ca"
+          />
+          <polygon
+            id="zone-cp"
+            class="zone-region"
+            points="260,30 490,420 260,290"
+            fill="rgba(34,211,238,0.10)"
+            stroke="rgba(34,211,238,0.25)"
+            stroke-width="1"
+            data-zone="cp"
+          />
+          <polygon
+            id="zone-ap"
+            class="zone-region"
+            points="30,420 490,420 260,290"
+            fill="rgba(167,139,250,0.10)"
+            stroke="rgba(167,139,250,0.25)"
+            stroke-width="1"
+            data-zone="ap"
+          />
+
+          <!-- Zone labels -->
+          <text class="zone-label" x="145" y="260" fill="rgba(74,222,128,0.7)">CA</text>
+          <text class="zone-label" x="375" y="260" fill="rgba(34,211,238,0.7)">CP</text>
+          <text class="zone-label" x="260" y="380" fill="rgba(167,139,250,0.7)">AP</text>
+
+          <!-- Vertex circles -->
+          <!-- C - top -->
+          <circle id="vtx-c" cx="260" cy="30" r="20" fill="#18181b" stroke="#2e2e33" stroke-width="1.5"/>
+          <!-- A - bottom left -->
+          <circle id="vtx-a" cx="30" cy="420" r="20" fill="#18181b" stroke="#2e2e33" stroke-width="1.5"/>
+          <!-- P - bottom right -->
+          <circle id="vtx-p" cx="490" cy="420" r="20" fill="#18181b" stroke="#2e2e33" stroke-width="1.5"/>
+
+          <!-- Vertex icons (simplified) -->
+          <!-- C: database cylinders icon -->
+          <text x="260" y="35" font-size="16" text-anchor="middle" dominant-baseline="middle">⬡</text>
+          <!-- A: signal/broadcast icon -->
+          <text x="30" y="425" font-size="16" text-anchor="middle" dominant-baseline="middle">◎</text>
+          <!-- P: network/split icon -->
+          <text x="490" y="425" font-size="16" text-anchor="middle" dominant-baseline="middle">⟂</text>
+
+          <!-- Vertex labels (outside triangle) -->
+          <!-- C label above -->
+          <text class="vertex-label" x="260" y="-8">C</text>
+          <text class="vertex-sub" x="260" y="8">Consistency</text>
+
+          <!-- A label left -->
+          <text class="vertex-label" x="30" y="455">A</text>
+          <text class="vertex-sub" x="30" y="469">Availability</text>
+
+          <!-- P label right -->
+          <text class="vertex-label" x="490" y="455">P</text>
+          <text class="vertex-sub" x="490" y="469">Partition Tolerance</text>
+
+          <!-- Centroid dot -->
+          <circle cx="260" cy="290" r="4" fill="#2e2e33"/>
+        </svg>
+      </div>
+
+      <!-- Controls row -->
+      <div class="partition-bar">
+        <span class="partition-label">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M2 8h4M10 8h4M8 2v4M8 10v4"/>
+            <circle cx="8" cy="8" r="2"/>
+          </svg>
+          Network Partition
+        </span>
+        <label class="toggle">
+          <input type="checkbox" id="partition-toggle">
+          <span class="toggle-track"></span>
+          <span class="toggle-thumb"></span>
+        </label>
+        <span class="toggle-text" id="toggle-text">OFF — Healthy</span>
+        <span class="partition-status off" id="partition-status">NORMAL</span>
+
+        <button class="demo-btn" id="demo-btn">
+          <svg viewBox="0 0 16 16" fill="currentColor">
+            <path d="M4 3l10 5-10 5V3z"/>
+          </svg>
+          SIMULATE
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Right: info panel -->
+    <div class="right-panel" id="right-panel">
+
+      <!-- Scenario banner -->
+      <div class="scenario-bar" id="scenario-bar">
+        <div class="scenario-bar-title">Current Scenario</div>
+        <div class="scenario-bar-desc" id="scenario-desc">All systems healthy. Click a zone or database to explore guarantees.</div>
+      </div>
+
+      <!-- Zone tabs -->
+      <div class="zone-tabs">
+        <div class="zone-tab active-ca" id="tab-ca" data-zone="ca">CA</div>
+        <div class="zone-tab" id="tab-cp" data-zone="cp">CP</div>
+        <div class="zone-tab" id="tab-ap" data-zone="ap">AP</div>
+      </div>
+
+      <!-- Tradeoff panel -->
+      <div class="tradeoff-panel" id="tradeoff-panel">
+        <!-- filled by JS -->
+      </div>
+
+      <!-- DB list -->
+      <div class="db-list-section">
+        <div class="db-list-title">Databases in this zone</div>
+        <div class="db-cards" id="db-cards">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Animation canvas -->
+<canvas id="anim-canvas"></canvas>
+
+<!-- Animation message overlay -->
+<div class="anim-overlay" id="anim-overlay">
+  <div class="anim-msg" id="anim-msg">
+    <div class="anim-msg-title" id="anim-msg-title"></div>
+    <div class="anim-msg-sub" id="anim-msg-sub"></div>
+  </div>
+</div>
+
+<script>
+/* ── Data ── */
+const ZONES = {
+  ca: {
+    label: 'CA — Consistent & Available',
+    color: '#4ade80',
+    colorDim: 'rgba(74,222,128,0.12)',
+    gain: 'Strong consistency + always available reads/writes',
+    sacrifice: 'Cannot survive network partitions',
+    when: 'Single datacenter, internal tools, monolithic apps',
+    note: 'The "P" of CAP is often non-negotiable in distributed systems, making true CA systems rare at scale.',
+    desc: 'CA systems guarantee that every read receives the most recent write, and the system remains available — but only when there is no network partition. In practice, network failures will happen, so CA systems typically run as single-node or tightly-coupled clusters.',
+    dbs: [
+      {
+        name: 'MySQL',
+        usecase: 'Relational OLTP workloads, e-commerce orders, financial transactions',
+        status: 'Primary-replica replication; read scaling; no automatic partition tolerance'
+      },
+      {
+        name: 'PostgreSQL',
+        usecase: 'Complex queries, ACID transactions, geospatial data, analytics',
+        status: 'Synchronous replication possible; partition splits can block writes'
+      },
+      {
+        name: 'Oracle DB',
+        usecase: 'Enterprise ERP, banking ledgers, high-value transactional data',
+        status: 'RAC clustering provides HA but not true partition tolerance'
+      },
+    ]
+  },
+  cp: {
+    label: 'CP — Consistent & Partition Tolerant',
+    color: '#22d3ee',
+    colorDim: 'rgba(34,211,238,0.12)',
+    gain: 'Consistent reads/writes even during partitions',
+    sacrifice: 'May reject requests to maintain consistency (unavailability)',
+    when: 'Financial systems, inventory management, leader election',
+    note: 'When a partition is detected, CP systems choose correctness over uptime — they will refuse to serve stale data.',
+    desc: 'CP systems sacrifice availability during network partitions to ensure no stale or conflicting data is returned. Reads and writes may block or fail until the partition heals. Ideal when correctness is more valuable than uptime.',
+    dbs: [
+      {
+        name: 'MongoDB',
+        usecase: 'Document storage with configurable read/write concerns, catalog, CMS',
+        status: 'Primary-only writes; secondary reads risk stale data unless concern="majority"'
+      },
+      {
+        name: 'HBase',
+        usecase: 'Wide-column store for time-series, IoT, event logging at scale',
+        status: 'ZooKeeper-coordinated; partition causes write unavailability'
+      },
+      {
+        name: 'ZooKeeper',
+        usecase: 'Distributed coordination, leader election, service registry',
+        status: 'Quorum-based; minority partition side goes read-only'
+      },
+    ]
+  },
+  ap: {
+    label: 'AP — Available & Partition Tolerant',
+    color: '#a78bfa',
+    colorDim: 'rgba(167,139,250,0.12)',
+    gain: 'Always responds, survives network partitions gracefully',
+    sacrifice: 'Data may be stale (eventual consistency — not immediately consistent)',
+    when: 'Social feeds, shopping carts, DNS, real-time analytics, global apps',
+    note: 'AP systems converge to consistency eventually. During a partition, different nodes may return different values for the same key.',
+    desc: 'AP systems stay operational during network partitions by allowing reads from any replica, even if it has not received the latest write. After the partition heals, conflicting writes are resolved through techniques like last-write-wins or CRDTs.',
+    dbs: [
+      {
+        name: 'Cassandra',
+        usecase: 'Time-series, IoT, messaging, always-on write-heavy workloads',
+        status: 'Tunable consistency; leaderless replication; writes succeed if ANY node up'
+      },
+      {
+        name: 'DynamoDB',
+        usecase: "Amazon's managed key-value store; shopping carts, session state, gaming",
+        status: 'Eventually consistent by default; strong reads available at extra cost'
+      },
+      {
+        name: 'CouchDB',
+        usecase: 'Offline-first mobile sync, document collaboration, edge computing',
+        status: 'Multi-master replication with MVCC conflict resolution'
+      },
+    ]
+  }
+};
+
+/* ── State ── */
+let activeZone = 'ca';
+let partitionActive = false;
+let animRunning = false;
+let animRaf = null;
+
+/* ── DOM refs ── */
+const zoneCa = document.getElementById('zone-ca');
+const zoneCp = document.getElementById('zone-cp');
+const zoneAp = document.getElementById('zone-ap');
+const tabCa = document.getElementById('tab-ca');
+const tabCp = document.getElementById('tab-cp');
+const tabAp = document.getElementById('tab-ap');
+const tradeoffPanel = document.getElementById('tradeoff-panel');
+const dbCards = document.getElementById('db-cards');
+const partitionToggle = document.getElementById('partition-toggle');
+const toggleText = document.getElementById('toggle-text');
+const partitionStatus = document.getElementById('partition-status');
+const scenarioDesc = document.getElementById('scenario-desc');
+const demoBtn = document.getElementById('demo-btn');
+const animCanvas = document.getElementById('anim-canvas');
+const animOverlay = document.getElementById('anim-overlay');
+const animMsg = document.getElementById('anim-msg');
+const animMsgTitle = document.getElementById('anim-msg-title');
+const animMsgSub = document.getElementById('anim-msg-sub');
+
+/* ── Select zone ── */
+function selectZone(zone) {
+  activeZone = zone;
+  renderTabs();
+  renderTradeoff();
+  renderDBCards();
+  highlightSvgZone(zone);
+}
+
+function renderTabs() {
+  [tabCa, tabCp, tabAp].forEach(t => {
+    t.className = 'zone-tab';
+  });
+  const map = { ca: tabCa, cp: tabCp, ap: tabAp };
+  map[activeZone].classList.add('active-' + activeZone);
+}
+
+function highlightSvgZone(zone) {
+  const regions = {
+    ca: { el: zoneCa, fill: 'rgba(74,222,128,0.22)', stroke: 'rgba(74,222,128,0.5)' },
+    cp: { el: zoneCp, fill: 'rgba(34,211,238,0.22)', stroke: 'rgba(34,211,238,0.5)' },
+    ap: { el: zoneAp, fill: 'rgba(167,139,250,0.22)', stroke: 'rgba(167,139,250,0.5)' },
+  };
+  // Reset all
+  zoneCa.setAttribute('fill', 'rgba(74,222,128,0.10)');
+  zoneCa.setAttribute('stroke', 'rgba(74,222,128,0.25)');
+  zoneCp.setAttribute('fill', 'rgba(34,211,238,0.10)');
+  zoneCp.setAttribute('stroke', 'rgba(34,211,238,0.25)');
+  zoneAp.setAttribute('fill', 'rgba(167,139,250,0.10)');
+  zoneAp.setAttribute('stroke', 'rgba(167,139,250,0.25)');
+  // Highlight active
+  const r = regions[zone];
+  r.el.setAttribute('fill', r.fill);
+  r.el.setAttribute('stroke', r.stroke);
+}
+
+function renderTradeoff() {
+  const d = ZONES[activeZone];
+  tradeoffPanel.innerHTML = `
+    <div class="tradeoff-title fade-in">Tradeoffs — ${d.label}</div>
+    <div class="tradeoff-grid fade-in">
+      <div class="tradeoff-card">
+        <div class="tradeoff-card-label gain">You Gain</div>
+        <div class="tradeoff-card-value">${d.gain}</div>
+      </div>
+      <div class="tradeoff-card">
+        <div class="tradeoff-card-label sacrifice">You Sacrifice</div>
+        <div class="tradeoff-card-value">${d.sacrifice}</div>
+      </div>
+      <div class="tradeoff-card">
+        <div class="tradeoff-card-label when">When to Choose</div>
+        <div class="tradeoff-card-value">${d.when}</div>
+      </div>
+      <div class="tradeoff-card">
+        <div class="tradeoff-card-label note">Key Insight</div>
+        <div class="tradeoff-card-value">${d.note}</div>
+      </div>
+    </div>
+    <div class="tradeoff-desc fade-in">${d.desc}</div>
+  `;
+}
+
+function renderDBCards() {
+  const d = ZONES[activeZone];
+  const zone = activeZone;
+  dbCards.innerHTML = '';
+  d.dbs.forEach((db, i) => {
+    const isDown = partitionActive && zone === 'ca';
+    const card = document.createElement('div');
+    card.className = 'db-card fade-in' + (isDown ? ' partition-down' : '');
+    card.style.animationDelay = (i * 0.06) + 's';
+    card.dataset.db = db.name;
+    card.innerHTML = `
+      <div class="db-card-top">
+        <div class="db-name">${db.name}</div>
+        <span class="db-badge ${zone}${isDown ? ' down' : ''}">${isDown ? 'UNAVAILABLE' : zone.toUpperCase()}</span>
+      </div>
+      <div class="db-usecase">${db.usecase}</div>
+      <div class="db-status-row">
+        <div class="db-status-dot${isDown ? ' down' : ''}"></div>
+        <div class="db-status-text${isDown ? ' down' : ''}">${isDown ? 'Partition detected — refusing connections' : db.status}</div>
+      </div>
+    `;
+    dbCards.appendChild(card);
+  });
+}
+
+/* ── Partition toggle ── */
+partitionToggle.addEventListener('change', () => {
+  partitionActive = partitionToggle.checked;
+  updatePartitionUI();
+  renderDBCards();
+});
+
+function updatePartitionUI() {
+  if (partitionActive) {
+    toggleText.textContent = 'ON — Partitioned';
+    partitionStatus.textContent = 'PARTITION';
+    partitionStatus.className = 'partition-status on';
+    scenarioDesc.textContent = 'Network partition active! CA systems are now unavailable — they cannot guarantee consistency across a split network. CP systems remain consistent but may reject writes. AP systems stay online with eventual consistency.';
+  } else {
+    toggleText.textContent = 'OFF — Healthy';
+    partitionStatus.textContent = 'NORMAL';
+    partitionStatus.className = 'partition-status off';
+    scenarioDesc.textContent = 'All systems healthy. Click a zone or database to explore guarantees.';
+  }
+  updateSvgPartition();
+}
+
+function updateSvgPartition() {
+  const vtxC = document.getElementById('vtx-c');
+  const vtxA = document.getElementById('vtx-a');
+  const vtxP = document.getElementById('vtx-p');
+  if (partitionActive) {
+    vtxC.setAttribute('stroke', 'rgba(248,113,113,0.6)');
+    vtxA.setAttribute('stroke', 'rgba(248,113,113,0.6)');
+    vtxP.setAttribute('stroke', 'rgba(34,211,238,0.5)');
+    // CA zone goes dim/red
+    zoneCa.setAttribute('fill', 'rgba(248,113,113,0.07)');
+    if (activeZone === 'ca') zoneCa.setAttribute('fill', 'rgba(248,113,113,0.14)');
+    zoneCa.setAttribute('stroke', 'rgba(248,113,113,0.3)');
+  } else {
+    vtxC.setAttribute('stroke', '#2e2e33');
+    vtxA.setAttribute('stroke', '#2e2e33');
+    vtxP.setAttribute('stroke', '#2e2e33');
+    // Restore
+    zoneCa.setAttribute('fill', activeZone === 'ca' ? 'rgba(74,222,128,0.22)' : 'rgba(74,222,128,0.10)');
+    zoneCa.setAttribute('stroke', activeZone === 'ca' ? 'rgba(74,222,128,0.5)' : 'rgba(74,222,128,0.25)');
+  }
+}
+
+/* ── Click on SVG zones ── */
+document.getElementById('cap-svg').addEventListener('click', e => {
+  const zone = e.target.dataset.zone;
+  if (zone) selectZone(zone);
+});
+
+/* ── Tab clicks ── */
+[tabCa, tabCp, tabAp].forEach(tab => {
+  tab.addEventListener('click', () => selectZone(tab.dataset.zone));
+});
+
+/* ── Demo animation ── */
+demoBtn.addEventListener('click', () => {
+  if (animRunning) return;
+  runDemoAnimation();
+});
+
+function runDemoAnimation() {
+  animRunning = true;
+  demoBtn.classList.add('running');
+  demoBtn.innerHTML = `
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+      <rect x="3" y="3" width="4" height="10" rx="1"/>
+      <rect x="9" y="3" width="4" height="10" rx="1"/>
+    </svg>
+    RUNNING…
+  `;
+
+  const canvas = animCanvas;
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.classList.add('active');
+
+  // Build node network
+  const nodes = buildNodes();
+  let tick = 0;
+  let phase = 0; // 0=healthy, 1=partition, 2=reaction, 3=resolve
+  let phaseStart = 0;
+  const PHASES = [60, 120, 180, 240]; // frames per phase
+
+  // Show first message
+  showAnimMsg('Network Partition Detected!', 'Simulating a network split between datacenters…');
+
+  function step() {
+    tick++;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const frameInPhase = tick - phaseStart;
+    if (frameInPhase >= PHASES[phase]) {
+      phase++;
+      phaseStart = tick;
+      if (phase === 1) {
+        showAnimMsg('Partition Active', 'CA systems (MySQL, PostgreSQL, Oracle) are rejecting connections.\nCP systems sacrificing availability to stay consistent.\nAP systems responding normally with eventual consistency.');
+        partitionToggle.checked = true;
+        partitionActive = true;
+        updatePartitionUI();
+        renderDBCards();
+      } else if (phase === 2) {
+        showAnimMsg('Systems Responding…', 'CA: OFFLINE — cannot guarantee consistency across split.\nCP: DEGRADED — refusing writes on minority partition.\nAP: ONLINE — accepting writes, will reconcile later.');
+      } else if (phase === 3) {
+        showAnimMsg('Partition Healed', 'Network restored. CP/AP systems reconciling state.\nCA systems back online — eventual consistency achieved.');
+        partitionToggle.checked = false;
+        partitionActive = false;
+        updatePartitionUI();
+        renderDBCards();
+      }
+      if (phase >= PHASES.length) {
+        endAnimation(ctx, canvas);
+        return;
+      }
+    }
+
+    drawNodes(ctx, nodes, tick, phase, canvas);
+    animRaf = requestAnimationFrame(step);
+  }
+
+  animRaf = requestAnimationFrame(step);
+}
+
+function buildNodes() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const groups = [
+    // Group A (left datacenter) — 4 nodes
+    { id: 0, zone: 'ca', label: 'MySQL', x: w * 0.15, y: h * 0.3, dc: 0 },
+    { id: 1, zone: 'cp', label: 'Mongo', x: w * 0.18, y: h * 0.5, dc: 0 },
+    { id: 2, zone: 'ap', label: 'Cassandra', x: w * 0.13, y: h * 0.65, dc: 0 },
+    { id: 3, zone: 'ca', label: 'Postgres', x: w * 0.22, y: h * 0.42, dc: 0 },
+    // Group B (right datacenter) — 4 nodes
+    { id: 4, zone: 'ca', label: 'Oracle', x: w * 0.78, y: h * 0.3, dc: 1 },
+    { id: 5, zone: 'cp', label: 'ZooKeeper', x: w * 0.82, y: h * 0.5, dc: 1 },
+    { id: 6, zone: 'ap', label: 'DynamoDB', x: w * 0.75, y: h * 0.65, dc: 1 },
+    { id: 7, zone: 'ap', label: 'CouchDB', x: w * 0.85, y: h * 0.42, dc: 1 },
+  ];
+  return groups;
+}
+
+const ZONE_COLORS = { ca: '#4ade80', cp: '#22d3ee', ap: '#a78bfa' };
+
+function drawNodes(ctx, nodes, tick, phase, canvas) {
+  const w = canvas.width;
+  const h = canvas.height;
+
+  ctx.save();
+
+  // Draw partition line in phase 1+
+  if (phase >= 1) {
+    const alpha = Math.min(1, (tick - 60) / 20);
+    ctx.strokeStyle = `rgba(248,113,113,${alpha * 0.6})`;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    ctx.moveTo(w / 2, 0);
+    ctx.lineTo(w / 2, h);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Label
+    ctx.fillStyle = `rgba(248,113,113,${alpha * 0.8})`;
+    ctx.font = '600 13px "DM Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('NETWORK PARTITION', w / 2, 40);
+    ctx.fillStyle = `rgba(248,113,113,${alpha * 0.5})`;
+    ctx.font = '11px "DM Mono", monospace';
+    ctx.fillText('DC-A', w * 0.25, 40);
+    ctx.fillText('DC-B', w * 0.75, 40);
+  }
+
+  // Draw edges within each DC
+  const intraDCPairs = [[0,1],[1,2],[2,3],[0,3],[1,3],[4,5],[5,6],[6,7],[4,7],[5,7]];
+  intraDCPairs.forEach(([a, b]) => {
+    const na = nodes[a];
+    const nb = nodes[b];
+    ctx.strokeStyle = 'rgba(46,46,51,0.8)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(na.x, na.y);
+    ctx.lineTo(nb.x, nb.y);
+    ctx.stroke();
+  });
+
+  // Cross-DC edges (animated breaking)
+  const crossPairs = [[0,4],[1,5],[2,6]];
+  crossPairs.forEach(([a, b]) => {
+    const na = nodes[a];
+    const nb = nodes[b];
+    let alpha = 0.5;
+    let dashed = false;
+    if (phase === 1) {
+      const progress = Math.min(1, (tick - 60) / 30);
+      alpha = 0.5 * (1 - progress);
+      dashed = progress > 0.3;
+    } else if (phase >= 1) {
+      alpha = 0;
+    }
+    if (alpha > 0.01) {
+      if (dashed) ctx.setLineDash([4, 6]);
+      ctx.strokeStyle = `rgba(248,113,113,${alpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(na.x, na.y);
+      ctx.lineTo(nb.x, nb.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const baseColor = ZONE_COLORS[n.zone];
+    let nodeAlpha = 1;
+    let status = 'ok'; // ok, down, degraded
+
+    if (phase >= 1 && n.zone === 'ca') status = 'down';
+    if (phase >= 1 && n.zone === 'cp') status = 'degraded';
+    if (phase >= 3) { status = 'ok'; }
+
+    const pulse = Math.sin(tick * 0.08 + n.id) * 0.3 + 0.7;
+
+    // Glow
+    const glowR = status === 'down' ? 22 : 16;
+    const glowColor = status === 'down' ? 'rgba(248,113,113,' : status === 'degraded' ? 'rgba(251,191,36,' : `rgba(${hexToRgb(baseColor)},`;
+    const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, glowR);
+    grad.addColorStop(0, glowColor + (0.25 * pulse) + ')');
+    grad.addColorStop(1, glowColor + '0)');
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Circle
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, 9, 0, Math.PI * 2);
+    const circleColor = status === 'down' ? '#f87171' : status === 'degraded' ? '#fbbf24' : baseColor;
+    ctx.fillStyle = circleColor;
+    ctx.globalAlpha = nodeAlpha;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = '#0e0e10';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = status === 'down' ? 'rgba(248,113,113,0.9)' : 'rgba(250,250,250,0.85)';
+    ctx.font = '500 11px "DM Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(n.label, n.x, n.y + 22);
+
+    // Status indicator
+    if (status === 'down') {
+      ctx.fillStyle = 'rgba(248,113,113,0.8)';
+      ctx.font = '10px "DM Mono", monospace';
+      ctx.fillText('OFFLINE', n.x, n.y + 35);
+    } else if (status === 'degraded') {
+      ctx.fillStyle = 'rgba(251,191,36,0.8)';
+      ctx.font = '10px "DM Mono", monospace';
+      ctx.fillText('DEGRADED', n.x, n.y + 35);
+    }
+  });
+
+  ctx.restore();
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `${r},${g},${b}`;
+}
+
+function showAnimMsg(title, sub) {
+  animOverlay.classList.add('active');
+  animMsgTitle.textContent = title;
+  animMsgSub.textContent = sub;
+  animMsg.classList.add('visible');
+  setTimeout(() => animMsg.classList.remove('visible'), 2800);
+}
+
+function endAnimation(ctx, canvas) {
+  animRunning = false;
+  demoBtn.classList.remove('running');
+  demoBtn.innerHTML = `
+    <svg viewBox="0 0 16 16" fill="currentColor">
+      <path d="M4 3l10 5-10 5V3z"/>
+    </svg>
+    SIMULATE
+  `;
+
+  // Fade out canvas
+  canvas.style.transition = 'opacity 0.8s';
+  canvas.style.opacity = '0';
+  setTimeout(() => {
+    canvas.classList.remove('active');
+    canvas.style.opacity = '';
+    canvas.style.transition = '';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }, 900);
+
+  animOverlay.classList.remove('active');
+  animMsg.classList.remove('visible');
+}
+
+/* ── Init ── */
+selectZone('ca');
+renderTabs();
+</script>
+</body>
+</html>

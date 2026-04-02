@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashcards — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.15);
+  --radius: 12px;
+  --green: #4ade80;
+  --yellow: #facc15;
+  --orange: #fb923c;
+  --red: #f87171;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 36px 20px 80px;
+}
+
+/* Header */
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 40px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  text-decoration: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.back-btn:hover { color: var(--accent); border-color: rgba(34,211,238,0.3); }
+
+.header-info { flex: 1; }
+
+h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+h1 span { color: var(--accent); }
+
+.header-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+/* Nav tabs */
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 32px;
+  animation: fadeUp 0.5s ease 0.08s both;
+}
+
+.nav-tab {
+  flex: 1;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-3);
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  text-align: center;
+}
+.nav-tab:hover { color: var(--text-2); background: var(--surface-2); }
+.nav-tab.active { background: var(--surface-3); color: var(--text); }
+
+/* Views */
+.view { display: none; animation: fadeUp 0.35s ease both; }
+.view.active { display: block; }
+
+/* ─── DASHBOARD ─────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.stat-card:hover { border-color: rgba(34,211,238,0.2); }
+
+.stat-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dash-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+/* Bar chart */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 80px;
+}
+
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.bar-fill {
+  width: 100%;
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.15);
+  border-radius: 4px 4px 0 0;
+  min-height: 2px;
+  transition: height 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.bar-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(34,211,238,0.4) 0%, rgba(34,211,238,0.1) 100%);
+}
+
+.bar-fill.has-data {
+  background: rgba(34,211,238,0.15);
+  border-color: rgba(34,211,238,0.3);
+}
+
+.bar-day {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+
+/* Deck list in dashboard */
+.deck-overview {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.deck-overview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.deck-overview-row:last-child { border-bottom: none; }
+.deck-overview-row:hover { background: var(--surface-2); }
+
+.deck-overview-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.deck-overview-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.deck-chip {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  color: var(--text-2);
+}
+.deck-chip.due {
+  background: rgba(34,211,238,0.1);
+  color: var(--accent);
+  border: 1px solid rgba(34,211,238,0.2);
+}
+
+.empty-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+}
+
+/* ─── STUDY MODE ─────────────────────────────────── */
+.study-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 12px;
+}
+
+.deck-selector-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.deck-select {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 12px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2371717a' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+.deck-select:focus { border-color: rgba(34,211,238,0.4); }
+.deck-select option { background: var(--surface-2); }
+
+.study-progress-bar {
+  height: 3px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  margin-bottom: 28px;
+  overflow: hidden;
+}
+
+.study-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 8px rgba(34,211,238,0.4);
+}
+
+.study-counter {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  text-align: center;
+  margin-bottom: 20px;
+  letter-spacing: 0.05em;
+}
+
+/* 3D flip card */
+.card-scene {
+  perspective: 1000px;
+  margin-bottom: 24px;
+}
+
+.card-3d {
+  width: 100%;
+  min-height: 280px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.card-3d.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.card-face:hover { border-color: rgba(34,211,238,0.2); }
+
+.card-face.back {
+  transform: rotateY(180deg);
+  background: var(--surface-2);
+}
+
+.card-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.card-text {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text);
+  max-width: 520px;
+}
+
+.card-text em { font-style: italic; color: var(--text-2); }
+.card-text strong { font-weight: 800; color: var(--accent); }
+
+.card-hint {
+  position: absolute;
+  bottom: 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.card-next-review {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 14px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.card-next-review.visible { opacity: 1; }
+
+/* Rating buttons */
+.rating-btns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.rating-btns.visible {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0);
+}
+
+.rating-btn {
+  padding: 12px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rating-btn:active { transform: scale(0.95); }
+
+.rating-btn .rating-key {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.rating-btn.again { border-color: rgba(248,113,113,0.3); }
+.rating-btn.again:hover { background: rgba(248,113,113,0.1); color: var(--red); border-color: var(--red); }
+
+.rating-btn.hard { border-color: rgba(251,146,60,0.3); }
+.rating-btn.hard:hover { background: rgba(251,146,60,0.1); color: var(--orange); border-color: var(--orange); }
+
+.rating-btn.good { border-color: rgba(250,204,21,0.3); }
+.rating-btn.good:hover { background: rgba(250,204,21,0.1); color: var(--yellow); border-color: var(--yellow); }
+
+.rating-btn.easy { border-color: rgba(74,222,128,0.3); }
+.rating-btn.easy:hover { background: rgba(74,222,128,0.1); color: var(--green); border-color: var(--green); }
+
+.rating-interval {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text-3);
+}
+
+/* Study done state */
+.study-done {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  gap: 16px;
+}
+
+.study-done.visible { display: flex; }
+
+.done-icon {
+  width: 64px;
+  height: 64px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--accent);
+  box-shadow: 0 0 24px rgba(34,211,238,0.2);
+  margin-bottom: 8px;
+}
+
+.done-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.done-title span { color: var(--accent); }
+
+.done-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+/* Quick add panel */
+.quick-add {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0;
+  overflow: hidden;
+  margin-bottom: 16px;
+  max-height: 0;
+  transition: max-height 0.3s ease, border-color 0.2s;
+}
+
+.quick-add.open {
+  max-height: 260px;
+  border-color: rgba(34,211,238,0.2);
+}
+
+.quick-add-inner {
+  padding: 16px;
+}
+
+.quick-add-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+textarea, input[type="text"] {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: none;
+}
+textarea:focus, input[type="text"]:focus { border-color: rgba(34,211,238,0.4); }
+textarea::placeholder, input[type="text"]::placeholder { color: var(--text-3); }
+
+textarea { min-height: 72px; }
+
+/* ─── DECKS VIEW ──────────────────────────────────── */
+.decks-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.decks-toolbar input {
+  flex: 1;
+}
+
+.deck-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.deck-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: border-color 0.2s;
+}
+.deck-card:hover { border-color: rgba(34,211,238,0.2); }
+
+.deck-card-info { flex: 1; }
+
+.deck-card-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.deck-card-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  display: flex;
+  gap: 12px;
+}
+
+.deck-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ─── CARDS EDITOR ────────────────────────────────── */
+.editor-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.editor-deck-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-deck-label span {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(34,211,238,0.2);
+}
+
+.cards-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.cards-table-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto auto;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.card-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto auto;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: start;
+  transition: background 0.15s;
+}
+.card-row:last-child { border-bottom: none; }
+.card-row:hover { background: var(--surface-2); }
+
+.card-row-text {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.4;
+  word-break: break-word;
+}
+.card-row-text strong { color: var(--accent); font-weight: 700; }
+.card-row-text em { color: var(--text-2); font-style: italic; }
+
+.card-row-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Add card form */
+.add-card-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.add-card-form.editing {
+  border-color: rgba(34,211,238,0.3);
+}
+
+.form-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 14px;
+  font-family: 'DM Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+}
+
+/* Buttons */
+.btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Syne', sans-serif;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, transform 0.1s, background 0.15s, color 0.15s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg);
+}
+.btn-primary:hover { opacity: 0.88; }
+
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { color: var(--text); border-color: var(--text-3); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-3);
+  border: 1px solid transparent;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--border); }
+
+.btn-danger {
+  background: transparent;
+  color: var(--red);
+  border: 1px solid rgba(248,113,113,0.3);
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.btn-danger:hover { background: rgba(248,113,113,0.1); }
+
+.btn-icon {
+  padding: 6px 8px;
+  font-size: 14px;
+  background: var(--surface-2);
+  color: var(--text-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-icon:hover { color: var(--accent); border-color: rgba(34,211,238,0.3); }
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+/* Import/export */
+.io-btns {
+  display: flex;
+  gap: 8px;
+}
+
+/* Keyboard shortcut hint bar */
+.kbd-bar {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-top: 16px;
+}
+
+.kbd-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-2);
+  padding: 2px 5px;
+  min-width: 22px;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+  z-index: 100;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 440px;
+  transform: translateY(16px) scale(0.97);
+  transition: transform 0.2s;
+}
+.modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+
+.modal-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.modal-input {
+  margin-bottom: 16px;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 24px 0;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .dash-row { grid-template-columns: 1fr; }
+  .rating-btns { grid-template-columns: repeat(2, 1fr); }
+  .cards-table-header,
+  .card-row { grid-template-columns: 1fr 1fr auto; }
+  .cards-table-header .col-due,
+  .card-row .col-due { display: none; }
+}
+
+/* ─── no-due state ─── */
+.no-due {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+}
+.no-due .no-due-icon { font-size: 40px; margin-bottom: 16px; }
+.no-due .no-due-title { font-size: 16px; color: var(--text-2); margin-bottom: 8px; }
+.no-due .no-due-sub { font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <a href="./index.html" class="back-btn">&#8592; Home</a>
+    <div class="header-info">
+      <h1>Flash<span>cards</span></h1>
+      <div class="header-sub">spaced repetition memorization</div>
+    </div>
+    <div class="io-btns">
+      <button class="btn btn-secondary" onclick="exportDecks()" title="Export all decks as JSON">Export</button>
+      <label class="btn btn-secondary" style="cursor:pointer" title="Import decks from JSON">
+        Import
+        <input type="file" accept=".json" style="display:none" onchange="importDecks(event)">
+      </label>
+    </div>
+  </header>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchView('dashboard')">Dashboard</button>
+    <button class="nav-tab" onclick="switchView('study')">Study</button>
+    <button class="nav-tab" onclick="switchView('decks')">Decks</button>
+    <button class="nav-tab" onclick="switchView('editor')">Cards</button>
+  </div>
+
+  <!-- ─── DASHBOARD ─────────────────────────────── -->
+  <div class="view active" id="view-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val" id="stat-due">0</div>
+        <div class="stat-label">Due Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-retention">0%</div>
+        <div class="stat-label">Retention</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-streak">0</div>
+        <div class="stat-label">Day Streak</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-total">0</div>
+        <div class="stat-label">Total Cards</div>
+      </div>
+    </div>
+
+    <div class="dash-row">
+      <div class="panel">
+        <div class="panel-title">7-day study history</div>
+        <div class="bar-chart" id="barChart"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Quick actions</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn-primary" style="width:100%" onclick="switchView('study')">&#9654; Start Studying</button>
+          <button class="btn btn-secondary" style="width:100%" onclick="openNewDeckModal()">+ New Deck</button>
+          <button class="btn btn-secondary" style="width:100%" onclick="switchView('editor')">Edit Cards</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-title" style="margin-bottom:12px">Your Decks</div>
+    <div id="deckOverview"></div>
+  </div>
+
+  <!-- ─── STUDY MODE ────────────────────────────── -->
+  <div class="view" id="view-study">
+    <div class="study-header">
+      <div class="deck-selector-wrap">
+        <select class="deck-select" id="studyDeckSelect" onchange="loadStudyDeck()"></select>
+      </div>
+      <button class="btn btn-ghost" onclick="toggleQuickAdd()" id="quickAddToggle" title="Quick add card (Q)">+ Quick Add</button>
+    </div>
+
+    <div class="quick-add" id="quickAdd">
+      <div class="quick-add-inner">
+        <div class="quick-add-title">Quick Add Card</div>
+        <div class="field-row">
+          <textarea id="qaFront" placeholder="Front (question / term)&#10;*bold*, _italic_" rows="3"></textarea>
+          <textarea id="qaBack" placeholder="Back (answer / definition)&#10;*bold*, _italic_" rows="3"></textarea>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="quickAddCard()">Add Card</button>
+          <button class="btn btn-secondary" onclick="toggleQuickAdd()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="studyArea">
+      <div class="study-progress-bar"><div class="study-progress-fill" id="studyProgressFill"></div></div>
+      <div class="study-counter" id="studyCounter">0 / 0 cards</div>
+
+      <div class="card-scene" onclick="flipCard()">
+        <div class="card-3d" id="card3d">
+          <div class="card-face front" id="cardFront">
+            <div class="card-label">Front</div>
+            <div class="card-text" id="cardFrontText">Select a deck to start</div>
+            <div class="card-hint">Press Space or tap to flip</div>
+          </div>
+          <div class="card-face back" id="cardBack">
+            <div class="card-label">Back</div>
+            <div class="card-text" id="cardBackText"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-next-review" id="cardNextReview"></div>
+
+      <div class="rating-btns" id="ratingBtns">
+        <button class="rating-btn again" onclick="rateCard(0)">
+          <span>Again</span>
+          <span class="rating-key"><kbd>1</kbd></span>
+          <span class="rating-interval" id="int-again">&lt; 1m</span>
+        </button>
+        <button class="rating-btn hard" onclick="rateCard(1)">
+          <span>Hard</span>
+          <span class="rating-key"><kbd>2</kbd></span>
+          <span class="rating-interval" id="int-hard"></span>
+        </button>
+        <button class="rating-btn good" onclick="rateCard(2)">
+          <span>Good</span>
+          <span class="rating-key"><kbd>3</kbd></span>
+          <span class="rating-interval" id="int-good"></span>
+        </button>
+        <button class="rating-btn easy" onclick="rateCard(3)">
+          <span>Easy</span>
+          <span class="rating-key"><kbd>4</kbd></span>
+          <span class="rating-interval" id="int-easy"></span>
+        </button>
+      </div>
+
+      <div class="study-done" id="studyDone">
+        <div class="done-icon">&#10003;</div>
+        <div class="done-title">All <span>done!</span></div>
+        <div class="done-sub" id="doneSub">No more cards due for today.</div>
+        <button class="btn btn-primary" onclick="resetStudySession()" style="margin-top:8px">Review All Cards</button>
+      </div>
+    </div>
+
+    <div class="kbd-bar">
+      <div class="kbd-hint"><kbd>Space</kbd> flip card</div>
+      <div class="kbd-hint"><kbd>1</kbd> Again</div>
+      <div class="kbd-hint"><kbd>2</kbd> Hard</div>
+      <div class="kbd-hint"><kbd>3</kbd> Good</div>
+      <div class="kbd-hint"><kbd>4</kbd> Easy</div>
+      <div class="kbd-hint"><kbd>Q</kbd> quick add</div>
+    </div>
+  </div>
+
+  <!-- ─── DECKS VIEW ─────────────────────────────── -->
+  <div class="view" id="view-decks">
+    <div class="decks-toolbar">
+      <input type="text" id="newDeckInput" placeholder="New deck name..." style="flex:1">
+      <button class="btn btn-primary" onclick="createDeck()">+ Create Deck</button>
+    </div>
+    <div class="deck-list" id="deckList"></div>
+  </div>
+
+  <!-- ─── CARDS EDITOR ──────────────────────────── -->
+  <div class="view" id="view-editor">
+    <div class="editor-toolbar">
+      <div class="editor-deck-label">
+        Editing:
+        <select class="deck-select" id="editorDeckSelect" onchange="loadEditorDeck()" style="flex:none;width:auto"></select>
+      </div>
+      <button class="btn btn-primary" onclick="showAddCardForm()">+ Add Card</button>
+    </div>
+
+    <div class="add-card-form" id="addCardForm" style="display:none">
+      <div class="form-title" id="formTitle">New Card</div>
+      <div class="field-row">
+        <div>
+          <div class="modal-label">Front (question / term)</div>
+          <textarea id="editFront" placeholder="Supports *bold* and _italic_" rows="4"></textarea>
+        </div>
+        <div>
+          <div class="modal-label">Back (answer / definition)</div>
+          <textarea id="editBack" placeholder="Supports *bold* and _italic_" rows="4"></textarea>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="saveCardBtn" onclick="saveCard()">Save Card</button>
+        <button class="btn btn-secondary" onclick="cancelCardEdit()">Cancel</button>
+      </div>
+    </div>
+
+    <div class="cards-table" id="cardsTable">
+      <div class="cards-table-header">
+        <span>Front</span>
+        <span>Back</span>
+        <span class="col-due">Due</span>
+        <span>Actions</span>
+      </div>
+      <div id="cardsList"></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- New Deck Modal -->
+<div class="modal-overlay" id="newDeckModal">
+  <div class="modal">
+    <div class="modal-title">Create New Deck</div>
+    <div class="modal-input">
+      <label class="modal-label">Deck Name</label>
+      <input type="text" id="modalDeckName" placeholder="e.g. JavaScript, Spanish Vocab...">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="confirmNewDeck()">Create</button>
+      <button class="btn btn-secondary" onclick="closeModal('newDeckModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename Deck Modal -->
+<div class="modal-overlay" id="renameDeckModal">
+  <div class="modal">
+    <div class="modal-title">Rename Deck</div>
+    <div class="modal-input">
+      <label class="modal-label">New Name</label>
+      <input type="text" id="modalRenameName" placeholder="Deck name">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="confirmRenameDeck()">Rename</button>
+      <button class="btn btn-secondary" onclick="closeModal('renameDeckModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+//  DATA LAYER
+// ─────────────────────────────────────────────────────────
+
+const STORAGE_KEY = 'utile_flashcards_v2';
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// ─────────────────────────────────────────────────────────
+//  SM-2 ALGORITHM
+// ─────────────────────────────────────────────────────────
+
+// quality: 0=Again, 1=Hard, 2=Good, 3=Easy  →  mapped to SM-2 q: 0,3,4,5
+const Q_MAP = [0, 3, 4, 5];
+
+function sm2(card, quality) {
+  const q = Q_MAP[quality]; // 0..5
+  let { interval, easeFactor, repetitions } = card;
+
+  if (q < 3) {
+    // Failed — reset
+    repetitions = 0;
+    interval = 1;
+  } else {
+    if (repetitions === 0) {
+      interval = 1;
+    } else if (repetitions === 1) {
+      interval = 6;
+    } else {
+      interval = Math.round(interval * easeFactor);
+    }
+    repetitions += 1;
+    easeFactor = Math.max(1.3, easeFactor + 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
+  }
+
+  const now = Date.now();
+  const dueDate = now + interval * 86400000;
+
+  return { interval, easeFactor, repetitions, dueDate, lastReview: now };
+}
+
+function previewIntervals(card) {
+  return [0, 1, 2, 3].map(q => sm2({ ...card }, q).interval);
+}
+
+function fmtInterval(days) {
+  if (days < 1) return '< 1d';
+  if (days === 1) return '1 day';
+  if (days < 30) return days + 'd';
+  if (days < 365) return Math.round(days / 30) + 'mo';
+  return (days / 365).toFixed(1) + 'yr';
+}
+
+function isDue(card) {
+  return !card.dueDate || card.dueDate <= Date.now();
+}
+
+// ─────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────
+
+let state = {
+  decks: [],        // [{ id, name, createdAt }]
+  cards: [],        // [{ id, deckId, front, back, interval, easeFactor, repetitions, dueDate, lastReview }]
+  history: [],      // [{ date: 'YYYY-MM-DD', reviewed: N, correct: N }]
+  streak: 0,
+  lastStudyDate: null
+};
+
+const stored = loadData();
+if (stored) {
+  state = { ...state, ...stored };
+} else {
+  initStarterDeck();
+}
+
+function initStarterDeck() {
+  const deckId = uid();
+  state.decks.push({ id: deckId, name: 'CS Fundamentals', createdAt: Date.now() });
+
+  const starterCards = [
+    ['Big O Notation', 'A mathematical notation describing the limiting behavior of a function — used to classify algorithms by how their run time or space requirements grow as input size grows.'],
+    ['O(1) — Constant Time', 'Execution time does not change regardless of input size. Example: array index access.'],
+    ['O(n) — Linear Time', 'Execution time grows linearly with input size. Example: a single for-loop over n elements.'],
+    ['O(n²) — Quadratic Time', 'Execution time grows proportional to the square of input size. Example: nested loops.'],
+    ['O(log n) — Logarithmic Time', 'Execution time grows logarithmically. Example: binary search — each step halves the search space.'],
+    ['Hash Map', 'A data structure that maps keys to values using a hash function. Average O(1) lookup, insertion, and deletion.'],
+    ['Stack', 'LIFO (Last In, First Out) data structure. Operations: push (add to top) and pop (remove from top).'],
+    ['Queue', 'FIFO (First In, First Out) data structure. Operations: enqueue (add to back) and dequeue (remove from front).'],
+    ['Binary Search Tree (BST)', 'A tree where each node has at most two children. Left child < parent < right child. O(log n) search on balanced BST.'],
+    ['Recursion', 'A function that calls itself to solve a smaller sub-problem. Requires a base case to stop, and a recursive case to reduce the problem.'],
+    ['Closure', 'A function that retains access to its lexical scope (outer variables) even after the outer function has returned.'],
+    ['Memoization', 'An optimization technique that stores results of expensive function calls and returns the cached result when the same inputs occur again.'],
+    ['REST', 'REpresentational State Transfer — an architectural style for distributed hypermedia systems. Uses HTTP verbs: GET, POST, PUT, DELETE, PATCH.'],
+    ['TCP vs UDP', '*TCP*: connection-oriented, reliable, ordered delivery. *UDP*: connectionless, faster, no delivery guarantee. Use TCP for accuracy, UDP for speed.'],
+    ['DNS', 'Domain Name System — translates human-readable domain names (e.g. google.com) to IP addresses. Often called the "phonebook of the internet."'],
+    ['Idempotent', 'An operation that produces the same result when applied multiple times. GET, PUT, DELETE are idempotent. POST generally is not.'],
+    ['Immutability', 'An object whose state cannot be modified after creation. Immutable values avoid shared-state bugs and are safe to use across threads.'],
+    ['Polymorphism', 'The ability of different objects to respond to the same interface or method call. Enables one interface for many data types.'],
+    ['ACID (Database)', '*Atomicity* (all-or-nothing), *Consistency* (valid state), *Isolation* (concurrent transactions don\'t interfere), *Durability* (committed data persists).'],
+    ['CAP Theorem', 'A distributed system can guarantee at most two of three: *Consistency*, *Availability*, *Partition Tolerance*. Must trade-off during network failure.'],
+  ];
+
+  starterCards.forEach(([front, back]) => {
+    state.cards.push({
+      id: uid(),
+      deckId,
+      front,
+      back,
+      interval: 1,
+      easeFactor: 2.5,
+      repetitions: 0,
+      dueDate: null,
+      lastReview: null
+    });
+  });
+
+  saveData();
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// ─────────────────────────────────────────────────────────
+//  VIEWS
+// ─────────────────────────────────────────────────────────
+
+let currentView = 'dashboard';
+
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach((t, i) => {
+    const names = ['dashboard', 'study', 'decks', 'editor'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.getElementById('view-' + name).classList.add('active');
+  currentView = name;
+
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'study') renderStudy();
+  if (name === 'decks') renderDecks();
+  if (name === 'editor') renderEditor();
+}
+
+// ─────────────────────────────────────────────────────────
+//  MARKDOWN-LITE
+// ─────────────────────────────────────────────────────────
+
+function renderMd(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>')
+    .replace(/_(.+?)_/g, '<em>$1</em>');
+}
+
+// ─────────────────────────────────────────────────────────
+//  DASHBOARD
+// ─────────────────────────────────────────────────────────
+
+function renderDashboard() {
+  const today = todayStr();
+  const dueCount = state.cards.filter(isDue).length;
+  document.getElementById('stat-due').textContent = dueCount;
+  document.getElementById('stat-total').textContent = state.cards.length;
+  document.getElementById('stat-streak').textContent = computeStreak();
+
+  // Retention rate: % correct in last 7 days
+  const cutoff = Date.now() - 7 * 86400000;
+  const recentHistory = state.history.filter(h => h.date >= dateStr(new Date(cutoff)));
+  const totalReviewed = recentHistory.reduce((s, h) => s + h.reviewed, 0);
+  const totalCorrect = recentHistory.reduce((s, h) => s + h.correct, 0);
+  const retention = totalReviewed > 0 ? Math.round(totalCorrect / totalReviewed * 100) : 0;
+  document.getElementById('stat-retention').textContent = retention + '%';
+
+  // Bar chart — last 7 days
+  const chart = document.getElementById('barChart');
+  chart.innerHTML = '';
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const last7 = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    const ds = dateStr(d);
+    const entry = state.history.find(h => h.date === ds);
+    last7.push({ day: days[d.getDay()], count: entry ? entry.reviewed : 0 });
+  }
+  const maxCount = Math.max(...last7.map(d => d.count), 1);
+  last7.forEach(({ day, count }) => {
+    const col = document.createElement('div');
+    col.className = 'bar-col';
+    const pct = Math.max(count / maxCount * 100, count > 0 ? 4 : 1);
+    col.innerHTML = `
+      <div class="bar-fill${count > 0 ? ' has-data' : ''}" style="height:${pct}%"></div>
+      <div class="bar-day">${day}</div>
+    `;
+    chart.appendChild(col);
+  });
+
+  // Deck overview
+  const container = document.getElementById('deckOverview');
+  if (state.decks.length === 0) {
+    container.innerHTML = `<div class="deck-overview"><div class="empty-state">No decks yet — create one in the Decks tab.</div></div>`;
+    return;
+  }
+  const rows = state.decks.map(deck => {
+    const deckCards = state.cards.filter(c => c.deckId === deck.id);
+    const due = deckCards.filter(isDue).length;
+    return `
+      <div class="deck-overview-row" onclick="goStudyDeck('${deck.id}')">
+        <div class="deck-overview-name">${escHtml(deck.name)}</div>
+        <div class="deck-overview-stats">
+          <span class="deck-chip">${deckCards.length} cards</span>
+          ${due > 0 ? `<span class="deck-chip due">${due} due</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  container.innerHTML = `<div class="deck-overview">${rows}</div>`;
+}
+
+function goStudyDeck(deckId) {
+  switchView('study');
+  const sel = document.getElementById('studyDeckSelect');
+  sel.value = deckId;
+  loadStudyDeck();
+}
+
+// ─────────────────────────────────────────────────────────
+//  STUDY MODE
+// ─────────────────────────────────────────────────────────
+
+let studyQueue = [];
+let studyIndex = 0;
+let studyFlipped = false;
+let studySessionReviewed = 0;
+let studySessionCorrect = 0;
+let currentStudyDeckId = null;
+let reviewingAll = false;
+
+function renderStudy() {
+  populateDeckSelect('studyDeckSelect');
+  const sel = document.getElementById('studyDeckSelect');
+  if (currentStudyDeckId && sel.querySelector(`option[value="${currentStudyDeckId}"]`)) {
+    sel.value = currentStudyDeckId;
+  }
+  loadStudyDeck();
+}
+
+function loadStudyDeck() {
+  const sel = document.getElementById('studyDeckSelect');
+  currentStudyDeckId = sel.value;
+  reviewingAll = false;
+
+  if (!currentStudyDeckId) {
+    setStudyDoneVisible(false);
+    document.getElementById('studyArea').style.display = 'block';
+    document.getElementById('cardFrontText').innerHTML = 'Select a deck above';
+    document.getElementById('studyCounter').textContent = '';
+    return;
+  }
+
+  const dueCards = state.cards.filter(c => c.deckId === currentStudyDeckId && isDue(c));
+  studyQueue = shuffle(dueCards);
+  studyIndex = 0;
+  studyFlipped = false;
+  studySessionReviewed = 0;
+  studySessionCorrect = 0;
+
+  if (studyQueue.length === 0) {
+    showStudyDone(false);
+  } else {
+    setStudyDoneVisible(false);
+    showCard();
+  }
+}
+
+function resetStudySession() {
+  reviewingAll = true;
+  const allCards = state.cards.filter(c => c.deckId === currentStudyDeckId);
+  studyQueue = shuffle(allCards);
+  studyIndex = 0;
+  studyFlipped = false;
+  studySessionReviewed = 0;
+  studySessionCorrect = 0;
+  setStudyDoneVisible(false);
+  showCard();
+}
+
+function showCard() {
+  if (studyIndex >= studyQueue.length) {
+    showStudyDone(true);
+    return;
+  }
+  const card = studyQueue[studyIndex];
+  studyFlipped = false;
+
+  const card3d = document.getElementById('card3d');
+  card3d.classList.remove('flipped');
+
+  document.getElementById('cardFrontText').innerHTML = renderMd(card.front);
+  document.getElementById('cardBackText').innerHTML = renderMd(card.back);
+
+  const ratingBtns = document.getElementById('ratingBtns');
+  ratingBtns.classList.remove('visible');
+  document.getElementById('cardNextReview').classList.remove('visible');
+
+  // Update interval previews
+  const intervals = previewIntervals(card);
+  document.getElementById('int-again').textContent = fmtInterval(intervals[0]);
+  document.getElementById('int-hard').textContent = fmtInterval(intervals[1]);
+  document.getElementById('int-good').textContent = fmtInterval(intervals[2]);
+  document.getElementById('int-easy').textContent = fmtInterval(intervals[3]);
+
+  const total = studyQueue.length;
+  const progress = total > 0 ? (studyIndex / total) * 100 : 0;
+  document.getElementById('studyProgressFill').style.width = progress + '%';
+  document.getElementById('studyCounter').textContent = `${studyIndex + 1} / ${total} cards`;
+}
+
+function flipCard() {
+  if (studyIndex >= studyQueue.length) return;
+  if (studyFlipped) return;
+  studyFlipped = true;
+
+  document.getElementById('card3d').classList.add('flipped');
+
+  setTimeout(() => {
+    document.getElementById('ratingBtns').classList.add('visible');
+  }, 280);
+}
+
+function rateCard(quality) {
+  if (!studyFlipped) return;
+  if (studyIndex >= studyQueue.length) return;
+
+  const card = studyQueue[studyIndex];
+  const updated = sm2(card, quality);
+  const cardIdx = state.cards.findIndex(c => c.id === card.id);
+  if (cardIdx >= 0) {
+    Object.assign(state.cards[cardIdx], updated);
+  }
+
+  studySessionReviewed++;
+  if (quality >= 2) studySessionCorrect++;
+
+  recordHistory(quality >= 2);
+  saveData();
+
+  studyIndex++;
+  showCard();
+}
+
+function recordHistory(correct) {
+  const today = todayStr();
+  let entry = state.history.find(h => h.date === today);
+  if (!entry) {
+    entry = { date: today, reviewed: 0, correct: 0 };
+    state.history.push(entry);
+    // Trim old history
+    state.history = state.history.slice(-90);
+  }
+  entry.reviewed++;
+  if (correct) entry.correct++;
+
+  // Update streak
+  const yesterday = dateStr(new Date(Date.now() - 86400000));
+  if (state.lastStudyDate === yesterday || state.lastStudyDate === today) {
+    if (state.lastStudyDate !== today) state.streak = (state.streak || 0) + 1;
+  } else {
+    state.streak = 1;
+  }
+  state.lastStudyDate = today;
+}
+
+function showStudyDone(completed) {
+  setStudyDoneVisible(true);
+  const sub = completed
+    ? `Session complete! Reviewed ${studySessionReviewed} cards.`
+    : 'No cards are due right now. Great job keeping up!';
+  document.getElementById('doneSub').textContent = sub;
+  document.getElementById('studyProgressFill').style.width = '100%';
+  document.getElementById('studyCounter').textContent = '';
+  document.getElementById('ratingBtns').classList.remove('visible');
+}
+
+function setStudyDoneVisible(vis) {
+  const done = document.getElementById('studyDone');
+  const card = document.getElementById('card3d').parentElement;
+  const counter = document.getElementById('studyCounter');
+  const bar = document.querySelector('.study-progress-bar');
+
+  done.classList.toggle('visible', vis);
+  card.style.display = vis ? 'none' : '';
+  counter.style.display = vis ? 'none' : '';
+  bar.style.display = vis ? 'none' : '';
+}
+
+function toggleQuickAdd() {
+  const panel = document.getElementById('quickAdd');
+  const isOpen = panel.classList.contains('open');
+  panel.classList.toggle('open', !isOpen);
+  if (!isOpen) {
+    setTimeout(() => document.getElementById('qaFront').focus(), 310);
+  }
+}
+
+function quickAddCard() {
+  const front = document.getElementById('qaFront').value.trim();
+  const back = document.getElementById('qaBack').value.trim();
+  if (!front || !back) { showToast('Both front and back are required.'); return; }
+  if (!currentStudyDeckId) { showToast('Please select a deck first.'); return; }
+
+  state.cards.push({
+    id: uid(),
+    deckId: currentStudyDeckId,
+    front, back,
+    interval: 1,
+    easeFactor: 2.5,
+    repetitions: 0,
+    dueDate: null,
+    lastReview: null
+  });
+  saveData();
+
+  document.getElementById('qaFront').value = '';
+  document.getElementById('qaBack').value = '';
+  toggleQuickAdd();
+  showToast('Card added!');
+}
+
+// ─────────────────────────────────────────────────────────
+//  DECKS VIEW
+// ─────────────────────────────────────────────────────────
+
+function renderDecks() {
+  const list = document.getElementById('deckList');
+  if (state.decks.length === 0) {
+    list.innerHTML = `<div class="panel"><div class="empty-state">No decks yet. Create one above.</div></div>`;
+    return;
+  }
+  list.innerHTML = state.decks.map(deck => {
+    const cards = state.cards.filter(c => c.deckId === deck.id);
+    const due = cards.filter(isDue).length;
+    return `
+      <div class="deck-card">
+        <div class="deck-card-info">
+          <div class="deck-card-name">${escHtml(deck.name)}</div>
+          <div class="deck-card-meta">
+            <span>${cards.length} cards</span>
+            <span>${due} due</span>
+            <span>Created ${fmtDate(deck.createdAt)}</span>
+          </div>
+        </div>
+        <div class="deck-card-actions">
+          <button class="btn btn-ghost" onclick="openRenameDeck('${deck.id}')">Rename</button>
+          <button class="btn btn-ghost" onclick="goStudyDeck('${deck.id}')">Study</button>
+          <button class="btn btn-danger" onclick="deleteDeck('${deck.id}')">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function createDeck() {
+  const input = document.getElementById('newDeckInput');
+  const name = input.value.trim();
+  if (!name) { showToast('Enter a deck name.'); return; }
+  if (state.decks.find(d => d.name.toLowerCase() === name.toLowerCase())) {
+    showToast('A deck with that name already exists.');
+    return;
+  }
+  state.decks.push({ id: uid(), name, createdAt: Date.now() });
+  saveData();
+  input.value = '';
+  renderDecks();
+  showToast('Deck created!');
+}
+
+let renamingDeckId = null;
+
+function openRenameDeck(deckId) {
+  renamingDeckId = deckId;
+  const deck = state.decks.find(d => d.id === deckId);
+  document.getElementById('modalRenameName').value = deck ? deck.name : '';
+  openModal('renameDeckModal');
+  setTimeout(() => document.getElementById('modalRenameName').focus(), 100);
+}
+
+function confirmRenameDeck() {
+  const name = document.getElementById('modalRenameName').value.trim();
+  if (!name) return;
+  const deck = state.decks.find(d => d.id === renamingDeckId);
+  if (deck) { deck.name = name; saveData(); renderDecks(); showToast('Deck renamed.'); }
+  closeModal('renameDeckModal');
+}
+
+function deleteDeck(deckId) {
+  const deck = state.decks.find(d => d.id === deckId);
+  if (!deck) return;
+  const cardCount = state.cards.filter(c => c.deckId === deckId).length;
+  const msg = cardCount > 0
+    ? `Delete "${deck.name}" and all ${cardCount} cards?`
+    : `Delete deck "${deck.name}"?`;
+  if (!confirm(msg)) return;
+  state.decks = state.decks.filter(d => d.id !== deckId);
+  state.cards = state.cards.filter(c => c.deckId !== deckId);
+  saveData();
+  renderDecks();
+  showToast('Deck deleted.');
+}
+
+// ─────────────────────────────────────────────────────────
+//  EDITOR
+// ─────────────────────────────────────────────────────────
+
+let editingCardId = null;
+
+function renderEditor() {
+  populateDeckSelect('editorDeckSelect');
+  loadEditorDeck();
+}
+
+function loadEditorDeck() {
+  const deckId = document.getElementById('editorDeckSelect').value;
+  const cards = state.cards.filter(c => c.deckId === deckId);
+  const list = document.getElementById('cardsList');
+
+  if (!deckId) {
+    list.innerHTML = `<div class="empty-state">Select a deck above to edit its cards.</div>`;
+    return;
+  }
+
+  if (cards.length === 0) {
+    list.innerHTML = `<div class="empty-state">No cards in this deck. Add one above.</div>`;
+    return;
+  }
+
+  list.innerHTML = cards.map(card => {
+    const dueLabel = card.dueDate
+      ? (isDue(card) ? 'Due now' : 'Due ' + fmtDate(card.dueDate))
+      : 'New';
+    return `
+      <div class="card-row">
+        <div class="card-row-text">${renderMd(card.front)}</div>
+        <div class="card-row-text">${renderMd(card.back)}</div>
+        <div class="card-row-text col-due" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-3)">${dueLabel}</div>
+        <div class="card-row-actions">
+          <button class="btn-icon" onclick="editCard('${card.id}')" title="Edit">&#9998;</button>
+          <button class="btn-icon" onclick="deleteCard('${card.id}')" title="Delete" style="color:var(--red)">&#10005;</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function showAddCardForm() {
+  editingCardId = null;
+  document.getElementById('formTitle').textContent = 'New Card';
+  document.getElementById('saveCardBtn').textContent = 'Add Card';
+  document.getElementById('editFront').value = '';
+  document.getElementById('editBack').value = '';
+  const form = document.getElementById('addCardForm');
+  form.style.display = 'block';
+  form.classList.remove('editing');
+  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('editFront').focus();
+}
+
+function editCard(cardId) {
+  const card = state.cards.find(c => c.id === cardId);
+  if (!card) return;
+  editingCardId = cardId;
+  document.getElementById('formTitle').textContent = 'Edit Card';
+  document.getElementById('saveCardBtn').textContent = 'Update Card';
+  document.getElementById('editFront').value = card.front;
+  document.getElementById('editBack').value = card.back;
+  const form = document.getElementById('addCardForm');
+  form.style.display = 'block';
+  form.classList.add('editing');
+  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('editFront').focus();
+}
+
+function saveCard() {
+  const front = document.getElementById('editFront').value.trim();
+  const back = document.getElementById('editBack').value.trim();
+  if (!front || !back) { showToast('Both front and back are required.'); return; }
+
+  const deckId = document.getElementById('editorDeckSelect').value;
+  if (!deckId) { showToast('Select a deck first.'); return; }
+
+  if (editingCardId) {
+    const card = state.cards.find(c => c.id === editingCardId);
+    if (card) { card.front = front; card.back = back; }
+    showToast('Card updated.');
+  } else {
+    state.cards.push({
+      id: uid(),
+      deckId,
+      front, back,
+      interval: 1,
+      easeFactor: 2.5,
+      repetitions: 0,
+      dueDate: null,
+      lastReview: null
+    });
+    showToast('Card added.');
+  }
+
+  saveData();
+  cancelCardEdit();
+  loadEditorDeck();
+}
+
+function cancelCardEdit() {
+  editingCardId = null;
+  const form = document.getElementById('addCardForm');
+  form.style.display = 'none';
+  form.classList.remove('editing');
+}
+
+function deleteCard(cardId) {
+  if (!confirm('Delete this card?')) return;
+  state.cards = state.cards.filter(c => c.id !== cardId);
+  saveData();
+  loadEditorDeck();
+  showToast('Card deleted.');
+}
+
+// ─────────────────────────────────────────────────────────
+//  DECK SELECT HELPERS
+// ─────────────────────────────────────────────────────────
+
+function populateDeckSelect(elId) {
+  const sel = document.getElementById(elId);
+  const prev = sel.value;
+  sel.innerHTML = '';
+  if (state.decks.length === 0) {
+    sel.innerHTML = '<option value="">No decks — create one in Decks tab</option>';
+    return;
+  }
+  state.decks.forEach(deck => {
+    const opt = document.createElement('option');
+    opt.value = deck.id;
+    opt.textContent = deck.name;
+    sel.appendChild(opt);
+  });
+  if (prev && sel.querySelector(`option[value="${prev}"]`)) sel.value = prev;
+}
+
+// ─────────────────────────────────────────────────────────
+//  IMPORT / EXPORT
+// ─────────────────────────────────────────────────────────
+
+function exportDecks() {
+  const data = JSON.stringify({ decks: state.decks, cards: state.cards }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'flashcards-export.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported!');
+}
+
+function importDecks(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.decks) || !Array.isArray(data.cards)) {
+        showToast('Invalid file format.'); return;
+      }
+      // Merge — avoid duplicates by id
+      const existingDeckIds = new Set(state.decks.map(d => d.id));
+      const existingCardIds = new Set(state.cards.map(c => c.id));
+      let addedDecks = 0, addedCards = 0;
+      data.decks.forEach(d => {
+        if (!existingDeckIds.has(d.id)) { state.decks.push(d); addedDecks++; }
+      });
+      data.cards.forEach(c => {
+        if (!existingCardIds.has(c.id)) { state.cards.push(c); addedCards++; }
+      });
+      saveData();
+      renderDashboard();
+      showToast(`Imported ${addedDecks} decks, ${addedCards} cards.`);
+    } catch(err) {
+      showToast('Failed to parse file.');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ─────────────────────────────────────────────────────────
+//  DECK MODAL
+// ─────────────────────────────────────────────────────────
+
+function openNewDeckModal() {
+  document.getElementById('modalDeckName').value = '';
+  openModal('newDeckModal');
+  setTimeout(() => document.getElementById('modalDeckName').focus(), 100);
+}
+
+function confirmNewDeck() {
+  const name = document.getElementById('modalDeckName').value.trim();
+  if (!name) return;
+  if (state.decks.find(d => d.name.toLowerCase() === name.toLowerCase())) {
+    showToast('A deck with that name already exists.');
+    return;
+  }
+  state.decks.push({ id: uid(), name, createdAt: Date.now() });
+  saveData();
+  closeModal('newDeckModal');
+  renderDashboard();
+  showToast('Deck created!');
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ─────────────────────────────────────────────────────────
+//  KEYBOARD SHORTCUTS
+// ─────────────────────────────────────────────────────────
+
+document.addEventListener('keydown', e => {
+  // Don't fire when typing in inputs
+  const tag = document.activeElement.tagName.toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+  if (currentView !== 'study') return;
+
+  if (e.code === 'Space') {
+    e.preventDefault();
+    flipCard();
+  } else if (e.key === '1') {
+    rateCard(0);
+  } else if (e.key === '2') {
+    rateCard(1);
+  } else if (e.key === '3') {
+    rateCard(2);
+  } else if (e.key === '4') {
+    rateCard(3);
+  } else if (e.key === 'q' || e.key === 'Q') {
+    toggleQuickAdd();
+  } else if (e.code === 'ArrowRight' || e.code === 'ArrowDown') {
+    if (studyFlipped) rateCard(2); // Good as default nav
+  }
+});
+
+// Modal: Enter to confirm
+document.getElementById('modalDeckName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmNewDeck();
+});
+document.getElementById('modalRenameName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmRenameDeck();
+});
+document.getElementById('newDeckInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') createDeck();
+});
+
+// ─────────────────────────────────────────────────────────
+//  UTILITIES
+// ─────────────────────────────────────────────────────────
+
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+function todayStr() { return dateStr(new Date()); }
+function dateStr(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+function fmtDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function computeStreak() {
+  if (!state.lastStudyDate) return 0;
+  const today = todayStr();
+  const yesterday = dateStr(new Date(Date.now() - 86400000));
+  if (state.lastStudyDate === today || state.lastStudyDate === yesterday) {
+    return state.streak || 1;
+  }
+  return 0;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ─────────────────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────────────────
+
+renderDashboard();
+</script>
+</body>
+</html>

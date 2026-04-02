@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Design Checklist — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.15);
+  --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --orange: #fb923c;
+  --purple: #a78bfa;
+  --radius: 14px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top Bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--accent); }
+.back-link svg { width:16px; height:16px; }
+
+.topbar-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.btn svg { width:14px; height:14px; }
+.btn-primary {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-primary:hover { background: rgba(34,211,238,0.18); }
+
+/* ── Main Layout ── */
+.main {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Left Panel ── */
+.panel-left {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 57px);
+  overflow: hidden;
+}
+
+.panel-section {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.endpoint-textarea {
+  width: 100%;
+  min-height: 180px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.endpoint-textarea:focus { border-color: var(--accent); }
+.endpoint-textarea::placeholder { color: var(--text-3); }
+
+.hint {
+  margin-top: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.6;
+}
+
+/* ── Score Ring ── */
+.score-block {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.score-ring-wrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.score-ring-wrap svg {
+  width: 80px;
+  height: 80px;
+  transform: rotate(-90deg);
+}
+
+.ring-bg { fill: none; stroke: var(--surface-3); stroke-width: 6; }
+.ring-fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 201;
+  stroke-dashoffset: 201;
+  transition: stroke-dashoffset 0.6s ease, stroke 0.3s;
+}
+
+.score-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+  font-family: 'DM Mono', monospace;
+}
+
+.score-meta { flex: 1; }
+.score-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.score-sublabel {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+.score-grade {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ── Analysis Results ── */
+.analysis-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.analysis-list::-webkit-scrollbar { width: 4px; }
+.analysis-list::-webkit-scrollbar-track { background: transparent; }
+.analysis-list::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 2px; }
+
+.analysis-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 10px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  text-align: center;
+}
+.analysis-empty svg { width:32px; height:32px; opacity:0.3; }
+
+.endpoint-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  transition: border-color 0.2s;
+}
+.endpoint-card.has-issues { border-left: 3px solid var(--red); }
+.endpoint-card.clean { border-left: 3px solid var(--green); }
+
+.endpoint-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.method-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+.method-GET    { background: rgba(74,222,128,0.15); color: var(--green); }
+.method-POST   { background: rgba(34,211,238,0.12); color: var(--accent); }
+.method-PUT    { background: rgba(251,191,36,0.15); color: var(--yellow); }
+.method-PATCH  { background: rgba(251,146,60,0.15); color: var(--orange); }
+.method-DELETE { background: rgba(248,113,113,0.15); color: var(--red); }
+.method-OTHER  { background: var(--surface-3); color: var(--text-3); }
+
+.endpoint-path {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.endpoint-desc {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-bottom: 8px;
+  font-family: 'DM Mono', monospace;
+}
+
+.issue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.issue-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.issue-item.error { color: var(--red); }
+.issue-item.warning { color: var(--yellow); }
+.issue-item.info { color: var(--accent); }
+.issue-item.ok { color: var(--green); }
+.issue-icon { flex-shrink: 0; margin-top: 1px; }
+
+.status-suggestion {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: var(--surface-3);
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.status-suggestion span {
+  color: var(--purple);
+  font-weight: 500;
+}
+
+/* ── Right Panel ── */
+.panel-right {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 57px);
+  overflow: hidden;
+}
+
+.checklist-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.checklist-tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  padding: 14px 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+  position: relative;
+}
+.tab:hover { color: var(--text-2); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  background: var(--surface-3);
+  color: var(--text-3);
+  font-size: 10px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  padding: 0 5px;
+}
+.tab.active .tab-badge { background: var(--accent-dim); color: var(--accent); }
+
+/* ── Checklist ── */
+.checklist-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.checklist-body::-webkit-scrollbar { width: 4px; }
+.checklist-body::-webkit-scrollbar-track { background: transparent; }
+.checklist-body::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 2px; }
+
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.checklist-item:hover { border-color: var(--accent); background: var(--surface-2); }
+.checklist-item.checked { border-color: rgba(74,222,128,0.3); background: rgba(74,222,128,0.04); }
+.checklist-item.auto-fail { border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.04); }
+.checklist-item.auto-pass { border-color: rgba(74,222,128,0.3); background: rgba(74,222,128,0.04); }
+
+.check-box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 5px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.checklist-item.checked .check-box,
+.checklist-item.auto-pass .check-box {
+  background: var(--green);
+  border-color: var(--green);
+}
+.checklist-item.auto-fail .check-box {
+  background: var(--red);
+  border-color: var(--red);
+}
+.check-box svg { width:10px; height:10px; color:#000; }
+
+.check-text { flex: 1; }
+.check-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 3px;
+}
+.checklist-item.checked .check-title,
+.checklist-item.auto-pass .check-title {
+  color: var(--text-2);
+  text-decoration: line-through;
+  text-decoration-color: rgba(74,222,128,0.4);
+}
+.check-desc {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
+.auto-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.auto-tag.pass { background: rgba(74,222,128,0.12); color: var(--green); }
+.auto-tag.fail { background: rgba(248,113,113,0.12); color: var(--red); }
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  width: 280px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-2);
+  line-height: 1.6;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.checklist-item:hover .tooltip { opacity: 1; }
+
+/* ── Category progress bar ── */
+.cat-progress {
+  padding: 6px 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cat-progress-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.cat-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+.cat-progress-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+/* ── Scrollbar global ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <a href="index.html" class="back-link">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M10 3L5 8l5 5"/>
+      </svg>
+      utile
+    </a>
+    <span class="topbar-title">API Design Checklist</span>
+    <div class="topbar-actions">
+      <button class="btn" id="btn-clear" title="Clear all">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/>
+        </svg>
+        Clear
+      </button>
+      <button class="btn btn-primary" id="btn-export" title="Export as Markdown">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M8 2v9M5 8l3 3 3-3M2 13h12"/>
+        </svg>
+        Export MD
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <div class="main">
+    <!-- Left Panel: Input + Analysis -->
+    <div class="panel-left">
+      <!-- Input -->
+      <div class="panel-section">
+        <div class="section-label">Endpoint Definitions</div>
+        <textarea
+          class="endpoint-textarea"
+          id="endpoint-input"
+          placeholder="GET /users — List all users&#10;POST /users — Create a user&#10;GET /users/{id} — Get user by ID&#10;PUT /users/{id} — Update user&#10;DELETE /users/{id} — Delete user&#10;GET /users/{id}/posts — List user posts"
+          spellcheck="false"
+        ></textarea>
+        <div class="hint">Format: <code style="color:var(--accent)">METHOD /path — description</code> (one per line)</div>
+      </div>
+
+      <!-- Score -->
+      <div class="score-block">
+        <div class="score-ring-wrap">
+          <svg viewBox="0 0 80 80">
+            <circle class="ring-bg" cx="40" cy="40" r="32"/>
+            <circle class="ring-fill" id="ring-fill" cx="40" cy="40" r="32"/>
+          </svg>
+          <div class="score-num" id="score-num">—</div>
+        </div>
+        <div class="score-meta">
+          <div class="score-label">API Design Score</div>
+          <div class="score-sublabel" id="score-detail">Paste endpoints + check items<br>to calculate your score</div>
+          <div class="score-grade" id="score-grade" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- Analysis Results -->
+      <div class="section-label" style="padding:14px 24px 0; font-family:'DM Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-3);display:flex;align-items:center;gap:6px;">
+        Endpoint Analysis
+        <span style="flex:1;height:1px;background:var(--border);display:block;"></span>
+      </div>
+      <div class="analysis-list" id="analysis-list">
+        <div class="analysis-empty" id="analysis-empty">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="4" y="4" width="24" height="24" rx="4"/>
+            <path d="M10 12h12M10 16h8M10 20h10"/>
+          </svg>
+          Paste API endpoints above<br>to analyze them
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Checklist -->
+    <div class="panel-right">
+      <div class="checklist-tabs" id="checklist-tabs"></div>
+      <div class="checklist-body" id="checklist-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Checklist Data ── */
+const CATEGORIES = [
+  {
+    id: 'naming',
+    label: 'Naming',
+    items: [
+      { id: 'n1', title: 'Use plural nouns for resource collections', desc: 'e.g. /users not /user, /products not /product', tooltip: 'REST resources represent collections. Using plural nouns makes it clear the endpoint operates on a collection. /users/42 reads as "user 42 from the users collection".', autoKey: 'pluralNouns' },
+      { id: 'n2', title: 'No verbs in endpoint paths', desc: 'e.g. /users not /getUsers or /createUser', tooltip: 'HTTP methods already express the action. Adding verbs like /getUser or /deletePost creates RPC-style routes that break REST conventions.', autoKey: 'noVerbs' },
+      { id: 'n3', title: 'Consistent casing in paths', desc: 'Pick one: kebab-case, snake_case, or camelCase', tooltip: 'Mixing /user-posts with /userPosts or /user_posts in the same API creates confusion. Pick a convention and stick to it across all endpoints.', autoKey: 'consistentCase' },
+      { id: 'n4', title: 'Lowercase path segments', desc: 'All path segments should be lowercase', tooltip: 'URLs are case-sensitive on most servers. Using lowercase throughout avoids bugs and is the widely adopted REST convention.', autoKey: 'lowercasePaths' },
+      { id: 'n5', title: 'No trailing slashes', desc: '/users not /users/', tooltip: 'Trailing slashes are ambiguous. Many frameworks treat /users and /users/ as different routes. Remove trailing slashes and redirect if needed.' },
+      { id: 'n6', title: 'Use hyphens over underscores in paths', desc: 'Prefer /user-posts over /user_posts', tooltip: 'Hyphens are more URL-friendly and readable. Underscores can be obscured by link underlines in browsers. Google recommends hyphens for URLs.' },
+      { id: 'n7', title: 'Resource IDs are path parameters', desc: '/users/{id} not /users?id=42', tooltip: 'When identifying a specific resource, use path parameters. Query strings are for filtering, sorting, and pagination, not resource identification.' },
+      { id: 'n8', title: 'Sub-resources express relationships', desc: '/users/{id}/orders for owned resources', tooltip: 'Nested resources show ownership hierarchy. /users/42/orders retrieves orders belonging to user 42. Avoid nesting deeper than 2-3 levels.' },
+      { id: 'n9', title: 'Use nouns, not adjectives for resources', desc: '/admins not /administrative, /reports not /reportable', tooltip: 'Resource names should be concrete nouns that map to real entities in your domain model, not descriptive adjectives or ambiguous terms.' },
+      { id: 'n10', title: 'API prefix or version in base path', desc: '/api/v1/users or /v1/users', tooltip: 'A clear API prefix distinguishes your API routes from other application routes and makes routing configuration explicit.' },
+    ]
+  },
+  {
+    id: 'methods',
+    label: 'HTTP Methods',
+    items: [
+      { id: 'm1', title: 'GET only retrieves, never modifies', desc: 'GET must be safe and idempotent', tooltip: 'GET requests should have no side effects. Caches, proxies, and prefetch mechanisms all assume GET is safe to repeat freely.', autoKey: 'getRetrieve' },
+      { id: 'm2', title: 'POST creates new resources', desc: 'POST /users creates a user', tooltip: 'POST is the standard method for creation. It is neither safe nor idempotent — two identical POST requests may create two resources.' },
+      { id: 'm3', title: 'PUT replaces the full resource', desc: 'PUT /users/{id} sends the complete object', tooltip: 'PUT should be idempotent and replace the entire resource. If you send only changed fields, use PATCH instead.' },
+      { id: 'm4', title: 'PATCH updates partial resource', desc: 'PATCH /users/{id} sends only changed fields', tooltip: 'PATCH applies a partial update. Unlike PUT, only the provided fields are changed. Consider JSON Patch (RFC 6902) for fine-grained control.' },
+      { id: 'm5', title: 'DELETE removes the resource', desc: 'DELETE /users/{id} removes that user', tooltip: 'DELETE should be idempotent — deleting an already-deleted resource should return 404 or 204, not an error.' },
+      { id: 'm6', title: 'Use HEAD for metadata only', desc: 'HEAD /users/{id} returns headers, no body', tooltip: 'HEAD is identical to GET but without a response body. Use it for checking resource existence, caching headers, or content type without transferring data.' },
+      { id: 'm7', title: 'Support OPTIONS for CORS preflight', desc: 'OPTIONS /users returns allowed methods', tooltip: 'Browsers send OPTIONS preflight requests before cross-origin requests. Your API should respond with appropriate CORS headers.' },
+      { id: 'm8', title: 'Correct verb for bulk operations', desc: 'POST /users/bulk-create, DELETE /users/bulk-delete', tooltip: 'Bulk endpoints should still use appropriate HTTP verbs. For bulk creation use POST, for bulk deletion use DELETE with a body listing IDs.' },
+    ]
+  },
+  {
+    id: 'status',
+    label: 'Status Codes',
+    items: [
+      { id: 's1', title: '200 OK for successful GET/PUT/PATCH', desc: 'Return 200 with the resource body', tooltip: '200 is the generic success code. Use it when the request succeeded and there is content to return in the body.' },
+      { id: 's2', title: '201 Created for successful POST', desc: 'Include Location header with new resource URL', tooltip: '201 indicates a new resource was created. Always include a Location header pointing to the new resource, e.g. Location: /users/123.' },
+      { id: 's3', title: '204 No Content for DELETE', desc: 'Return 204 when body is empty', tooltip: '204 confirms success with no response body. Use for DELETE, or PUT/PATCH when you choose not to return the updated resource.' },
+      { id: 's4', title: '400 Bad Request for invalid input', desc: 'Include error details in response body', tooltip: '400 means the request is malformed or has invalid data. Always include a structured error body explaining what went wrong.' },
+      { id: 's5', title: '401 Unauthorized for missing auth', desc: 'Return 401 when credentials are missing or invalid', tooltip: '401 means authentication is required or failed. Despite the name "Unauthorized," it is about authentication, not authorization. Include WWW-Authenticate header.' },
+      { id: 's6', title: '403 Forbidden for insufficient permissions', desc: 'Authenticated but not allowed', tooltip: '403 means the client is authenticated but lacks permission. Do not use 401 for this — 403 is specifically for authorization failures.' },
+      { id: 's7', title: '404 Not Found for missing resources', desc: 'Return 404 when the resource does not exist', tooltip: '404 for missing resources. Optionally use 404 instead of 403 to avoid leaking the existence of resources the caller cannot access.' },
+      { id: 's8', title: '422 Unprocessable Entity for validation errors', desc: 'Distinct from 400 — request is well-formed but fails validation', tooltip: '422 is preferred over 400 when the request body is valid JSON/XML but fails business validation rules (e.g., email already taken).' },
+    ]
+  },
+  {
+    id: 'versioning',
+    label: 'Versioning',
+    items: [
+      { id: 'v1', title: 'Version your API from day one', desc: '/v1/users prevents painful future migrations', tooltip: 'Even if you have one version, including /v1/ from the start means you can introduce /v2/ without breaking existing clients.' },
+      { id: 'v2', title: 'Use URL versioning or Accept header', desc: '/v1/users or Accept: application/vnd.api+json;version=1', tooltip: 'URL versioning (/v1/) is the most visible and easiest to debug. Header versioning (Accept) is cleaner but less discoverable. Pick one.' },
+      { id: 'v3', title: 'Never remove fields without a major version bump', desc: 'Adding fields is backward-compatible; removing is not', tooltip: 'Removing or renaming fields is a breaking change. Adding optional fields to responses is generally safe. Use versioning to signal breaking changes.' },
+      { id: 'v4', title: 'Deprecation headers for old versions', desc: 'Sunset: <date>, Deprecation: <date>', tooltip: 'Use Sunset and Deprecation response headers to tell clients when a version will be retired. This gives them time to migrate.' },
+      { id: 'v5', title: 'Document version differences', desc: 'Changelog between v1 and v2', tooltip: 'When introducing a new version, document exactly what changed. Clients need to understand what they must update to migrate.' },
+    ]
+  },
+  {
+    id: 'security',
+    label: 'Security',
+    items: [
+      { id: 'sec1', title: 'Use HTTPS everywhere', desc: 'Never expose APIs over plain HTTP', tooltip: 'All API traffic should be encrypted via TLS. Redirect HTTP to HTTPS. Never accept credentials or transmit sensitive data over HTTP.' },
+      { id: 'sec2', title: 'Authentication on all non-public endpoints', desc: 'Bearer tokens, API keys, or OAuth 2.0', tooltip: 'Every endpoint that returns or modifies user data must require authentication. Use stateless tokens (JWT) rather than session cookies for APIs.' },
+      { id: 'sec3', title: 'Rate limiting to prevent abuse', desc: 'Return 429 Too Many Requests with Retry-After', tooltip: 'Rate limit all endpoints, especially auth. Return 429 with a Retry-After header. Implement per-user and per-IP limits.' },
+      { id: 'sec4', title: 'Input validation and sanitization', desc: 'Validate all inputs server-side, never trust the client', tooltip: 'Always validate and sanitize input on the server regardless of client-side validation. Protect against SQL injection, XSS, and path traversal.' },
+      { id: 'sec5', title: 'CORS headers properly configured', desc: 'Restrict allowed origins, do not use *', tooltip: 'Configure CORS to only allow trusted origins. Using Access-Control-Allow-Origin: * on authenticated endpoints is a security vulnerability.' },
+      { id: 'sec6', title: 'No sensitive data in URLs', desc: 'Passwords and tokens belong in headers/body', tooltip: 'Query parameters and path segments are logged in server logs, browser history, and proxies. Never put passwords, tokens, or PII in URLs.' },
+      { id: 'sec7', title: 'Structured error responses without stack traces', desc: 'Return { "error": "..." } not exception details', tooltip: 'Error responses should be informative for developers without leaking internal implementation details, stack traces, or server infrastructure info.' },
+    ]
+  },
+  {
+    id: 'docs',
+    label: 'Documentation',
+    items: [
+      { id: 'd1', title: 'OpenAPI / Swagger specification', desc: 'Machine-readable API contract in YAML or JSON', tooltip: 'An OpenAPI spec enables auto-generated docs, client SDKs, mock servers, and contract testing. It is the de-facto standard for REST API documentation.' },
+      { id: 'd2', title: 'Document all request/response fields', desc: 'Include types, constraints, and examples', tooltip: 'Document every field: its type, whether it is required or optional, valid values or ranges, and a realistic example value.' },
+      { id: 'd3', title: 'Provide working code examples', desc: 'cURL, JavaScript fetch, Python requests', tooltip: 'Developers learn fastest from copy-paste examples. Provide examples in multiple languages, especially for authentication flows.' },
+      { id: 'd4', title: 'Document all error codes', desc: 'List every error code with cause and resolution', tooltip: 'For each error your API can return, document the status code, error code, human-readable message, and what the client should do to resolve it.' },
+      { id: 'd5', title: 'Changelog and migration guides', desc: 'Document what changed between versions', tooltip: 'A changelog helps consumers understand what changed. Migration guides step developers through upgrading from one version to the next.' },
+    ]
+  },
+];
+
+/* ── State ── */
+let state = {
+  activeTab: 'naming',
+  checked: new Set(),
+  autoPass: new Set(),
+  autoFail: new Set(),
+  endpoints: [],
+};
+
+/* ── Render Tabs ── */
+function renderTabs() {
+  const el = document.getElementById('checklist-tabs');
+  el.innerHTML = CATEGORIES.map(cat => {
+    const items = cat.items;
+    const total = items.length;
+    const passed = items.filter(i =>
+      state.checked.has(i.id) || state.autoPass.has(i.id)
+    ).length;
+    return `<div class="tab ${state.activeTab === cat.id ? 'active' : ''}" data-tab="${cat.id}">
+      ${cat.label}
+      <span class="tab-badge">${passed}/${total}</span>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      state.activeTab = t.dataset.tab;
+      renderTabs();
+      renderChecklist();
+    });
+  });
+}
+
+/* ── Render Checklist ── */
+function renderChecklist() {
+  const body = document.getElementById('checklist-body');
+  const cat = CATEGORIES.find(c => c.id === state.activeTab);
+  if (!cat) return;
+
+  const total = cat.items.length;
+  const passed = cat.items.filter(i =>
+    state.checked.has(i.id) || state.autoPass.has(i.id)
+  ).length;
+  const pct = total ? Math.round((passed / total) * 100) : 0;
+
+  let html = `<div class="cat-progress">
+    <div class="cat-progress-bar"><div class="cat-progress-fill" style="width:${pct}%"></div></div>
+    <span class="cat-progress-label">${passed} / ${total} complete</span>
+  </div>`;
+
+  html += cat.items.map(item => {
+    const isAutoPass = state.autoPass.has(item.id);
+    const isAutoFail = state.autoFail.has(item.id);
+    const isChecked = state.checked.has(item.id);
+    const cls = isAutoPass || isChecked ? 'checked' : isAutoFail ? 'auto-fail' : '';
+    const autoTag = isAutoPass
+      ? '<span class="auto-tag pass">auto ✓</span>'
+      : isAutoFail
+      ? '<span class="auto-tag fail">auto ✗</span>'
+      : '';
+
+    const checkSvg = (isChecked || isAutoPass)
+      ? `<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2"><path d="M1.5 5l2.5 2.5 4.5-5"/></svg>`
+      : isAutoFail
+      ? `<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l6 6M8 2l-6 6"/></svg>`
+      : '';
+
+    return `<div class="checklist-item ${cls}" data-id="${item.id}">
+      <div class="check-box">${checkSvg}</div>
+      <div class="check-text">
+        <div class="check-title">${item.title}</div>
+        <div class="check-desc">${item.desc}</div>
+      </div>
+      ${autoTag}
+      <div class="tooltip">${item.tooltip}</div>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = html;
+  body.querySelectorAll('.checklist-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id;
+      if (state.autoPass.has(id) || state.autoFail.has(id)) return;
+      if (state.checked.has(id)) state.checked.delete(id);
+      else state.checked.add(id);
+      updateScore();
+      renderTabs();
+      renderChecklist();
+    });
+  });
+}
+
+/* ── Score ── */
+function updateScore() {
+  const allItems = CATEGORIES.flatMap(c => c.items);
+  const total = allItems.length;
+  const passed = allItems.filter(i =>
+    state.checked.has(i.id) || state.autoPass.has(i.id)
+  ).length;
+  const failed = allItems.filter(i => state.autoFail.has(i.id)).length;
+
+  // Base score from checklist (70% weight)
+  const checklistScore = total ? (passed / total) * 70 : 0;
+
+  // Endpoint analysis score (30% weight)
+  let endpointScore = 30;
+  if (state.endpoints.length > 0) {
+    const issues = state.endpoints.reduce((sum, ep) => sum + ep.issues.filter(i => i.type === 'error').length, 0);
+    const warnings = state.endpoints.reduce((sum, ep) => sum + ep.issues.filter(i => i.type === 'warning').length, 0);
+    const deduct = Math.min(30, issues * 5 + warnings * 2);
+    endpointScore = 30 - deduct;
+  } else if (passed === 0) {
+    endpointScore = 0;
+  }
+
+  const score = Math.round(checklistScore + endpointScore);
+  const numEl = document.getElementById('score-num');
+  const ringEl = document.getElementById('ring-fill');
+  const detailEl = document.getElementById('score-detail');
+  const gradeEl = document.getElementById('score-grade');
+
+  numEl.textContent = score;
+  const circumference = 201;
+  const offset = circumference - (score / 100) * circumference;
+  ringEl.style.strokeDashoffset = offset;
+
+  const gradeInfo = score >= 90
+    ? { label: 'Excellent', color: 'var(--green)', bg: 'rgba(74,222,128,0.12)' }
+    : score >= 75
+    ? { label: 'Good', color: 'var(--accent)', bg: 'rgba(34,211,238,0.12)' }
+    : score >= 60
+    ? { label: 'Fair', color: 'var(--yellow)', bg: 'rgba(251,191,36,0.12)' }
+    : { label: 'Needs Work', color: 'var(--red)', bg: 'rgba(248,113,113,0.12)' };
+
+  ringEl.style.stroke = gradeInfo.color;
+  numEl.style.color = gradeInfo.color;
+  gradeEl.textContent = gradeInfo.label;
+  gradeEl.style.color = gradeInfo.color;
+  gradeEl.style.background = gradeInfo.bg;
+  gradeEl.style.display = 'inline-block';
+  detailEl.textContent = `${passed} of ${total} items passed · ${state.endpoints.length} endpoints analyzed`;
+}
+
+/* ── Endpoint Parsing & Analysis ── */
+const VERBS_IN_PATH = [
+  'get','fetch','retrieve','list','search','find',
+  'create','add','insert','new',
+  'update','edit','modify','change',
+  'delete','remove','destroy',
+  'send','submit','process','handle',
+];
+
+function detectCase(segment) {
+  if (/^[a-z][a-z0-9]*(-[a-z0-9]+)+$/.test(segment)) return 'kebab';
+  if (/^[a-z][a-z0-9]*(_[a-z0-9]+)+$/.test(segment)) return 'snake';
+  if (/^[a-z][a-zA-Z0-9]+$/.test(segment) && /[A-Z]/.test(segment)) return 'camel';
+  if (/^[a-z][a-z0-9]*$/.test(segment)) return 'lower';
+  return 'unknown';
+}
+
+function suggestStatusCodes(method, path) {
+  const m = method.toUpperCase();
+  const isCollection = !path.includes('{');
+  if (m === 'GET')    return isCollection ? '200, 400, 401, 403, 404' : '200, 401, 403, 404';
+  if (m === 'POST')   return '201, 400, 401, 403, 409, 422';
+  if (m === 'PUT')    return '200, 400, 401, 403, 404, 422';
+  if (m === 'PATCH')  return '200, 400, 401, 403, 404, 422';
+  if (m === 'DELETE') return '204, 401, 403, 404';
+  return '200, 400, 401, 403';
+}
+
+function analyzeEndpoint(raw) {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  // Parse: METHOD /path [— description]
+  const match = trimmed.match(/^([A-Z]+)\s+(\/[^\s—\-]*)\s*(?:—|--)?\s*(.*)$/i);
+  if (!match) return { raw: trimmed, parse_error: true, issues: [{ type: 'error', text: 'Cannot parse line — expected: METHOD /path — description' }] };
+
+  const method = match[1].toUpperCase();
+  const path = match[2];
+  const desc = match[3].trim();
+  const issues = [];
+
+  // 1. Valid HTTP method
+  const validMethods = ['GET','POST','PUT','PATCH','DELETE','HEAD','OPTIONS'];
+  if (!validMethods.includes(method)) {
+    issues.push({ type: 'error', text: `"${method}" is not a standard HTTP method` });
+  }
+
+  // 2. Verb-alignment checks
+  const descLower = desc.toLowerCase();
+  if (method === 'GET' && (descLower.includes('creat') || descLower.includes('updat') || descLower.includes('delet') || descLower.includes('remov'))) {
+    issues.push({ type: 'warning', text: `GET should not modify data — description suggests mutation` });
+  }
+  if (method === 'POST' && descLower.match(/\b(get|fetch|list|retriev)\b/)) {
+    issues.push({ type: 'info', text: `POST used for retrieval — consider GET if idempotent` });
+  }
+
+  // 3. Path analysis
+  const segments = path.split('/').filter(s => s && !s.startsWith('{'));
+
+  // No verbs in path
+  for (const seg of segments) {
+    const segLower = seg.toLowerCase();
+    for (const verb of VERBS_IN_PATH) {
+      if (segLower === verb || segLower.startsWith(verb + '-') || segLower.endsWith('-' + verb)) {
+        issues.push({ type: 'error', text: `Verb "${seg}" in path — use nouns (HTTP method expresses the action)` });
+        break;
+      }
+    }
+  }
+
+  // Plural nouns in collection paths
+  // A collection segment: does not have a sibling {id} param immediately after
+  const pathParts = path.split('/').filter(Boolean);
+  for (let i = 0; i < pathParts.length; i++) {
+    const seg = pathParts[i];
+    if (seg.startsWith('{')) continue;
+    // Check if it's a collection (either last segment on collection route, or followed by {id})
+    const nextSeg = pathParts[i + 1];
+    const isCollection = !nextSeg || nextSeg.startsWith('{');
+    if (isCollection) {
+      // Basic singular check: ends without 's', not a known exception
+      const exceptions = ['data','media','equipment','staff','series','species','info'];
+      if (!exceptions.includes(seg) && !seg.endsWith('s') && !seg.endsWith('x') && !seg.endsWith('z') && !/ies$/.test(seg)) {
+        issues.push({ type: 'warning', text: `"${seg}" looks singular — use plural for collections (e.g. /${seg}s)` });
+      }
+    }
+  }
+
+  // Lowercase check
+  for (const seg of segments) {
+    if (seg !== seg.toLowerCase() && !seg.startsWith('{')) {
+      issues.push({ type: 'warning', text: `"${seg}" has uppercase letters — paths should be lowercase` });
+      break;
+    }
+  }
+
+  // Consistent casing detection (collect all non-param segments)
+  const caseTypes = segments.filter(s => !s.startsWith('{')).map(detectCase);
+  const uniqueCases = [...new Set(caseTypes.filter(c => c !== 'lower'))];
+  if (uniqueCases.length > 1) {
+    issues.push({ type: 'warning', text: `Mixed naming styles (${uniqueCases.join(', ')}) — pick one convention` });
+  }
+
+  // Trailing slash
+  if (path.endsWith('/') && path.length > 1) {
+    issues.push({ type: 'warning', text: 'Trailing slash detected — remove it' });
+  }
+
+  // Nesting depth
+  const nestDepth = pathParts.filter(s => !s.startsWith('{')).length;
+  if (nestDepth > 3) {
+    issues.push({ type: 'warning', text: `Path nests ${nestDepth} levels deep — consider flattening (max ~3)` });
+  }
+
+  if (issues.length === 0) {
+    issues.push({ type: 'ok', text: 'Looks good — no RESTful issues detected' });
+  }
+
+  return {
+    raw: trimmed,
+    method,
+    path,
+    desc,
+    issues,
+    statusSuggestion: suggestStatusCodes(method, path),
+  };
+}
+
+/* ── Auto-detect checklist items from endpoints ── */
+function runAutoChecks(endpoints) {
+  const valid = endpoints.filter(e => !e.parse_error);
+  state.autoPass = new Set();
+  state.autoFail = new Set();
+  if (!valid.length) return;
+
+  const paths = valid.map(e => e.path);
+  const methods = valid.map(e => e.method);
+  const allSegments = paths.flatMap(p => p.split('/').filter(s => s && !s.startsWith('{')));
+
+  // n1: plural nouns — fail if any singular detected
+  const hasSingular = valid.some(e =>
+    e.issues.some(i => i.text.includes('looks singular'))
+  );
+  if (hasSingular) state.autoFail.add('n1');
+  else state.autoPass.add('n1');
+
+  // n2: no verbs in paths
+  const hasVerb = valid.some(e =>
+    e.issues.some(i => i.text.includes('Verb') && i.text.includes('in path'))
+  );
+  if (hasVerb) state.autoFail.add('n2');
+  else state.autoPass.add('n2');
+
+  // n3: consistent casing
+  const caseTypes = allSegments.map(detectCase).filter(c => c !== 'lower');
+  const uniqueCases = [...new Set(caseTypes)];
+  if (uniqueCases.length > 1) state.autoFail.add('n3');
+  else state.autoPass.add('n3');
+
+  // n4: lowercase paths
+  const hasUppercase = paths.some(p =>
+    p.split('/').filter(s => s && !s.startsWith('{')).some(s => s !== s.toLowerCase())
+  );
+  if (hasUppercase) state.autoFail.add('n4');
+  else state.autoPass.add('n4');
+
+  // m1: GET only retrieves
+  const getViolation = valid.some(e =>
+    e.method === 'GET' && e.issues.some(i => i.text.includes('GET should not modify'))
+  );
+  if (getViolation) state.autoFail.add('m1');
+  else if (methods.includes('GET')) state.autoPass.add('m1');
+
+  // v1: version in path
+  const hasVersion = paths.some(p => /\/v\d+\//i.test(p));
+  if (hasVersion) state.autoPass.add('v1');
+  else state.autoFail.add('v1');
+
+  // n8: sub-resources nesting
+  const hasNesting = paths.some(p => (p.match(/\{[^}]+\}/g) || []).length >= 1 && p.split('/').length > 3);
+  if (hasNesting) state.autoPass.add('n8');
+}
+
+/* ── Render Analysis ── */
+function renderAnalysis() {
+  const listEl = document.getElementById('analysis-list');
+  const emptyEl = document.getElementById('analysis-empty');
+
+  if (!state.endpoints.length) {
+    emptyEl.style.display = 'flex';
+    // Remove all cards
+    listEl.querySelectorAll('.endpoint-card').forEach(el => el.remove());
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  const ICONS = {
+    error:   '<svg class="issue-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="5"/><path d="M6 4v3M6 8.5v.5"/></svg>',
+    warning: '<svg class="issue-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 1l5 9H1z"/><path d="M6 5v2M6 8.5v.5"/></svg>',
+    info:    '<svg class="issue-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="5"/><path d="M6 5v4M6 3.5v.5"/></svg>',
+    ok:      '<svg class="issue-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="5"/><path d="M3.5 6l1.5 1.5 3-3.5"/></svg>',
+  };
+
+  const html = state.endpoints.map(ep => {
+    if (ep.parse_error) {
+      return `<div class="endpoint-card has-issues">
+        <div class="endpoint-head">
+          <span class="method-badge method-OTHER">?</span>
+          <span class="endpoint-path" style="color:var(--text-3)">${ep.raw}</span>
+        </div>
+        <div class="issue-list">
+          ${ep.issues.map(i => `<div class="issue-item error">${ICONS.error}${i.text}</div>`).join('')}
+        </div>
+      </div>`;
+    }
+    const methodClass = ['GET','POST','PUT','PATCH','DELETE'].includes(ep.method) ? ep.method : 'OTHER';
+    const hasErrors = ep.issues.some(i => i.type === 'error' || i.type === 'warning');
+    return `<div class="endpoint-card ${hasErrors ? 'has-issues' : 'clean'}">
+      <div class="endpoint-head">
+        <span class="method-badge method-${methodClass}">${ep.method}</span>
+        <span class="endpoint-path">${ep.path}</span>
+      </div>
+      ${ep.desc ? `<div class="endpoint-desc">${ep.desc}</div>` : ''}
+      <div class="issue-list">
+        ${ep.issues.map(i => `<div class="issue-item ${i.type}">${ICONS[i.type] || ''}${i.text}</div>`).join('')}
+      </div>
+      <div class="status-suggestion">Suggested codes: <span>${ep.statusSuggestion}</span></div>
+    </div>`;
+  }).join('');
+
+  // Replace only cards, not the empty state element
+  listEl.querySelectorAll('.endpoint-card').forEach(el => el.remove());
+  listEl.insertAdjacentHTML('beforeend', html);
+}
+
+/* ── Input Handler ── */
+let debounceTimer;
+document.getElementById('endpoint-input').addEventListener('input', e => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    const lines = e.target.value.split('\n').filter(l => l.trim());
+    state.endpoints = lines.map(analyzeEndpoint).filter(Boolean);
+    runAutoChecks(state.endpoints);
+    renderAnalysis();
+    updateScore();
+    renderTabs();
+    renderChecklist();
+  }, 300);
+});
+
+/* ── Clear ── */
+document.getElementById('btn-clear').addEventListener('click', () => {
+  document.getElementById('endpoint-input').value = '';
+  state.endpoints = [];
+  state.checked = new Set();
+  state.autoPass = new Set();
+  state.autoFail = new Set();
+  renderAnalysis();
+  updateScore();
+  renderTabs();
+  renderChecklist();
+
+  const numEl = document.getElementById('score-num');
+  const ringEl = document.getElementById('ring-fill');
+  const gradeEl = document.getElementById('score-grade');
+  numEl.textContent = '—';
+  numEl.style.color = 'var(--accent)';
+  ringEl.style.strokeDashoffset = '201';
+  ringEl.style.stroke = 'var(--accent)';
+  gradeEl.style.display = 'none';
+  document.getElementById('score-detail').textContent = 'Paste endpoints + check items\nto calculate your score';
+});
+
+/* ── Export Markdown ── */
+document.getElementById('btn-export').addEventListener('click', () => {
+  const allItems = CATEGORIES.flatMap(c => c.items);
+  const total = allItems.length;
+  const passed = allItems.filter(i => state.checked.has(i.id) || state.autoPass.has(i.id)).length;
+  const scoreText = document.getElementById('score-num').textContent;
+
+  let md = `# API Design Checklist\n\n`;
+  md += `**Score: ${scoreText === '—' ? 'N/A' : scoreText + '/100'}** · ${passed}/${total} items passed\n\n`;
+  md += `Generated: ${new Date().toISOString().slice(0, 10)}\n\n`;
+
+  CATEGORIES.forEach(cat => {
+    md += `## ${cat.label}\n\n`;
+    cat.items.forEach(item => {
+      const done = state.checked.has(item.id) || state.autoPass.has(item.id);
+      const failed = state.autoFail.has(item.id);
+      const prefix = done ? '[x]' : '[ ]';
+      const suffix = state.autoPass.has(item.id) ? ' *(auto-detected: pass)*' : state.autoFail.has(item.id) ? ' *(auto-detected: fail)*' : '';
+      md += `- ${prefix} **${item.title}**${suffix}\n`;
+      md += `  ${item.desc}\n\n`;
+    });
+  });
+
+  if (state.endpoints.length > 0) {
+    md += `## Endpoint Analysis\n\n`;
+    state.endpoints.forEach(ep => {
+      if (ep.parse_error) {
+        md += `### ⚠ Parse error\n\`${ep.raw}\`\n\n`;
+        return;
+      }
+      md += `### \`${ep.method} ${ep.path}\`\n`;
+      if (ep.desc) md += `${ep.desc}\n\n`;
+      ep.issues.forEach(i => {
+        const icon = i.type === 'ok' ? '✓' : i.type === 'error' ? '✗' : i.type === 'warning' ? '⚠' : 'ℹ';
+        md += `- ${icon} ${i.text}\n`;
+      });
+      md += `\n**Suggested status codes:** ${ep.statusSuggestion}\n\n`;
+    });
+  }
+
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'api-checklist.md';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+/* ── Init ── */
+renderTabs();
+renderChecklist();
+</script>
+</body>
+</html>

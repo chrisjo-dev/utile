@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rep Counter — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.15);
+  --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --radius: 14px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top Bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--accent); }
+.back-link svg { width:14px; height:14px; }
+
+.topbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-2);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Main Layout ── */
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  grid-template-rows: 1fr;
+  min-height: 0;
+  gap: 0;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.sidebar-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-section:last-child {
+  border-bottom: none;
+}
+
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 12px;
+}
+
+/* Camera */
+.camera-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: var(--surface-3);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+#cameraCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transform: scaleX(-1);
+}
+
+.camera-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-3);
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  text-align: center;
+  padding: 16px;
+}
+
+.camera-overlay svg {
+  width: 32px;
+  height: 32px;
+  opacity: 0.4;
+}
+
+.camera-overlay.hidden { display: none; }
+
+.camera-status {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--accent);
+  background: rgba(0,0,0,0.6);
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Exercise selector */
+.exercise-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.ex-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-2);
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.ex-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ex-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.exercise-hint {
+  margin-top: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  line-height: 1.5;
+  min-height: 30px;
+}
+
+/* Sensitivity */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.slider-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  min-width: 24px;
+  text-align: right;
+}
+
+/* Set tracker */
+.sets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.set-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+}
+
+.set-item.active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.set-item .set-name { color: var(--text-2); }
+.set-item .set-reps { color: var(--accent); font-weight: 500; }
+
+.next-set-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-2);
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+
+.next-set-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Voice toggle */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.toggle {
+  position: relative;
+  width: 38px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.toggle input { opacity: 0; width: 0; height: 0; }
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--surface-3);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.toggle input:checked + .toggle-track {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-3);
+  transition: all 0.2s;
+}
+
+.toggle input:checked ~ .toggle-thumb {
+  transform: translateX(18px);
+  background: var(--accent);
+}
+
+/* ── Content Area ── */
+.content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 24px;
+  gap: 20px;
+}
+
+/* Rep counter hero */
+.rep-hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  flex-shrink: 0;
+}
+
+.rep-display {
+  text-align: center;
+}
+
+.rep-number {
+  font-family: 'Syne', sans-serif;
+  font-size: 120px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+  text-shadow: 0 0 40px rgba(34,211,238,0.3);
+  transition: transform 0.1s;
+  letter-spacing: -4px;
+}
+
+.rep-number.pop {
+  animation: rep-pop 0.25s ease-out;
+}
+
+@keyframes rep-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.rep-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text-3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.rep-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 20px;
+  min-width: 140px;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stat-value.accent { color: var(--accent); }
+.stat-value.green { color: var(--green); }
+.stat-value.yellow { color: var(--yellow); }
+
+.stat-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 22px;
+  border-radius: 9px;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 20px rgba(34,211,238,0.35);
+}
+
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--text-2);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--red);
+  border-color: rgba(248,113,113,0.3);
+}
+
+.btn-danger:hover {
+  background: rgba(248,113,113,0.1);
+  border-color: var(--red);
+}
+
+.btn svg { width:15px; height:15px; }
+
+/* Graph */
+.graph-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.graph-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.graph-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.graph-legend {
+  display: flex;
+  gap: 14px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.graph-wrap {
+  flex: 1;
+  min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+#motionGraph {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Summary modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.modal-backdrop.hidden { display: none; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 36px;
+  width: 460px;
+  max-width: 90vw;
+}
+
+.modal-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.modal-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  margin-bottom: 28px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.summary-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+.summary-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.summary-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.sets-summary {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 24px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.sets-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+}
+
+.sets-summary-row:last-child { border-bottom: none; }
+.sets-summary-row .sn { color: var(--text-2); }
+.sets-summary-row .sr { color: var(--accent); }
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Responsive */
+@media (max-width: 800px) {
+  .main {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    overflow-y: auto;
+  }
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow-y: visible;
+  }
+  .rep-number { font-size: 80px; }
+  .rep-hero { flex-direction: column; gap: 20px; }
+  .rep-stats { flex-direction: row; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Top Bar -->
+  <header class="topbar">
+    <a href="index.html" class="back-link">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M10 3L5 8l5 5"/>
+      </svg>
+      utile
+    </a>
+    <span class="topbar-title">REP COUNTER</span>
+    <div class="topbar-right">
+      <span id="sessionTime" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-3);">00:00</span>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+      <!-- Camera -->
+      <div class="sidebar-section">
+        <div class="section-label">Camera Feed</div>
+        <div class="camera-wrap">
+          <canvas id="cameraCanvas" width="320" height="240"></canvas>
+          <div class="camera-overlay" id="cameraOverlay">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+            </svg>
+            <span>Click Start to enable camera</span>
+          </div>
+          <div class="camera-status" id="cameraStatus" style="display:none;">
+            <div class="status-dot"></div>
+            LIVE
+          </div>
+        </div>
+      </div>
+
+      <!-- Exercise -->
+      <div class="sidebar-section">
+        <div class="section-label">Exercise Type</div>
+        <div class="exercise-grid">
+          <button class="ex-btn active" data-ex="pushups">Push-ups</button>
+          <button class="ex-btn" data-ex="squats">Squats</button>
+          <button class="ex-btn" data-ex="pullups">Pull-ups</button>
+          <button class="ex-btn" data-ex="curls">Curls</button>
+          <button class="ex-btn" data-ex="custom" style="grid-column:span 2;">Custom</button>
+        </div>
+        <div class="exercise-hint" id="exerciseHint">
+          Place camera to see your upper body. Lower and raise yourself fully for clean peaks.
+        </div>
+      </div>
+
+      <!-- Sensitivity -->
+      <div class="sidebar-section">
+        <div class="section-label">Detection Sensitivity</div>
+        <div class="slider-row">
+          <span class="slider-label">Low</span>
+          <input type="range" id="sensitivitySlider" min="1" max="10" value="5">
+          <span class="slider-label">High</span>
+          <span class="slider-val" id="sensitivityVal">5</span>
+        </div>
+      </div>
+
+      <!-- Voice -->
+      <div class="sidebar-section">
+        <div class="section-label">Voice Count</div>
+        <div class="toggle-row">
+          <span class="toggle-label">Announce reps aloud</span>
+          <label class="toggle">
+            <input type="checkbox" id="voiceToggle" checked>
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Sets -->
+      <div class="sidebar-section" style="flex:1;">
+        <div class="section-label">Sets</div>
+        <div class="sets-list" id="setsList">
+          <div class="set-item active" id="currentSetItem">
+            <span class="set-name">Set 1</span>
+            <span class="set-reps" id="currentSetReps">0 reps</span>
+          </div>
+        </div>
+        <button class="next-set-btn" id="nextSetBtn">+ Next Set</button>
+      </div>
+
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+
+      <!-- Rep Hero -->
+      <div class="rep-hero">
+        <div class="rep-display">
+          <div class="rep-number" id="repNumber">0</div>
+          <div class="rep-label">REPS — <span id="currentExLabel">PUSH-UPS</span></div>
+        </div>
+        <div class="rep-stats">
+          <div class="stat-card">
+            <div class="stat-value accent" id="totalRepsVal">0</div>
+            <div class="stat-name">Total Reps</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value green" id="setsVal">1</div>
+            <div class="stat-name">Sets</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value yellow" id="calVal">0</div>
+            <div class="stat-name">Cal (est.)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button class="btn btn-primary" id="startBtn">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l10 5-10 5z"/></svg>
+          Start
+        </button>
+        <button class="btn btn-secondary" id="pauseBtn" style="display:none;">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2h3v12H4zm5 0h3v12H9z"/></svg>
+          Pause
+        </button>
+        <button class="btn btn-secondary" id="resumeBtn" style="display:none;">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l10 5-10 5z"/></svg>
+          Resume
+        </button>
+        <button class="btn btn-danger" id="stopBtn" style="display:none;">
+          <svg viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="3" width="10" height="10" rx="1"/></svg>
+          Finish
+        </button>
+        <button class="btn btn-secondary" id="resetBtn" style="display:none;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8a5 5 0 105-5H6m-3 0l3-3M3 3l3 3"/></svg>
+          Reset
+        </button>
+      </div>
+
+      <!-- Motion Graph -->
+      <div class="graph-section">
+        <div class="graph-header">
+          <span class="graph-title">Motion Intensity — last 5 seconds</span>
+          <div class="graph-legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--accent);"></div>
+              Signal
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:rgba(34,211,238,0.3);"></div>
+              Smoothed
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--yellow);border-radius:2px;width:10px;height:3px;"></div>
+              Threshold
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--green);"></div>
+              Peak
+            </div>
+          </div>
+        </div>
+        <div class="graph-wrap">
+          <canvas id="motionGraph"></canvas>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Summary Modal -->
+<div class="modal-backdrop hidden" id="summaryModal">
+  <div class="modal">
+    <div class="modal-title">Workout Complete</div>
+    <div class="modal-sub" id="summaryTime">Duration: 0:00</div>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-val" id="sumTotalReps">0</div>
+        <div class="summary-lbl">Total Reps</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-val" id="sumSets">0</div>
+        <div class="summary-lbl">Sets</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-val" id="sumCal">0</div>
+        <div class="summary-lbl">Calories</div>
+      </div>
+    </div>
+    <div class="sets-summary" id="setsSummaryList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="modalClose">New Workout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  running: false,
+  paused: false,
+  repCount: 0,
+  totalReps: 0,
+  setNumber: 1,
+  sets: [],           // [{set, reps}]
+  currentSetReps: 0,
+  exercise: 'pushups',
+  sensitivity: 5,
+  voiceEnabled: true,
+  sessionStart: null,
+  sessionElapsed: 0,  // ms accumulated when paused
+  pausedAt: null,
+
+  // Motion detection
+  motionHistory: [],    // raw scores
+  smoothHistory: [],    // smoothed scores
+  peakMarkers: [],      // {x (history index), y}
+  lastPeakIndex: -999,
+
+  // Previous frame pixel data
+  prevFrame: null,
+};
+
+// ── Exercise config ────────────────────────────────────────────────────────
+const EXERCISES = {
+  pushups:  { label: 'PUSH-UPS',  hint: 'Place camera to see your upper body. Lower and raise yourself fully for clean peaks.', cal: 0.32 },
+  squats:   { label: 'SQUATS',    hint: 'Point camera at your lower body. Go down until thighs are parallel, then stand fully.', cal: 0.35 },
+  pullups:  { label: 'PULL-UPS',  hint: 'Mount camera below you. Hang fully at bottom, chin above bar at top.', cal: 0.45 },
+  curls:    { label: 'CURLS',     hint: 'Camera facing your arm. Full extension at bottom, bicep fully contracted at top.', cal: 0.14 },
+  custom:   { label: 'CUSTOM',    hint: 'Set sensitivity for your exercise. Each clear motion cycle = 1 rep.', cal: 0.25 },
+};
+
+// ── DOM refs ───────────────────────────────────────────────────────────────
+const cameraCanvas = document.getElementById('cameraCanvas');
+const cameraCtx    = cameraCanvas.getContext('2d', { willReadFrequently: true });
+const graphCanvas  = document.getElementById('motionGraph');
+const graphCtx     = graphCanvas.getContext('2d');
+const cameraOverlay = document.getElementById('cameraOverlay');
+const cameraStatus  = document.getElementById('cameraStatus');
+
+const repNumber      = document.getElementById('repNumber');
+const totalRepsVal   = document.getElementById('totalRepsVal');
+const setsVal        = document.getElementById('setsVal');
+const calVal         = document.getElementById('calVal');
+const currentExLabel = document.getElementById('currentExLabel');
+const exerciseHint   = document.getElementById('exerciseHint');
+const sensitivityVal = document.getElementById('sensitivityVal');
+const sessionTimeEl  = document.getElementById('sessionTime');
+const setsList       = document.getElementById('setsList');
+const currentSetItem = document.getElementById('currentSetItem');
+const currentSetRepsEl = document.getElementById('currentSetReps');
+
+const startBtn  = document.getElementById('startBtn');
+const pauseBtn  = document.getElementById('pauseBtn');
+const resumeBtn = document.getElementById('resumeBtn');
+const stopBtn   = document.getElementById('stopBtn');
+const resetBtn  = document.getElementById('resetBtn');
+const nextSetBtn = document.getElementById('nextSetBtn');
+
+const summaryModal  = document.getElementById('summaryModal');
+const sumTotalReps  = document.getElementById('sumTotalReps');
+const sumSets       = document.getElementById('sumSets');
+const sumCal        = document.getElementById('sumCal');
+const summaryTime   = document.getElementById('summaryTime');
+const setsSummaryList = document.getElementById('setsSummaryList');
+const modalClose    = document.getElementById('modalClose');
+
+// ── Camera ─────────────────────────────────────────────────────────────────
+let videoEl = document.createElement('video');
+videoEl.playsInline = true;
+videoEl.muted = true;
+let mediaStream = null;
+
+async function startCamera() {
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
+      audio: false
+    });
+    videoEl.srcObject = mediaStream;
+    await videoEl.play();
+    cameraOverlay.classList.add('hidden');
+    cameraStatus.style.display = 'flex';
+    return true;
+  } catch (e) {
+    cameraOverlay.querySelector('span').textContent = 'Camera access denied. Check browser permissions.';
+    return false;
+  }
+}
+
+function stopCamera() {
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
+  videoEl.srcObject = null;
+  cameraOverlay.classList.remove('hidden');
+  cameraStatus.style.display = 'none';
+  state.prevFrame = null;
+}
+
+// ── Motion computation ─────────────────────────────────────────────────────
+const SAMPLE_STEP = 4; // sample every Nth pixel for perf
+const HISTORY_MAX = 300; // ~5 seconds at 60fps
+
+function computeMotionScore() {
+  if (!mediaStream || videoEl.readyState < 2) return 0;
+
+  // Draw current frame
+  cameraCtx.drawImage(videoEl, 0, 0, cameraCanvas.width, cameraCanvas.height);
+  const cur = cameraCtx.getImageData(0, 0, cameraCanvas.width, cameraCanvas.height);
+
+  if (!state.prevFrame) {
+    state.prevFrame = cur;
+    return 0;
+  }
+
+  const data = cur.data;
+  const prev = state.prevFrame.data;
+  let diff = 0;
+  const len = data.length;
+
+  for (let i = 0; i < len; i += SAMPLE_STEP * 4) {
+    const dr = Math.abs(data[i]   - prev[i]);
+    const dg = Math.abs(data[i+1] - prev[i+1]);
+    const db = Math.abs(data[i+2] - prev[i+2]);
+    diff += (dr + dg + db) / 3;
+  }
+
+  const pixelCount = len / (SAMPLE_STEP * 4);
+  const score = diff / pixelCount; // 0–255 range, typically 0–30
+
+  state.prevFrame = cur;
+  return score;
+}
+
+function rollingAverage(arr, window) {
+  if (arr.length === 0) return 0;
+  const slice = arr.slice(Math.max(0, arr.length - window));
+  return slice.reduce((a, b) => a + b, 0) / slice.length;
+}
+
+function detectPeak() {
+  const h = state.smoothHistory;
+  const len = h.length;
+  if (len < 10) return false;
+
+  // Need at least minDist frames since last peak
+  // Sensitivity maps 1-10 → minDist 60-15
+  const sens = state.sensitivity;
+  const minDist = Math.round(60 - (sens - 1) * 5);
+
+  if (len - state.lastPeakIndex < minDist) return false;
+
+  // Compute mean + stddev of recent window
+  const window = Math.min(len, HISTORY_MAX);
+  const recent = h.slice(h.length - window);
+  const mean = recent.reduce((a, b) => a + b, 0) / recent.length;
+  const variance = recent.reduce((a, b) => a + (b - mean) ** 2, 0) / recent.length;
+  const std = Math.sqrt(variance);
+
+  // Sensitivity maps 1-10 → threshold multiplier 2.2-0.8
+  const threshMult = 2.2 - (sens - 1) * 0.14;
+  const threshold = mean + threshMult * std;
+
+  // Check: current point is a local maximum above threshold
+  const idx = len - 1;
+  const v = h[idx];
+  if (v < threshold) return false;
+
+  // Must be higher than neighbors (look back 5 frames)
+  const lookback = 5;
+  for (let i = Math.max(0, idx - lookback); i < idx; i++) {
+    if (h[i] >= v) return false;
+  }
+
+  // Record peak marker
+  state.peakMarkers.push({ histIdx: idx, y: v });
+  // Trim old markers
+  while (state.peakMarkers.length > 0 && state.peakMarkers[0].histIdx < h.length - HISTORY_MAX) {
+    state.peakMarkers.shift();
+  }
+
+  state.lastPeakIndex = idx;
+  return true;
+}
+
+// ── Speech ─────────────────────────────────────────────────────────────────
+const NUMBERS = ['One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten',
+                 'Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen',
+                 'Eighteen','Nineteen','Twenty'];
+
+function speak(text) {
+  if (!state.voiceEnabled || !window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1.1;
+  u.pitch = 1.0;
+  u.volume = 1.0;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+
+// ── Rep registration ───────────────────────────────────────────────────────
+function registerRep() {
+  state.repCount++;
+  state.currentSetReps++;
+  state.totalReps++;
+
+  // Update hero
+  repNumber.textContent = state.repCount;
+  repNumber.classList.remove('pop');
+  void repNumber.offsetWidth;
+  repNumber.classList.add('pop');
+
+  totalRepsVal.textContent = state.totalReps;
+  updateCalories();
+
+  // Update current set
+  currentSetRepsEl.textContent = state.currentSetReps + ' reps';
+
+  // Speak
+  const word = state.repCount <= 20 ? NUMBERS[state.repCount - 1] : String(state.repCount);
+  speak(word);
+}
+
+// ── Calories estimate ──────────────────────────────────────────────────────
+function updateCalories() {
+  const cfg = EXERCISES[state.exercise];
+  const cal = Math.round(state.totalReps * cfg.cal);
+  calVal.textContent = cal;
+}
+
+// ── Session timer ──────────────────────────────────────────────────────────
+function getElapsedMs() {
+  if (!state.sessionStart) return state.sessionElapsed;
+  return state.sessionElapsed + (Date.now() - state.sessionStart);
+}
+
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const ss = String(s % 60).padStart(2, '0');
+  return `${m}:${ss}`;
+}
+
+// ── Graph rendering ────────────────────────────────────────────────────────
+function renderGraph() {
+  const canvas = graphCanvas;
+  const parent = canvas.parentElement;
+  const W = parent.clientWidth;
+  const H = parent.clientHeight;
+
+  if (canvas.width !== W || canvas.height !== H) {
+    canvas.width = W;
+    canvas.height = H;
+  }
+
+  const ctx = graphCtx;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#18181b';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(46,46,51,0.8)';
+  ctx.lineWidth = 1;
+  const gridRows = 4;
+  for (let i = 1; i < gridRows; i++) {
+    const y = (H / gridRows) * i;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+
+  const raw = state.motionHistory;
+  const smooth = state.smoothHistory;
+  if (raw.length < 2) return;
+
+  // Compute display window
+  const displayCount = Math.min(raw.length, HISTORY_MAX);
+  const startIdx = raw.length - displayCount;
+
+  // Find max for scaling
+  const displaySlice = raw.slice(startIdx);
+  const maxVal = Math.max(10, ...displaySlice) * 1.2;
+
+  function toX(i) { return ((i) / (displayCount - 1)) * W; }
+  function toY(v) { return H - (v / maxVal) * H * 0.85 - H * 0.05; }
+
+  // Compute threshold line for display
+  const recentSmooth = smooth.slice(startIdx);
+  if (recentSmooth.length > 2) {
+    const mean = recentSmooth.reduce((a, b) => a + b, 0) / recentSmooth.length;
+    const variance = recentSmooth.reduce((a, b) => a + (b - mean) ** 2, 0) / recentSmooth.length;
+    const std = Math.sqrt(variance);
+    const sens = state.sensitivity;
+    const threshMult = 2.2 - (sens - 1) * 0.14;
+    const threshold = mean + threshMult * std;
+    const ty = toY(threshold);
+
+    ctx.strokeStyle = 'rgba(251,191,36,0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(0, ty);
+    ctx.lineTo(W, ty);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Label
+    ctx.fillStyle = 'rgba(251,191,36,0.6)';
+    ctx.font = '10px DM Mono, monospace';
+    ctx.fillText('threshold', 6, ty - 4);
+  }
+
+  // Draw raw signal
+  ctx.strokeStyle = 'rgba(34,211,238,0.35)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i < displayCount; i++) {
+    const ri = startIdx + i;
+    const x = toX(i);
+    const y = toY(raw[ri]);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Draw smoothed signal with fill
+  const smoothStart = startIdx;
+  const smoothSlice = smooth.slice(smoothStart);
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(34,211,238,0.18)');
+  grad.addColorStop(1, 'rgba(34,211,238,0.01)');
+
+  ctx.beginPath();
+  ctx.moveTo(toX(0), H);
+  for (let i = 0; i < smoothSlice.length; i++) {
+    const x = toX(i);
+    const y = toY(smoothSlice[i]);
+    ctx.lineTo(x, y);
+  }
+  ctx.lineTo(toX(smoothSlice.length - 1), H);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(34,211,238,0.7)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < smoothSlice.length; i++) {
+    const x = toX(i);
+    const y = toY(smoothSlice[i]);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Draw peak markers
+  for (const pk of state.peakMarkers) {
+    const i = pk.histIdx - startIdx;
+    if (i < 0 || i >= displayCount) continue;
+    const x = toX(i);
+    const y = toY(pk.y);
+
+    // Vertical line
+    ctx.strokeStyle = 'rgba(74,222,128,0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y + 10);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+
+    // Circle
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(74,222,128,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Current motion value label
+  if (raw.length > 0) {
+    const latest = smooth[smooth.length - 1] || 0;
+    ctx.fillStyle = 'rgba(34,211,238,0.8)';
+    ctx.font = '11px DM Mono, monospace';
+    ctx.fillText(`motion: ${latest.toFixed(1)}`, W - 110, 18);
+  }
+}
+
+// ── RAF loop ───────────────────────────────────────────────────────────────
+let rafId = null;
+const SMOOTH_WINDOW = 8;
+
+function loop() {
+  if (!state.running || state.paused) {
+    renderGraph();
+    if (state.running || state.paused) rafId = requestAnimationFrame(loop);
+    return;
+  }
+
+  // Compute motion
+  const score = computeMotionScore();
+
+  state.motionHistory.push(score);
+  if (state.motionHistory.length > HISTORY_MAX) state.motionHistory.shift();
+
+  const smoothed = rollingAverage(state.motionHistory, SMOOTH_WINDOW);
+  state.smoothHistory.push(smoothed);
+  if (state.smoothHistory.length > HISTORY_MAX) state.smoothHistory.shift();
+
+  // Detect peak
+  if (detectPeak()) {
+    registerRep();
+  }
+
+  // Update timer
+  sessionTimeEl.textContent = formatTime(getElapsedMs());
+
+  renderGraph();
+
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Controls ───────────────────────────────────────────────────────────────
+startBtn.addEventListener('click', async () => {
+  const ok = await startCamera();
+  if (!ok) return;
+
+  state.running = true;
+  state.paused = false;
+  state.sessionStart = Date.now();
+  state.sessionElapsed = 0;
+
+  startBtn.style.display = 'none';
+  pauseBtn.style.display = 'flex';
+  stopBtn.style.display = 'flex';
+
+  rafId = requestAnimationFrame(loop);
+});
+
+pauseBtn.addEventListener('click', () => {
+  state.paused = true;
+  state.sessionElapsed += Date.now() - state.sessionStart;
+  state.sessionStart = null;
+
+  pauseBtn.style.display = 'none';
+  resumeBtn.style.display = 'flex';
+});
+
+resumeBtn.addEventListener('click', () => {
+  state.paused = false;
+  state.sessionStart = Date.now();
+
+  resumeBtn.style.display = 'none';
+  pauseBtn.style.display = 'flex';
+});
+
+stopBtn.addEventListener('click', () => {
+  finishWorkout();
+});
+
+resetBtn.addEventListener('click', () => {
+  resetAll();
+});
+
+modalClose.addEventListener('click', () => {
+  summaryModal.classList.add('hidden');
+  resetAll();
+});
+
+function finishWorkout() {
+  state.running = false;
+  state.paused = false;
+  if (state.sessionStart) {
+    state.sessionElapsed += Date.now() - state.sessionStart;
+    state.sessionStart = null;
+  }
+  cancelAnimationFrame(rafId);
+  stopCamera();
+
+  // Save last set if it has reps
+  if (state.currentSetReps > 0) {
+    state.sets.push({ set: state.setNumber, reps: state.currentSetReps });
+  }
+
+  // Show summary
+  sumTotalReps.textContent = state.totalReps;
+  sumSets.textContent = state.sets.length || (state.currentSetReps > 0 ? 1 : 0);
+  const cfg = EXERCISES[state.exercise];
+  sumCal.textContent = Math.round(state.totalReps * cfg.cal);
+  summaryTime.textContent = 'Duration: ' + formatTime(state.sessionElapsed);
+
+  setsSummaryList.innerHTML = '';
+  state.sets.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'sets-summary-row';
+    row.innerHTML = `<span class="sn">Set ${s.set}</span><span class="sr">${s.reps} reps</span>`;
+    setsSummaryList.appendChild(row);
+  });
+  if (state.sets.length === 0 && state.currentSetReps > 0) {
+    const row = document.createElement('div');
+    row.className = 'sets-summary-row';
+    row.innerHTML = `<span class="sn">Set 1</span><span class="sr">${state.currentSetReps} reps</span>`;
+    setsSummaryList.appendChild(row);
+  }
+
+  summaryModal.classList.remove('hidden');
+
+  startBtn.style.display = 'flex';
+  pauseBtn.style.display = 'none';
+  resumeBtn.style.display = 'none';
+  stopBtn.style.display = 'none';
+  resetBtn.style.display = 'flex';
+}
+
+function resetAll() {
+  cancelAnimationFrame(rafId);
+  stopCamera();
+
+  state.running = false;
+  state.paused = false;
+  state.repCount = 0;
+  state.totalReps = 0;
+  state.setNumber = 1;
+  state.sets = [];
+  state.currentSetReps = 0;
+  state.motionHistory = [];
+  state.smoothHistory = [];
+  state.peakMarkers = [];
+  state.lastPeakIndex = -999;
+  state.prevFrame = null;
+  state.sessionStart = null;
+  state.sessionElapsed = 0;
+
+  repNumber.textContent = '0';
+  totalRepsVal.textContent = '0';
+  setsVal.textContent = '1';
+  calVal.textContent = '0';
+  sessionTimeEl.textContent = '00:00';
+  currentSetRepsEl.textContent = '0 reps';
+  currentSetItem.querySelector('.set-name').textContent = 'Set 1';
+
+  // Clear extra set items
+  while (setsList.children.length > 1) {
+    setsList.removeChild(setsList.lastChild);
+  }
+  currentSetItem.classList.add('active');
+
+  startBtn.style.display = 'flex';
+  pauseBtn.style.display = 'none';
+  resumeBtn.style.display = 'none';
+  stopBtn.style.display = 'none';
+  resetBtn.style.display = 'none';
+
+  renderGraph();
+}
+
+// ── Next set ───────────────────────────────────────────────────────────────
+nextSetBtn.addEventListener('click', () => {
+  if (!state.running || state.paused) return;
+
+  // Save current set
+  state.sets.push({ set: state.setNumber, reps: state.currentSetReps });
+
+  // Mark current item complete
+  currentSetItem.classList.remove('active');
+
+  // New set
+  state.setNumber++;
+  state.repCount = 0;
+  state.currentSetReps = 0;
+
+  repNumber.textContent = '0';
+  setsVal.textContent = state.setNumber;
+
+  currentSetItem.querySelector('.set-name').textContent = `Set ${state.setNumber}`;
+  currentSetItem.querySelector('.set-reps').textContent = '0 reps';
+  currentSetRepsEl.textContent = '0 reps';
+  currentSetItem.classList.add('active');
+
+  // Add past set display
+  const pastItem = document.createElement('div');
+  pastItem.className = 'set-item';
+  pastItem.innerHTML = `<span class="set-name">Set ${state.setNumber - 1}</span><span class="set-reps">${state.sets[state.sets.length - 1].reps} reps</span>`;
+  setsList.insertBefore(pastItem, currentSetItem);
+
+  speak('Next set');
+});
+
+// ── Exercise buttons ───────────────────────────────────────────────────────
+document.querySelectorAll('.ex-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ex-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.exercise = btn.dataset.ex;
+    const cfg = EXERCISES[state.exercise];
+    currentExLabel.textContent = cfg.label;
+    exerciseHint.textContent = cfg.hint;
+    updateCalories();
+  });
+});
+
+// ── Sensitivity slider ─────────────────────────────────────────────────────
+const sensitivitySlider = document.getElementById('sensitivitySlider');
+sensitivitySlider.addEventListener('input', () => {
+  state.sensitivity = parseInt(sensitivitySlider.value, 10);
+  sensitivityVal.textContent = state.sensitivity;
+});
+
+// ── Voice toggle ───────────────────────────────────────────────────────────
+const voiceToggle = document.getElementById('voiceToggle');
+voiceToggle.addEventListener('change', () => {
+  state.voiceEnabled = voiceToggle.checked;
+});
+
+// ── Resize graph ───────────────────────────────────────────────────────────
+const resizeObs = new ResizeObserver(() => renderGraph());
+resizeObs.observe(graphCanvas.parentElement);
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderGraph();
+</script>
+</body>
+</html>

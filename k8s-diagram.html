@@ -1,0 +1,2334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K8s Diagram — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.15);
+  --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --purple: #a78bfa;
+  --orange: #fb923c;
+  --pink: #f472b6;
+  --radius: 14px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Topbar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.topbar-left { display:flex; align-items:center; gap:16px; }
+.topbar-right { display:flex; align-items:center; gap:8px; }
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--accent); }
+.back-link svg { width:14px; height:14px; }
+
+.topbar-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.view-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.view-btn:hover { border-color: var(--accent); color: var(--accent); }
+.view-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+/* ── Main Layout ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Left Sidebar ── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sidebar-header h3 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+.search-box svg { width:13px; height:13px; color: var(--text-3); flex-shrink:0; }
+.search-box input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  width: 100%;
+}
+.search-box input::placeholder { color: var(--text-3); }
+
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.sidebar-list::-webkit-scrollbar { width: 4px; }
+.sidebar-list::-webkit-scrollbar-track { background: transparent; }
+.sidebar-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.sidebar-group-label {
+  padding: 10px 16px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 0;
+}
+.sidebar-item:hover { background: var(--surface-2); }
+.sidebar-item.active { background: var(--accent-dim); }
+.sidebar-item .item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.sidebar-item span {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-2);
+  transition: color 0.15s;
+}
+.sidebar-item:hover span, .sidebar-item.active span { color: var(--text); }
+
+/* ── Center: Diagram Area ── */
+.diagram-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.diagram-canvas {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+#main-svg {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+#main-svg:active { cursor: grabbing; }
+
+.svg-node {
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.svg-node:hover { filter: brightness(1.3); }
+.svg-node.highlighted rect, .svg-node.highlighted ellipse { stroke-width: 2.5 !important; filter: drop-shadow(0 0 8px currentColor); }
+
+/* Zoom controls */
+.zoom-controls {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.zoom-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.zoom-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Right Panel ── */
+.detail-panel {
+  width: 320px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.panel-tab {
+  flex: 1;
+  padding: 10px 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.panel-tab:hover { color: var(--text-2); }
+.panel-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+.panel-content::-webkit-scrollbar { width: 4px; }
+.panel-content::-webkit-scrollbar-track { background: transparent; }
+.panel-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.panel-tab-pane { display: none; }
+.panel-tab-pane.active { display: block; }
+
+/* Detail pane */
+.detail-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  gap: 10px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.detail-empty svg { opacity: 0.3; }
+
+.detail-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.detail-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.detail-desc {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.detail-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 8px;
+  margin-top: 16px;
+}
+
+.related-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.related-tag {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.related-tag:hover { border-color: var(--accent); color: var(--accent); }
+
+/* YAML block */
+.yaml-block {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--text-2);
+  white-space: pre;
+  overflow-x: auto;
+  position: relative;
+}
+.yaml-block::-webkit-scrollbar { height: 4px; }
+.yaml-block::-webkit-scrollbar-track { background: transparent; }
+.yaml-block::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.yaml-key { color: var(--accent); }
+.yaml-value { color: var(--green); }
+.yaml-string { color: var(--yellow); }
+.yaml-comment { color: var(--text-3); }
+
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-3);
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* kubectl commands */
+.cmd-list { display: flex; flex-direction: column; gap: 6px; }
+.cmd-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+.cmd-item:hover { border-color: var(--accent); color: var(--text); }
+.cmd-dollar { color: var(--accent); flex-shrink: 0; }
+
+/* ── Bottom Bar: Simulator ── */
+.bottom-bar {
+  border-top: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  background: var(--surface);
+  overflow-x: auto;
+}
+.bottom-bar::-webkit-scrollbar { height: 4px; }
+.bottom-bar::-webkit-scrollbar-track { background: transparent; }
+.bottom-bar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.sim-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.nodes-row {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.node-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  min-width: 120px;
+}
+.node-card-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  margin-bottom: 6px;
+  letter-spacing: 0.06em;
+}
+.node-pods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.pod-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  transition: all 0.5s ease;
+}
+.pod-dot.running { background: var(--green); }
+.pod-dot.pending { background: var(--yellow); animation: pod-pulse 1s ease infinite; }
+.pod-dot.terminating { background: var(--red); animation: pod-fade 0.8s ease forwards; }
+.pod-dot.empty { background: var(--surface-3); border: 1px solid var(--border); }
+
+@keyframes pod-pulse {
+  0%,100% { opacity:0.5; transform:scale(0.85); }
+  50% { opacity:1; transform:scale(1); }
+}
+@keyframes pod-fade {
+  to { opacity:0; transform:scale(0.5); }
+}
+
+.sim-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.replica-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.replica-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.replica-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--accent);
+  min-width: 20px;
+  text-align: center;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100px;
+  height: 4px;
+  background: var(--surface-3);
+  border-radius: 4px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg);
+}
+
+.sim-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.sim-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sim-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+/* ── YAML Generator Tab ── */
+.yaml-form { display: flex; flex-direction: column; gap: 12px; }
+
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.form-control {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.form-control:focus { border-color: var(--accent); }
+select.form-control option { background: var(--surface-2); }
+
+.generate-btn {
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+.generate-btn:hover { background: rgba(34,211,238,0.15); }
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(10px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* SVG styles */
+.edge-line {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1.5;
+  marker-end: url(#arrow);
+}
+.edge-line.highlighted {
+  stroke: var(--accent);
+  stroke-opacity: 0.6;
+}
+
+/* Rolling update animation */
+@keyframes roll-in {
+  from { opacity:0; transform:translateX(-8px); }
+  to { opacity:1; transform:translateX(0); }
+}
+.pod-dot.rolling { animation: roll-in 0.4s ease both; }
+
+/* Tooltip */
+.svg-tooltip {
+  position: absolute;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-2);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 100;
+  white-space: nowrap;
+}
+.svg-tooltip.visible { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <a href="index.html" class="back-link">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M10 12L6 8l4-4"/>
+        </svg>
+        utile
+      </a>
+      <span style="color:var(--border)">|</span>
+      <span class="topbar-title">Kubernetes Object Diagram</span>
+    </div>
+    <div class="topbar-right">
+      <button class="view-btn active" data-view="all" onclick="setView('all')">All</button>
+      <button class="view-btn" data-view="workloads" onclick="setView('workloads')">Workloads</button>
+      <button class="view-btn" data-view="networking" onclick="setView('networking')">Networking</button>
+      <button class="view-btn" data-view="storage" onclick="setView('storage')">Storage</button>
+      <button class="view-btn" data-view="config" onclick="setView('config')">Config</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h3>Objects</h3>
+        <div class="search-box">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="6.5" cy="6.5" r="4"/>
+            <path d="M11 11l3 3"/>
+          </svg>
+          <input type="text" placeholder="Search..." id="sidebar-search" oninput="filterSidebar(this.value)">
+        </div>
+      </div>
+      <div class="sidebar-list" id="sidebar-list"></div>
+    </div>
+
+    <!-- Diagram + Detail split -->
+    <div class="diagram-area">
+      <div class="diagram-canvas" id="diagram-canvas">
+        <svg id="main-svg" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#2e2e33"/>
+            </marker>
+            <marker id="arrow-accent" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#22d3ee" fill-opacity="0.6"/>
+            </marker>
+          </defs>
+          <g id="svg-root"></g>
+        </svg>
+        <div class="svg-tooltip" id="svg-tooltip"></div>
+        <div class="zoom-controls">
+          <button class="zoom-btn" onclick="zoom(1.2)">+</button>
+          <button class="zoom-btn" onclick="zoom(0.8)">−</button>
+          <button class="zoom-btn" onclick="resetZoom()" title="Reset" style="font-size:12px">⟳</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div class="detail-panel">
+      <div class="panel-tabs">
+        <button class="panel-tab active" data-tab="detail" onclick="switchTab('detail')">Info</button>
+        <button class="panel-tab" data-tab="yaml" onclick="switchTab('yaml')">YAML</button>
+        <button class="panel-tab" data-tab="kubectl" onclick="switchTab('kubectl')">kubectl</button>
+        <button class="panel-tab" data-tab="generator" onclick="switchTab('generator')">Generate</button>
+      </div>
+      <div class="panel-content">
+        <div class="panel-tab-pane active" id="tab-detail">
+          <div class="detail-empty" id="detail-empty">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="8" y="8" width="24" height="24" rx="4"/>
+              <path d="M14 20h12M20 14v12"/>
+            </svg>
+            <span>Click any object to explore</span>
+          </div>
+          <div id="detail-content" style="display:none"></div>
+        </div>
+        <div class="panel-tab-pane" id="tab-yaml">
+          <div class="detail-empty" id="yaml-empty">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 8h16a2 2 0 012 2v20a2 2 0 01-2 2H12a2 2 0 01-2-2V10a2 2 0 012-2z"/>
+              <path d="M15 16h10M15 21h10M15 26h6"/>
+            </svg>
+            <span>Select an object to view YAML</span>
+          </div>
+          <div id="yaml-content" style="display:none"></div>
+        </div>
+        <div class="panel-tab-pane" id="tab-kubectl">
+          <div class="detail-empty" id="kubectl-empty">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="6" y="10" width="28" height="20" rx="3"/>
+              <path d="M12 20l4-4 4 4 4-4"/>
+            </svg>
+            <span>Select an object for commands</span>
+          </div>
+          <div id="kubectl-content" style="display:none"></div>
+        </div>
+        <div class="panel-tab-pane" id="tab-generator">
+          <div id="generator-content"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Simulator -->
+  <div class="bottom-bar">
+    <span class="sim-label">Cluster Sim</span>
+    <div class="nodes-row" id="nodes-row"></div>
+    <div class="sim-controls">
+      <div class="replica-control">
+        <span class="replica-label">Replicas:</span>
+        <input type="range" min="1" max="8" value="3" id="replica-slider" oninput="setReplicas(this.value)">
+        <span class="replica-count" id="replica-display">3</span>
+      </div>
+      <button class="sim-btn" id="rolling-btn" onclick="triggerRollingUpdate()">Rolling Update</button>
+      <button class="sim-btn active" id="sim-toggle" onclick="toggleSim()">⏸ Pause</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// K8s Object Data
+// ═══════════════════════════════════════════════════════
+const K8S_OBJECTS = {
+  Cluster: {
+    color: '#22d3ee',
+    group: 'Infrastructure',
+    desc: 'The Kubernetes cluster is the top-level grouping of all resources. It consists of a control plane (API server, etcd, scheduler, controller manager) and worker nodes that run your workloads.',
+    yaml: `apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-cluster
+  # Clusters are configured via kubeconfig
+  # Example cluster context:
+contexts:
+- context:
+    cluster: my-cluster
+    user: admin
+  name: my-cluster`,
+    cmds: [
+      'kubectl cluster-info',
+      'kubectl get nodes -o wide',
+      'kubectl get all --all-namespaces',
+      'kubectl config get-contexts',
+      'kubectl config use-context my-cluster',
+    ],
+    related: ['Namespace','Node'],
+    views: ['all'],
+  },
+  Namespace: {
+    color: '#a78bfa',
+    group: 'Infrastructure',
+    desc: 'Namespaces provide a mechanism for isolating groups of resources within a single cluster. Names of resources need to be unique within a namespace, but not across namespaces.',
+    yaml: `apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-namespace
+  labels:
+    env: production
+    team: backend`,
+    cmds: [
+      'kubectl get namespaces',
+      'kubectl create namespace my-ns',
+      'kubectl delete namespace my-ns',
+      'kubectl get all -n my-namespace',
+      'kubectl config set-context --current --namespace=my-ns',
+    ],
+    related: ['Pod','Service','Deployment','ConfigMap','Secret'],
+    views: ['all'],
+  },
+  Node: {
+    color: '#fb923c',
+    group: 'Infrastructure',
+    desc: 'Nodes are the worker machines that run containerized applications. Each node contains the services necessary to run Pods: kubelet, kube-proxy, and a container runtime like containerd.',
+    yaml: `# Nodes are managed by the control plane
+# View node details:
+apiVersion: v1
+kind: Node
+metadata:
+  name: node-1
+  labels:
+    kubernetes.io/hostname: node-1
+    node.kubernetes.io/instance-type: m5.large
+spec:
+  taints:
+  - key: "dedicated"
+    value: "gpu"
+    effect: NoSchedule`,
+    cmds: [
+      'kubectl get nodes',
+      'kubectl describe node node-1',
+      'kubectl top node',
+      'kubectl cordon node-1',
+      'kubectl drain node-1 --ignore-daemonsets',
+      'kubectl uncordon node-1',
+    ],
+    related: ['Pod','Cluster'],
+    views: ['all','workloads'],
+  },
+  Pod: {
+    color: '#4ade80',
+    group: 'Workloads',
+    desc: 'Pods are the smallest deployable units in Kubernetes. A Pod encapsulates one or more containers, storage resources, a unique network IP, and options that govern how containers run.',
+    yaml: `apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+  namespace: default
+  labels:
+    app: my-app
+    version: v1
+spec:
+  containers:
+  - name: app
+    image: nginx:1.21
+    ports:
+    - containerPort: 80
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    env:
+    - name: ENV_VAR
+      valueFrom:
+        configMapKeyRef:
+          name: my-config
+          key: ENV_VAR
+  restartPolicy: Always`,
+    cmds: [
+      'kubectl get pods -n default',
+      'kubectl describe pod my-pod',
+      'kubectl logs my-pod -f',
+      'kubectl exec -it my-pod -- /bin/sh',
+      'kubectl delete pod my-pod',
+      'kubectl top pod my-pod',
+    ],
+    related: ['ReplicaSet','Service','ConfigMap','Secret','PVC','Node'],
+    views: ['all','workloads'],
+  },
+  Deployment: {
+    color: '#22d3ee',
+    group: 'Workloads',
+    desc: 'A Deployment manages a replicated application by creating ReplicaSets and Pods. It provides declarative updates — you describe the desired state and the Deployment Controller changes the actual state to match it.',
+    yaml: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+  namespace: default
+  labels:
+    app: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: app
+        image: my-app:v2
+        ports:
+        - containerPort: 8080`,
+    cmds: [
+      'kubectl get deployments',
+      'kubectl apply -f deployment.yaml',
+      'kubectl rollout status deployment/my-deployment',
+      'kubectl rollout undo deployment/my-deployment',
+      'kubectl scale deployment/my-deployment --replicas=5',
+      'kubectl rollout history deployment/my-deployment',
+    ],
+    related: ['ReplicaSet','Pod','HPA','Service'],
+    views: ['all','workloads'],
+  },
+  ReplicaSet: {
+    color: '#34d399',
+    group: 'Workloads',
+    desc: 'A ReplicaSet ensures that a specified number of Pod replicas are running at any given time. It is usually managed by a Deployment and handles the actual Pod lifecycle.',
+    yaml: `apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: my-replicaset
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: my-app
+        tier: frontend
+    spec:
+      containers:
+      - name: app
+        image: nginx:1.21`,
+    cmds: [
+      'kubectl get replicasets',
+      'kubectl describe rs my-replicaset',
+      'kubectl delete rs my-replicaset',
+      'kubectl scale rs my-replicaset --replicas=5',
+    ],
+    related: ['Deployment','Pod'],
+    views: ['all','workloads'],
+  },
+  StatefulSet: {
+    color: '#60a5fa',
+    group: 'Workloads',
+    desc: 'StatefulSet manages the deployment and scaling of a set of Pods, guaranteeing the ordering and uniqueness of these Pods. Ideal for stateful applications like databases.',
+    yaml: `apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: my-statefulset
+spec:
+  serviceName: "my-service"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: app
+        image: postgres:14
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi`,
+    cmds: [
+      'kubectl get statefulsets',
+      'kubectl describe sts my-statefulset',
+      'kubectl scale sts my-statefulset --replicas=5',
+      'kubectl rollout restart sts/my-statefulset',
+    ],
+    related: ['Pod','PVC','Service'],
+    views: ['all','workloads'],
+  },
+  DaemonSet: {
+    color: '#f472b6',
+    group: 'Workloads',
+    desc: 'A DaemonSet ensures that all (or some) Nodes run a copy of a Pod. Typical uses include running a logs collector, node monitoring agent, or a network plugin on every node.',
+    yaml: `apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter
+  template:
+    metadata:
+      labels:
+        app: node-exporter
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: node-exporter
+        image: prom/node-exporter:latest
+        ports:
+        - containerPort: 9100`,
+    cmds: [
+      'kubectl get daemonsets',
+      'kubectl describe ds node-exporter',
+      'kubectl rollout restart ds/node-exporter',
+      'kubectl delete ds node-exporter',
+    ],
+    related: ['Pod','Node','Namespace'],
+    views: ['all','workloads'],
+  },
+  Service: {
+    color: '#fbbf24',
+    group: 'Networking',
+    desc: 'A Service is an abstract way to expose an application running on a set of Pods as a network service. It provides stable DNS and IP despite Pods being ephemeral. Types: ClusterIP, NodePort, LoadBalancer.',
+    yaml: `apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: my-app
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 8080
+  - name: https
+    protocol: TCP
+    port: 443
+    targetPort: 8443
+# For LoadBalancer:
+# type: LoadBalancer
+# For NodePort:
+# type: NodePort
+# nodePort: 30080`,
+    cmds: [
+      'kubectl get services',
+      'kubectl describe svc my-service',
+      'kubectl expose deployment my-app --port=80 --type=LoadBalancer',
+      'kubectl port-forward svc/my-service 8080:80',
+      'kubectl delete svc my-service',
+    ],
+    related: ['Pod','Ingress','Deployment','Endpoint'],
+    views: ['all','networking'],
+  },
+  Ingress: {
+    color: '#f59e0b',
+    group: 'Networking',
+    desc: 'An Ingress exposes HTTP and HTTPS routes from outside the cluster to services within the cluster. Traffic routing is controlled by rules defined on the Ingress resource. Requires an Ingress Controller.',
+    yaml: `apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - my-app.example.com
+    secretName: my-tls-secret
+  rules:
+  - host: my-app.example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80`,
+    cmds: [
+      'kubectl get ingress',
+      'kubectl describe ingress my-ingress',
+      'kubectl apply -f ingress.yaml',
+      'kubectl delete ingress my-ingress',
+    ],
+    related: ['Service','Secret'],
+    views: ['all','networking'],
+  },
+  NetworkPolicy: {
+    color: '#e879f9',
+    group: 'Networking',
+    desc: 'NetworkPolicy defines how groups of Pods are allowed to communicate with each other and with network endpoints. By default, all traffic is allowed; NetworkPolicies restrict it.',
+    yaml: `apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+    ports:
+    - protocol: TCP
+      port: 8080`,
+    cmds: [
+      'kubectl get networkpolicies',
+      'kubectl describe netpol allow-frontend',
+      'kubectl apply -f netpol.yaml',
+    ],
+    related: ['Pod','Namespace'],
+    views: ['all','networking'],
+  },
+  ConfigMap: {
+    color: '#a3e635',
+    group: 'Configuration',
+    desc: 'ConfigMaps allow you to decouple configuration artifacts from image content to keep containerized applications portable. They store non-confidential data as key-value pairs.',
+    yaml: `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+  namespace: default
+data:
+  ENV_VAR: "production"
+  database_host: "postgres.default.svc.cluster.local"
+  database_port: "5432"
+  config.yaml: |
+    server:
+      port: 8080
+      debug: false
+    database:
+      maxConnections: 20`,
+    cmds: [
+      'kubectl get configmaps',
+      'kubectl describe cm my-config',
+      'kubectl create cm my-config --from-literal=key=value',
+      'kubectl create cm my-config --from-file=config.yaml',
+      'kubectl delete cm my-config',
+    ],
+    related: ['Pod','Deployment'],
+    views: ['all','config'],
+  },
+  Secret: {
+    color: '#f87171',
+    group: 'Configuration',
+    desc: 'Secrets store sensitive data such as passwords, OAuth tokens, and SSH keys. Values are base64-encoded (not encrypted by default — use encryption at rest or a secrets manager for production).',
+    yaml: `apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+  namespace: default
+type: Opaque
+data:
+  username: YWRtaW4=     # base64: admin
+  password: cGFzc3dvcmQ= # base64: password
+stringData:
+  api-key: "plain-text-value-auto-encoded"
+# TLS secret:
+# type: kubernetes.io/tls
+# data:
+#   tls.crt: <base64 cert>
+#   tls.key: <base64 key>`,
+    cmds: [
+      'kubectl get secrets',
+      'kubectl describe secret my-secret',
+      'kubectl create secret generic my-secret --from-literal=password=secret',
+      'kubectl create secret tls my-tls --cert=cert.pem --key=key.pem',
+      'kubectl get secret my-secret -o jsonpath="{.data.password}" | base64 -d',
+    ],
+    related: ['Pod','ServiceAccount','Ingress'],
+    views: ['all','config'],
+  },
+  ServiceAccount: {
+    color: '#94a3b8',
+    group: 'Configuration',
+    desc: 'Service Accounts provide an identity for processes that run in a Pod. When a Pod accesses the Kubernetes API, it authenticates as a particular Service Account.',
+    yaml: `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-service-account
+  namespace: default
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789:role/my-role
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: my-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: my-service-account
+roleRef:
+  kind: Role
+  name: my-role
+  apiGroup: rbac.authorization.k8s.io`,
+    cmds: [
+      'kubectl get serviceaccounts',
+      'kubectl describe sa my-service-account',
+      'kubectl create serviceaccount my-sa',
+    ],
+    related: ['Pod','Secret','Role'],
+    views: ['all','config'],
+  },
+  PersistentVolumeClaim: {
+    color: '#fb923c',
+    group: 'Storage',
+    desc: 'A PersistentVolumeClaim (PVC) is a request for storage by a user. It can request specific size and access modes (ReadWriteOnce, ReadOnlyMany, ReadWriteMany).',
+    yaml: `apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pvc
+  namespace: default
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: fast-ssd
+  resources:
+    requests:
+      storage: 20Gi
+  # For static binding:
+  # volumeName: my-pv`,
+    cmds: [
+      'kubectl get pvc',
+      'kubectl describe pvc my-pvc',
+      'kubectl delete pvc my-pvc',
+      'kubectl get pvc -o wide',
+    ],
+    related: ['PersistentVolume','StorageClass','Pod'],
+    views: ['all','storage'],
+  },
+  PersistentVolume: {
+    color: '#c084fc',
+    group: 'Storage',
+    desc: 'A PersistentVolume (PV) is a piece of storage in the cluster provisioned by an administrator or dynamically provisioned using StorageClasses. It is independent of any individual Pod lifecycle.',
+    yaml: `apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-pv
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: fast-ssd
+  hostPath:
+    path: /data/my-pv
+  # For cloud volumes:
+  # awsElasticBlockStore:
+  #   volumeID: vol-0123456789abcdef0
+  #   fsType: ext4`,
+    cmds: [
+      'kubectl get pv',
+      'kubectl describe pv my-pv',
+      'kubectl delete pv my-pv',
+      'kubectl get pv -o wide',
+    ],
+    related: ['PersistentVolumeClaim','StorageClass'],
+    views: ['all','storage'],
+  },
+  StorageClass: {
+    color: '#e879f9',
+    group: 'Storage',
+    desc: 'StorageClasses provide a way to describe the "classes" of storage offered. Different classes map to quality-of-service levels, backup policies, or arbitrary policies determined by the cluster administrators.',
+    yaml: `apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-ssd
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp3
+  iops: "3000"
+  throughput: "125"
+  encrypted: "true"
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true`,
+    cmds: [
+      'kubectl get storageclass',
+      'kubectl describe sc fast-ssd',
+      'kubectl apply -f storageclass.yaml',
+      'kubectl patch sc fast-ssd -p \'{"metadata": {"annotations": {"storageclass.kubernetes.io/is-default-class": "true"}}}\'',
+    ],
+    related: ['PersistentVolume','PersistentVolumeClaim'],
+    views: ['all','storage'],
+  },
+  HPA: {
+    color: '#22d3ee',
+    group: 'Workloads',
+    desc: 'HorizontalPodAutoscaler (HPA) automatically scales the number of Pod replicas in a Deployment, ReplicaSet, or StatefulSet based on observed CPU utilization or custom metrics.',
+    yaml: `apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-deployment
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: AverageValue
+        averageValue: 500Mi`,
+    cmds: [
+      'kubectl get hpa',
+      'kubectl describe hpa my-hpa',
+      'kubectl autoscale deployment my-app --cpu-percent=70 --min=2 --max=10',
+      'kubectl delete hpa my-hpa',
+    ],
+    related: ['Deployment','Pod'],
+    views: ['all','workloads'],
+  },
+  Job: {
+    color: '#fbbf24',
+    group: 'Workloads',
+    desc: 'A Job creates one or more Pods and ensures that a specified number of them successfully terminate. It tracks successful completions and retries on failure.',
+    yaml: `apiVersion: batch/v1
+kind: Job
+metadata:
+  name: my-job
+spec:
+  completions: 3
+  parallelism: 2
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: worker
+        image: my-worker:latest
+        command: ["./process-batch.sh"]
+        env:
+        - name: BATCH_SIZE
+          value: "100"`,
+    cmds: [
+      'kubectl get jobs',
+      'kubectl describe job my-job',
+      'kubectl logs job/my-job',
+      'kubectl delete job my-job',
+    ],
+    related: ['Pod'],
+    views: ['all','workloads'],
+  },
+  CronJob: {
+    color: '#34d399',
+    group: 'Workloads',
+    desc: 'CronJob creates Jobs on a repeating schedule. It is useful for performing scheduled or periodic tasks, such as backups, report generation, or sending emails.',
+    yaml: `apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: my-cronjob
+spec:
+  schedule: "0 2 * * *"  # 2am daily
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: backup-tool:latest
+            command: ["./backup.sh"]`,
+    cmds: [
+      'kubectl get cronjobs',
+      'kubectl describe cronjob my-cronjob',
+      'kubectl create job --from=cronjob/my-cronjob manual-run',
+      'kubectl delete cronjob my-cronjob',
+    ],
+    related: ['Job','Pod'],
+    views: ['all','workloads'],
+  },
+};
+
+// ═══════════════════════════════════════════════════════
+// Diagram Layout — node positions
+// ═══════════════════════════════════════════════════════
+const NODE_LAYOUT = {
+  // Infrastructure top row
+  Cluster:    { x: 400, y: 50,  w: 100, h: 38 },
+  Namespace:  { x: 400, y: 130, w: 110, h: 38 },
+  Node:       { x: 700, y: 130, w: 80,  h: 38 },
+
+  // Workloads
+  Deployment: { x: 220, y: 230, w: 105, h: 38 },
+  HPA:        { x: 80,  y: 230, w: 80,  h: 38 },
+  StatefulSet:{ x: 350, y: 230, w: 110, h: 38 },
+  DaemonSet:  { x: 480, y: 230, w: 100, h: 38 },
+  Job:        { x: 600, y: 230, w: 70,  h: 38 },
+  CronJob:    { x: 690, y: 230, w: 85,  h: 38 },
+
+  ReplicaSet: { x: 220, y: 320, w: 100, h: 38 },
+  Pod:        { x: 360, y: 420, w: 70,  h: 38 },
+
+  // Networking
+  Service:    { x: 540, y: 420, w: 80,  h: 38 },
+  Ingress:    { x: 650, y: 320, w: 80,  h: 38 },
+  NetworkPolicy:{ x: 760, y: 420, w: 120, h: 38 },
+
+  // Config
+  ConfigMap:  { x: 100, y: 520, w: 100, h: 38 },
+  Secret:     { x: 220, y: 520, w: 80,  h: 38 },
+  ServiceAccount: { x: 320, y: 520, w: 140, h: 38 },
+
+  // Storage
+  PersistentVolumeClaim: { x: 500, y: 520, w: 80, h: 38, label: 'PVC' },
+  PersistentVolume:      { x: 600, y: 600, w: 80, h: 38, label: 'PV'  },
+  StorageClass:          { x: 720, y: 600, w: 115, h: 38 },
+};
+
+const EDGES = [
+  { from: 'Cluster',    to: 'Namespace' },
+  { from: 'Cluster',    to: 'Node' },
+  { from: 'Namespace',  to: 'Deployment' },
+  { from: 'Namespace',  to: 'StatefulSet' },
+  { from: 'Namespace',  to: 'DaemonSet' },
+  { from: 'Namespace',  to: 'Job' },
+  { from: 'Namespace',  to: 'Service' },
+  { from: 'Namespace',  to: 'ConfigMap' },
+  { from: 'Namespace',  to: 'Secret' },
+  { from: 'Namespace',  to: 'PersistentVolumeClaim' },
+  { from: 'HPA',        to: 'Deployment', style:'dashed' },
+  { from: 'CronJob',    to: 'Job' },
+  { from: 'Deployment', to: 'ReplicaSet' },
+  { from: 'ReplicaSet', to: 'Pod' },
+  { from: 'StatefulSet',to: 'Pod' },
+  { from: 'DaemonSet',  to: 'Pod' },
+  { from: 'Job',        to: 'Pod' },
+  { from: 'Service',    to: 'Pod', style:'dashed', label:'selector' },
+  { from: 'Ingress',    to: 'Service' },
+  { from: 'Pod',        to: 'ConfigMap', style:'dashed' },
+  { from: 'Pod',        to: 'Secret', style:'dashed' },
+  { from: 'Pod',        to: 'PersistentVolumeClaim', style:'dashed' },
+  { from: 'Node',       to: 'Pod', style:'dashed', label:'schedules' },
+  { from: 'PersistentVolumeClaim', to: 'PersistentVolume' },
+  { from: 'PersistentVolume', to: 'StorageClass' },
+];
+
+const VIEW_FILTERS = {
+  all: null,
+  workloads: ['Cluster','Namespace','Node','Pod','Deployment','ReplicaSet','StatefulSet','DaemonSet','Job','CronJob','HPA'],
+  networking: ['Namespace','Pod','Service','Ingress','NetworkPolicy'],
+  storage: ['Namespace','Pod','PersistentVolumeClaim','PersistentVolume','StorageClass'],
+  config: ['Namespace','Pod','ConfigMap','Secret','ServiceAccount'],
+};
+
+// ═══════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════
+let selectedObject = null;
+let currentView = 'all';
+let transform = { x: 0, y: 0, scale: 1 };
+let isDragging = false;
+let dragStart = { x: 0, y: 0 };
+
+// ═══════════════════════════════════════════════════════
+// Sidebar
+// ═══════════════════════════════════════════════════════
+const GROUPS = ['Infrastructure','Workloads','Networking','Storage','Configuration'];
+
+function buildSidebar(filter='') {
+  const list = document.getElementById('sidebar-list');
+  list.innerHTML = '';
+  const f = filter.toLowerCase();
+
+  GROUPS.forEach(group => {
+    const items = Object.entries(K8S_OBJECTS)
+      .filter(([k,v]) => v.group === group && (k.toLowerCase().includes(f) || group.toLowerCase().includes(f)));
+    if (!items.length) return;
+
+    const gl = document.createElement('div');
+    gl.className = 'sidebar-group-label';
+    gl.textContent = group;
+    list.appendChild(gl);
+
+    items.forEach(([name, obj]) => {
+      const item = document.createElement('div');
+      item.className = 'sidebar-item' + (selectedObject === name ? ' active' : '');
+      item.dataset.name = name;
+      item.innerHTML = `
+        <div class="item-dot" style="background:${obj.color}"></div>
+        <span>${name}</span>
+      `;
+      item.addEventListener('click', () => selectObject(name));
+      list.appendChild(item);
+    });
+  });
+}
+
+function filterSidebar(val) { buildSidebar(val); }
+
+// ═══════════════════════════════════════════════════════
+// SVG Diagram
+// ═══════════════════════════════════════════════════════
+function buildDiagram() {
+  const root = document.getElementById('svg-root');
+  root.innerHTML = '';
+
+  const visibleNodes = VIEW_FILTERS[currentView];
+
+  // Draw edges first (behind nodes)
+  EDGES.forEach(edge => {
+    const fn = NODE_LAYOUT[edge.from];
+    const tn = NODE_LAYOUT[edge.to];
+    if (!fn || !tn) return;
+    if (visibleNodes && (!visibleNodes.includes(edge.from) || !visibleNodes.includes(edge.to))) return;
+
+    const x1 = fn.x + fn.w/2;
+    const y1 = fn.y + fn.h;
+    const x2 = tn.x + tn.w/2;
+    const y2 = tn.y;
+
+    const dy = y2 - y1;
+    const dx = x2 - x1;
+
+    let pathD;
+    if (Math.abs(dx) < 20) {
+      pathD = `M${x1},${y1} L${x2},${y2}`;
+    } else {
+      const my = y1 + dy * 0.5;
+      pathD = `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`;
+    }
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', pathD);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', '#2e2e33');
+    path.setAttribute('stroke-width', '1.5');
+    path.setAttribute('marker-end', 'url(#arrow)');
+    if (edge.style === 'dashed') {
+      path.setAttribute('stroke-dasharray', '5,4');
+      path.setAttribute('stroke-opacity', '0.6');
+    }
+    path.dataset.from = edge.from;
+    path.dataset.to = edge.to;
+    path.classList.add('edge-path');
+    root.appendChild(path);
+
+    if (edge.label) {
+      const mx = (x1+x2)/2;
+      const my2 = (y1+y2)/2;
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x', mx);
+      t.setAttribute('y', my2 - 4);
+      t.setAttribute('text-anchor','middle');
+      t.setAttribute('fill','#52525b');
+      t.setAttribute('font-size','9');
+      t.setAttribute('font-family','DM Mono, monospace');
+      t.textContent = edge.label;
+      root.appendChild(t);
+    }
+  });
+
+  // Draw nodes
+  Object.entries(NODE_LAYOUT).forEach(([name, pos]) => {
+    if (visibleNodes && !visibleNodes.includes(name)) return;
+    const obj = K8S_OBJECTS[name];
+    if (!obj) return;
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.classList.add('svg-node');
+    g.dataset.name = name;
+    g.setAttribute('transform', `translate(${pos.x},${pos.y})`);
+
+    // Background rect
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('width', pos.w);
+    rect.setAttribute('height', pos.h);
+    rect.setAttribute('rx', '8');
+    rect.setAttribute('fill', '#18181b');
+    rect.setAttribute('stroke', hexToRgba(obj.color, 0.5));
+    rect.setAttribute('stroke-width', '1.5');
+    g.appendChild(rect);
+
+    // Color accent left bar
+    const bar = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    bar.setAttribute('width', '3');
+    bar.setAttribute('height', pos.h - 8);
+    bar.setAttribute('x', '0');
+    bar.setAttribute('y', '4');
+    bar.setAttribute('rx', '2');
+    bar.setAttribute('fill', obj.color);
+    g.appendChild(bar);
+
+    // Label
+    const label = pos.label || name;
+    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x', pos.w/2 + 1);
+    text.setAttribute('y', pos.h/2 + 1);
+    text.setAttribute('text-anchor','middle');
+    text.setAttribute('dominant-baseline','middle');
+    text.setAttribute('fill', obj.color);
+    text.setAttribute('font-size', label.length > 12 ? '9' : '11');
+    text.setAttribute('font-family','DM Mono, monospace');
+    text.setAttribute('font-weight','500');
+    text.textContent = label;
+    g.appendChild(text);
+
+    if (selectedObject === name) {
+      rect.setAttribute('stroke', obj.color);
+      rect.setAttribute('stroke-width','2.5');
+      rect.setAttribute('fill', hexToRgba(obj.color, 0.08));
+    }
+
+    g.addEventListener('click', () => selectObject(name));
+    g.addEventListener('mouseenter', (e) => showTooltip(e, obj.desc.substring(0,80)+'…'));
+    g.addEventListener('mouseleave', hideTooltip);
+
+    root.appendChild(g);
+  });
+
+  applyTransform();
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ═══════════════════════════════════════════════════════
+// Selection & Panel
+// ═══════════════════════════════════════════════════════
+function selectObject(name) {
+  selectedObject = name;
+  buildSidebar(document.getElementById('sidebar-search').value);
+  buildDiagram();
+  highlightEdges(name);
+  updatePanel(name);
+}
+
+function highlightEdges(name) {
+  document.querySelectorAll('.edge-path').forEach(p => {
+    if (p.dataset.from === name || p.dataset.to === name) {
+      p.setAttribute('stroke', '#22d3ee');
+      p.setAttribute('stroke-opacity', '0.7');
+      p.setAttribute('marker-end','url(#arrow-accent)');
+    }
+  });
+}
+
+function updatePanel(name) {
+  const obj = K8S_OBJECTS[name];
+  if (!obj) return;
+
+  // Detail tab
+  document.getElementById('detail-empty').style.display = 'none';
+  const dc = document.getElementById('detail-content');
+  dc.style.display = 'block';
+  dc.innerHTML = `
+    <div class="detail-kind" style="background:${hexToRgba(obj.color,0.12)};color:${obj.color};border:1px solid ${hexToRgba(obj.color,0.3)}">
+      <div style="width:6px;height:6px;border-radius:50%;background:${obj.color}"></div>
+      ${obj.group}
+    </div>
+    <div class="detail-title">${name}</div>
+    <div class="detail-desc">${obj.desc}</div>
+    <div class="detail-section-title">Related Objects</div>
+    <div class="related-tags">
+      ${obj.related.map(r => `<span class="related-tag" onclick="selectObject('${r}')">${r}</span>`).join('')}
+    </div>
+  `;
+
+  // YAML tab
+  document.getElementById('yaml-empty').style.display = 'none';
+  const yc = document.getElementById('yaml-content');
+  yc.style.display = 'block';
+  yc.innerHTML = `
+    <div class="yaml-block" id="yaml-block-content">
+      <button class="copy-btn" onclick="copyYaml('${name}')">Copy</button>
+      ${syntaxHighlightYaml(obj.yaml)}
+    </div>
+  `;
+
+  // kubectl tab
+  document.getElementById('kubectl-empty').style.display = 'none';
+  const kc = document.getElementById('kubectl-content');
+  kc.style.display = 'block';
+  kc.innerHTML = `
+    <div class="detail-section-title" style="margin-top:0">${name} Commands</div>
+    <div class="cmd-list">
+      ${obj.cmds.map(cmd => `
+        <button class="cmd-item" onclick="copyCmd(this, '${escapeCmd(cmd)}')">
+          <span class="cmd-dollar">$</span>
+          <span>${escapeHtml(cmd)}</span>
+        </button>
+      `).join('')}
+    </div>
+    <div style="margin-top:12px;font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace">Click any command to copy</div>
+  `;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escapeCmd(s) {
+  return s.replace(/'/g,"\\'");
+}
+
+function syntaxHighlightYaml(yaml) {
+  return escapeHtml(yaml)
+    .split('\n')
+    .map(line => {
+      if (line.trim().startsWith('#')) return `<span class="yaml-comment">${line}</span>`;
+      return line.replace(/^(\s*)([a-zA-Z_-]+)(\s*:)(.*)$/, (_, indent, key, colon, val) => {
+        let v = val;
+        if (v.trim().startsWith('"') || v.trim().startsWith("'")) {
+          v = ` <span class="yaml-string">${v.trim()}</span>`;
+        } else if (v.trim() && !v.trim().startsWith('-')) {
+          v = ` <span class="yaml-value">${v.trim()}</span>`;
+        }
+        return `${indent}<span class="yaml-key">${key}</span>${colon}${v}`;
+      });
+    })
+    .join('\n');
+}
+
+function copyYaml(name) {
+  const obj = K8S_OBJECTS[name];
+  if (!obj) return;
+  navigator.clipboard.writeText(obj.yaml).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); }
+  });
+}
+
+function copyCmd(el, cmd) {
+  navigator.clipboard.writeText(cmd).then(() => {
+    const orig = el.querySelector('span:last-child').textContent;
+    el.querySelector('span:last-child').textContent = 'Copied!';
+    setTimeout(() => { el.querySelector('span:last-child').textContent = orig; }, 1200);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// View Switching
+// ═══════════════════════════════════════════════════════
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('.view-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  buildDiagram();
+  if (selectedObject) highlightEdges(selectedObject);
+}
+
+// ═══════════════════════════════════════════════════════
+// Pan & Zoom
+// ═══════════════════════════════════════════════════════
+function applyTransform() {
+  const root = document.getElementById('svg-root');
+  root.setAttribute('transform', `translate(${transform.x},${transform.y}) scale(${transform.scale})`);
+}
+
+function zoom(factor) {
+  transform.scale = Math.min(3, Math.max(0.3, transform.scale * factor));
+  applyTransform();
+}
+
+function resetZoom() {
+  transform = { x: 0, y: 0, scale: 1 };
+  applyTransform();
+}
+
+const svg = document.getElementById('main-svg');
+svg.addEventListener('mousedown', e => {
+  if (e.target.closest('.svg-node')) return;
+  isDragging = true;
+  dragStart = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+  svg.style.cursor = 'grabbing';
+});
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  transform.x = e.clientX - dragStart.x;
+  transform.y = e.clientY - dragStart.y;
+  applyTransform();
+});
+window.addEventListener('mouseup', () => {
+  isDragging = false;
+  svg.style.cursor = 'grab';
+});
+svg.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.1 : 0.9;
+  zoom(factor);
+}, { passive: false });
+
+// ═══════════════════════════════════════════════════════
+// Tooltip
+// ═══════════════════════════════════════════════════════
+const tooltip = document.getElementById('svg-tooltip');
+function showTooltip(e, text) {
+  tooltip.textContent = text;
+  tooltip.classList.add('visible');
+  moveTooltip(e);
+}
+function hideTooltip() { tooltip.classList.remove('visible'); }
+svg.addEventListener('mousemove', moveTooltip);
+function moveTooltip(e) {
+  const canvas = document.getElementById('diagram-canvas');
+  const r = canvas.getBoundingClientRect();
+  let x = e.clientX - r.left + 12;
+  let y = e.clientY - r.top - 36;
+  if (x + 300 > r.width) x = e.clientX - r.left - 312;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+
+// ═══════════════════════════════════════════════════════
+// Tab Switching
+// ═══════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.panel-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.panel-tab-pane').forEach(p => p.classList.toggle('active', p.id === 'tab-'+tab));
+}
+
+// ═══════════════════════════════════════════════════════
+// YAML Generator
+// ═══════════════════════════════════════════════════════
+const YAML_TEMPLATES = {
+  Pod: (f) => `apiVersion: v1
+kind: Pod
+metadata:
+  name: ${f.name || 'my-pod'}
+  namespace: ${f.namespace || 'default'}
+  labels:
+    app: ${f.app || 'my-app'}
+spec:
+  containers:
+  - name: ${f.container || 'app'}
+    image: ${f.image || 'nginx:latest'}
+    ports:
+    - containerPort: ${f.port || '80'}
+    resources:
+      requests:
+        cpu: "${f.cpuReq || '100m'}"
+        memory: "${f.memReq || '128Mi'}"
+      limits:
+        cpu: "${f.cpuLim || '500m'}"
+        memory: "${f.memLim || '512Mi'}"`,
+
+  Deployment: (f) => `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${f.name || 'my-deployment'}
+  namespace: ${f.namespace || 'default'}
+  labels:
+    app: ${f.app || 'my-app'}
+spec:
+  replicas: ${f.replicas || '3'}
+  selector:
+    matchLabels:
+      app: ${f.app || 'my-app'}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: ${f.app || 'my-app'}
+    spec:
+      containers:
+      - name: ${f.container || 'app'}
+        image: ${f.image || 'nginx:latest'}
+        ports:
+        - containerPort: ${f.port || '80'}`,
+
+  Service: (f) => `apiVersion: v1
+kind: Service
+metadata:
+  name: ${f.name || 'my-service'}
+  namespace: ${f.namespace || 'default'}
+spec:
+  type: ${f.svcType || 'ClusterIP'}
+  selector:
+    app: ${f.app || 'my-app'}
+  ports:
+  - name: http
+    protocol: TCP
+    port: ${f.port || '80'}
+    targetPort: ${f.targetPort || '8080'}`,
+
+  ConfigMap: (f) => `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${f.name || 'my-config'}
+  namespace: ${f.namespace || 'default'}
+data:
+  ${f.key1 || 'KEY'}: "${f.val1 || 'value'}"
+  ${f.key2 ? f.key2+': "'+f.val2+'"' : '# add more keys here'}`,
+
+  Secret: (f) => `apiVersion: v1
+kind: Secret
+metadata:
+  name: ${f.name || 'my-secret'}
+  namespace: ${f.namespace || 'default'}
+type: Opaque
+stringData:
+  ${f.key1 || 'username'}: "${f.val1 || 'admin'}"
+  ${f.key2 ? f.key2+': "'+f.val2+'"' : '# add more keys here'}`,
+
+  Ingress: (f) => `apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${f.name || 'my-ingress'}
+  namespace: ${f.namespace || 'default'}
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: ${f.host || 'my-app.example.com'}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ${f.svcName || 'my-service'}
+            port:
+              number: ${f.port || '80'}`,
+
+  PersistentVolumeClaim: (f) => `apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${f.name || 'my-pvc'}
+  namespace: ${f.namespace || 'default'}
+spec:
+  accessModes:
+  - ${f.accessMode || 'ReadWriteOnce'}
+  storageClassName: ${f.storageClass || 'standard'}
+  resources:
+    requests:
+      storage: ${f.storage || '10Gi'}`,
+
+  HPA: (f) => `apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ${f.name || 'my-hpa'}
+  namespace: ${f.namespace || 'default'}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ${f.targetDeploy || 'my-deployment'}
+  minReplicas: ${f.minReplicas || '2'}
+  maxReplicas: ${f.maxReplicas || '10'}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: ${f.cpuTarget || '70'}`,
+};
+
+const GENERATOR_FIELDS = {
+  Pod: [
+    {id:'name',label:'Name',ph:'my-pod'},
+    {id:'namespace',label:'Namespace',ph:'default'},
+    {id:'app',label:'App Label',ph:'my-app'},
+    {id:'container',label:'Container Name',ph:'app'},
+    {id:'image',label:'Image',ph:'nginx:latest'},
+    {id:'port',label:'Port',ph:'80'},
+    {id:'cpuReq',label:'CPU Request',ph:'100m'},
+    {id:'memReq',label:'Memory Request',ph:'128Mi'},
+  ],
+  Deployment: [
+    {id:'name',label:'Name',ph:'my-deployment'},
+    {id:'namespace',label:'Namespace',ph:'default'},
+    {id:'app',label:'App Label',ph:'my-app'},
+    {id:'replicas',label:'Replicas',ph:'3'},
+    {id:'container',label:'Container Name',ph:'app'},
+    {id:'image',label:'Image',ph:'nginx:latest'},
+    {id:'port',label:'Port',ph:'80'},
+  ],
+  Service: [
+    {id:'name',label:'Name',ph:'my-service'},
+    {id:'namespace',label:'Namespace',ph:'default'},
+    {id:'app',label:'App Label Selector',ph:'my-app'},
+    {id:'port',label:'Port',ph:'80'},
+    {id:'targetPort',label:'Target Port',ph:'8080'},
+    {id:'svcType',label:'Type',ph:'ClusterIP',type:'select',opts:['ClusterIP','NodePort','LoadBalancer','ExternalName']},
+  ],
+  ConfigMap: [
+    {id:'name',label:'Name',ph:'my-config'},
+    {id:'namespace',label:'Namespace',ph:'default'},
+    {id:'key1',label:'Key 1',ph:'ENV_VAR'},
+    {id:'val1',label:'Value 1',ph:'production'},
+    {id:'key2',label:'Key 2 (optional)',ph:'DATABASE_URL'},
+    {id:'val2',label:'Value 2 (optional)',ph:'postgres://...'},
+  ],
+  Secret: [
+    {id:'name',label:'Name',ph:'my-secret'},
+    {id:'namespace',label:'Namespace',ph:'default'},
+    {id:'key1',label:'Key 1',ph:'username'},
+    {id:'val1',label:'Value 1',ph:'admin'},
+    {id:'key2',label:'Key 2 (optional)',ph:'password'},
+    {id:'val2',label:'Value 2 (optional)',ph:'secret'},
+  ],
+  Ingress: [
+    {id:'name',label:'Name',ph:'my-ingress'},
+    {id:'namespace',label:'Namespace',ph:'default'},
+    {id:'host',label:'Hostname',ph:'my-app.example.com'},
+    {id:'svcName',label:'Service Name',ph:'my-service'},
+    {id:'port',label:'Service Port',ph:'80'},
+  ],
+  PersistentVolumeClaim: [
+    {id:'name',label:'Name',ph:'my-pvc'},
+    {id:'namespace',label:'Namespace',ph:'default'},
+    {id:'storage',label:'Storage Size',ph:'10Gi'},
+    {id:'storageClass',label:'StorageClass',ph:'standard'},
+    {id:'accessMode',label:'Access Mode',ph:'ReadWriteOnce',type:'select',opts:['ReadWriteOnce','ReadOnlyMany','ReadWriteMany']},
+  ],
+  HPA: [
+    {id:'name',label:'Name',ph:'my-hpa'},
+    {id:'namespace',label:'Namespace',ph:'default'},
+    {id:'targetDeploy',label:'Target Deployment',ph:'my-deployment'},
+    {id:'minReplicas',label:'Min Replicas',ph:'2'},
+    {id:'maxReplicas',label:'Max Replicas',ph:'10'},
+    {id:'cpuTarget',label:'CPU % Target',ph:'70'},
+  ],
+};
+
+function buildGenerator() {
+  const container = document.getElementById('generator-content');
+  const kinds = Object.keys(GENERATOR_FIELDS);
+  container.innerHTML = `
+    <div class="yaml-form">
+      <div class="form-group">
+        <label class="form-label">Kind</label>
+        <select class="form-control" id="gen-kind" onchange="updateGeneratorFields()">
+          ${kinds.map(k => `<option value="${k}">${k}</option>`).join('')}
+        </select>
+      </div>
+      <div id="gen-fields"></div>
+      <button class="generate-btn" onclick="generateYaml()">Generate YAML</button>
+      <div id="gen-output" style="margin-top:8px"></div>
+    </div>
+  `;
+  updateGeneratorFields();
+}
+
+function updateGeneratorFields() {
+  const kind = document.getElementById('gen-kind').value;
+  const fields = GENERATOR_FIELDS[kind] || [];
+  const container = document.getElementById('gen-fields');
+  container.innerHTML = fields.map(f => {
+    if (f.type === 'select') {
+      return `
+        <div class="form-group">
+          <label class="form-label">${f.label}</label>
+          <select class="form-control" id="gen-${f.id}">
+            ${f.opts.map(o => `<option>${o}</option>`).join('')}
+          </select>
+        </div>
+      `;
+    }
+    return `
+      <div class="form-group">
+        <label class="form-label">${f.label}</label>
+        <input class="form-control" id="gen-${f.id}" type="text" placeholder="${f.ph}">
+      </div>
+    `;
+  }).join('');
+}
+
+function generateYaml() {
+  const kind = document.getElementById('gen-kind').value;
+  const fields = GENERATOR_FIELDS[kind] || [];
+  const values = {};
+  fields.forEach(f => {
+    const el = document.getElementById('gen-'+f.id);
+    if (el) values[f.id] = el.value.trim();
+  });
+  const tmpl = YAML_TEMPLATES[kind];
+  if (!tmpl) return;
+  const yaml = tmpl(values);
+  const out = document.getElementById('gen-output');
+  out.innerHTML = `
+    <div class="yaml-block" style="max-height:300px;overflow-y:auto">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(${JSON.stringify(yaml)}).then(()=>{this.textContent='Copied!';setTimeout(()=>{this.textContent='Copy'},1500)})">Copy</button>
+      ${syntaxHighlightYaml(yaml)}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════
+// Cluster Simulator
+// ═══════════════════════════════════════════════════════
+const NODES_COUNT = 3;
+let simRunning = true;
+let simInterval = null;
+let replicaTarget = 3;
+let pods = []; // { node, state }
+
+function initSim() {
+  pods = [];
+  for (let i = 0; i < replicaTarget; i++) {
+    pods.push({ node: i % NODES_COUNT, state: 'running', id: i });
+  }
+  renderNodes();
+  startSimLoop();
+}
+
+function renderNodes() {
+  const row = document.getElementById('nodes-row');
+  row.innerHTML = '';
+  for (let n = 0; n < NODES_COUNT; n++) {
+    const card = document.createElement('div');
+    card.className = 'node-card';
+    card.id = `node-card-${n}`;
+    card.innerHTML = `<div class="node-card-title">node-${n+1}</div><div class="node-pods" id="node-pods-${n}"></div>`;
+    row.appendChild(card);
+  }
+  updatePodDots();
+}
+
+function updatePodDots() {
+  for (let n = 0; n < NODES_COUNT; n++) {
+    const container = document.getElementById(`node-pods-${n}`);
+    if (!container) continue;
+    container.innerHTML = '';
+    const nodePods = pods.filter(p => p.node === n);
+    nodePods.forEach(p => {
+      const dot = document.createElement('div');
+      dot.className = `pod-dot ${p.state}`;
+      dot.title = `pod-${p.id} (${p.state})`;
+      container.appendChild(dot);
+    });
+    // Empty slots
+    const maxPerNode = 4;
+    const empty = maxPerNode - nodePods.length;
+    for (let e = 0; e < Math.max(0, empty); e++) {
+      const dot = document.createElement('div');
+      dot.className = 'pod-dot empty';
+      container.appendChild(dot);
+    }
+  }
+}
+
+function startSimLoop() {
+  if (simInterval) clearInterval(simInterval);
+  if (!simRunning) return;
+  simInterval = setInterval(() => {
+    const running = pods.filter(p => p.state === 'running');
+    const rand = Math.random();
+
+    if (rand < 0.15 && running.length > 0) {
+      // Randomly terminate one pod and schedule a new one
+      const victim = running[Math.floor(Math.random() * running.length)];
+      victim.state = 'terminating';
+      updatePodDots();
+      setTimeout(() => {
+        pods = pods.filter(p => p !== victim);
+        // Reschedule
+        const newId = Date.now() % 1000;
+        pods.push({ node: Math.floor(Math.random() * NODES_COUNT), state: 'pending', id: newId });
+        updatePodDots();
+        setTimeout(() => {
+          const p = pods.find(p => p.id === newId);
+          if (p) { p.state = 'running'; updatePodDots(); }
+        }, 800);
+      }, 600);
+    }
+
+    // Reconcile toward target
+    const currentRunning = pods.filter(p => p.state === 'running' || p.state === 'pending').length;
+    if (currentRunning < replicaTarget) {
+      const newId = Date.now() % 1000;
+      pods.push({ node: Math.floor(Math.random() * NODES_COUNT), state: 'pending', id: newId });
+      updatePodDots();
+      setTimeout(() => {
+        const p = pods.find(pd => pd.id === newId);
+        if (p) { p.state = 'running'; updatePodDots(); }
+      }, 700);
+    } else if (currentRunning > replicaTarget) {
+      const excess = pods.filter(p => p.state === 'running');
+      if (excess.length > replicaTarget) {
+        excess[0].state = 'terminating';
+        updatePodDots();
+        setTimeout(() => {
+          pods = pods.filter(p => p !== excess[0]);
+          updatePodDots();
+        }, 600);
+      }
+    }
+
+  }, 2500);
+}
+
+function setReplicas(val) {
+  replicaTarget = parseInt(val);
+  document.getElementById('replica-display').textContent = replicaTarget;
+}
+
+function toggleSim() {
+  simRunning = !simRunning;
+  const btn = document.getElementById('sim-toggle');
+  if (simRunning) {
+    btn.textContent = '⏸ Pause';
+    btn.classList.add('active');
+    startSimLoop();
+  } else {
+    btn.textContent = '▶ Resume';
+    btn.classList.remove('active');
+    clearInterval(simInterval);
+  }
+}
+
+function triggerRollingUpdate() {
+  const btn = document.getElementById('rolling-btn');
+  btn.textContent = 'Updating…';
+  btn.disabled = true;
+
+  const running = pods.filter(p => p.state === 'running');
+  let delay = 0;
+  running.forEach((pod, i) => {
+    setTimeout(() => {
+      pod.state = 'terminating';
+      updatePodDots();
+      setTimeout(() => {
+        pods = pods.filter(p => p !== pod);
+        const newId = Date.now() % 10000 + i;
+        pods.push({ node: pod.node, state: 'pending', id: newId });
+        updatePodDots();
+        setTimeout(() => {
+          const p = pods.find(p => p.id === newId);
+          if (p) { p.state = 'running'; updatePodDots(); }
+          if (i === running.length - 1) {
+            btn.textContent = 'Rolling Update';
+            btn.disabled = false;
+          }
+        }, 600);
+      }, 500);
+    }, delay);
+    delay += 700;
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════════════
+buildSidebar();
+buildDiagram();
+buildGenerator();
+initSim();
+
+// Center diagram on load
+window.addEventListener('load', () => {
+  const canvas = document.getElementById('diagram-canvas');
+  const svgEl = document.getElementById('main-svg');
+  const cw = canvas.clientWidth;
+  const ch = canvas.clientHeight;
+  // Diagram spans roughly x:80-890, y:50-640 → w~810, h~590
+  const diagramW = 870;
+  const diagramH = 640;
+  const scale = Math.min(cw / diagramW, ch / diagramH) * 0.88;
+  transform.scale = scale;
+  transform.x = (cw - diagramW * scale) / 2;
+  transform.y = (ch - diagramH * scale) / 2 - 10;
+  applyTransform();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Scalability Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-2: #a78bfa;
+  --accent-3: #34d399;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --radius: 12px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+  animation: fadeUp 0.5s ease both;
+}
+
+header { margin-bottom: 32px; }
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-bottom: 24px;
+  transition: color 0.15s;
+}
+.back-link:hover { color: var(--accent); }
+header h1 {
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+header h1 em { color: var(--accent); font-style: normal; }
+header p {
+  font-family: 'DM Mono', monospace;
+  color: var(--text-3);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+/* Preset bar */
+.preset-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.preset-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-right: 4px;
+}
+.preset-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  color: var(--text-2);
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.3px;
+}
+.preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+.preset-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.export-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  color: var(--text-3);
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.export-btn:hover { border-color: var(--accent-3); color: var(--accent-3); }
+
+/* Main layout */
+.layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+/* Panel */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 20px;
+}
+@media (max-width: 900px) {
+  .panel { position: static; }
+}
+.panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.panel-section {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.panel-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.field label span {
+  font-family: 'DM Mono', monospace;
+  color: var(--text-3);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.input-wrap input,
+.input-wrap select {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  -moz-appearance: textfield;
+}
+.input-wrap input::-webkit-outer-spin-button,
+.input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.input-wrap input:focus,
+.input-wrap select:focus { border-color: var(--accent); }
+.input-wrap select { appearance: none; cursor: pointer; }
+.input-wrap select option { background: var(--surface-2); }
+.input-unit {
+  position: absolute;
+  right: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  pointer-events: none;
+}
+.input-wrap input.has-unit { padding-right: 40px; }
+
+.presets-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.quick-btn {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 3px 8px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.quick-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Results area */
+.results { display: flex; flex-direction: column; gap: 16px; }
+
+/* Card base */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .badge {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+
+/* Key metrics row */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1000px) {
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 500px) {
+  .metrics-grid { grid-template-columns: 1fr 1fr; }
+}
+.metric {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: border-color 0.15s;
+}
+.metric:hover { border-color: var(--accent); }
+.metric-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.metric-val.purple { color: var(--accent-2); }
+.metric-val.green { color: var(--accent-3); }
+.metric-val.warn { color: var(--warn); }
+.metric-lbl {
+  font-size: 10px;
+  color: var(--text-3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.metric-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+/* Math steps */
+.math-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 700px) {
+  .math-section { grid-template-columns: 1fr; }
+}
+.math-block {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.math-block-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+}
+.math-step {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.math-step:last-child { border-bottom: none; padding-bottom: 0; }
+.math-formula {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.math-formula em { color: var(--text-2); font-style: normal; }
+.math-result {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+}
+.math-result.purple { color: var(--accent-2); }
+.math-result.green { color: var(--accent-3); }
+.math-result.warn { color: var(--warn); }
+
+/* Storage timeline */
+.storage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+@media (max-width: 800px) {
+  .storage-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.storage-item {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.storage-label {
+  font-size: 10px;
+  color: var(--text-3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.storage-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 16px;
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.storage-growth {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.storage-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.storage-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.storage-bar-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  width: 40px;
+  flex-shrink: 0;
+}
+.storage-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.storage-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+.storage-bar-fill.y1 { background: var(--accent-3); }
+.storage-bar-fill.y3 { background: var(--accent); }
+.storage-bar-fill.y5 { background: var(--warn); }
+.storage-bar-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-2);
+  width: 70px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Infrastructure */
+.infra-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .infra-grid { grid-template-columns: 1fr; }
+}
+.infra-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.infra-card-icon {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+.infra-card-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.infra-spec {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.infra-spec:last-child { border-bottom: none; padding-bottom: 0; }
+.infra-spec-key { color: var(--text-3); font-weight: 600; }
+.infra-spec-val {
+  font-family: 'DM Mono', monospace;
+  color: var(--text);
+}
+.infra-spec-val.accent { color: var(--accent); }
+.infra-spec-val.green { color: var(--accent-3); }
+.infra-spec-val.warn { color: var(--warn); }
+
+/* Architecture diagram */
+.arch-diagram {
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  overflow: hidden;
+  min-height: 260px;
+}
+.arch-layer {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+.arch-arrow-row {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+.arch-arrow {
+  color: var(--text-3);
+  font-size: 18px;
+  line-height: 1;
+}
+.arch-node {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  text-align: center;
+  min-width: 90px;
+  transition: border-color 0.2s, transform 0.2s;
+  cursor: default;
+}
+.arch-node:hover { border-color: var(--accent); transform: translateY(-2px); }
+.arch-node.accent-node { border-color: var(--accent); background: var(--accent-dim); }
+.arch-node.purple-node { border-color: var(--accent-2); background: rgba(167,139,250,0.07); }
+.arch-node.green-node { border-color: var(--accent-3); background: rgba(52,211,153,0.07); }
+.arch-node.warn-node { border-color: var(--warn); background: rgba(251,191,36,0.07); }
+.arch-node-icon { font-size: 18px; margin-bottom: 4px; }
+.arch-node-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.arch-node-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  margin-top: 3px;
+}
+.arch-node.purple-node .arch-node-val { color: var(--accent-2); }
+.arch-node.green-node .arch-node-val { color: var(--accent-3); }
+.arch-node.warn-node .arch-node-val { color: var(--warn); }
+
+/* Scale indicator */
+.scale-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--surface-3);
+  border-radius: 8px;
+}
+.scale-track {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.scale-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent-3), var(--accent), var(--warn), var(--danger));
+  transition: width 0.4s ease;
+}
+.scale-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.scale-tier {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.scale-tier.startup { background: rgba(52,211,153,0.15); color: var(--accent-3); }
+.scale-tier.growth { background: rgba(34,211,238,0.12); color: var(--accent); }
+.scale-tier.scale { background: rgba(251,191,36,0.12); color: var(--warn); }
+.scale-tier.hyper { background: rgba(248,113,113,0.12); color: var(--danger); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <a href="./index.html" class="back-link"><span>&#8592;</span> Home</a>
+    <h1>System <em>Scalability</em> Calculator</h1>
+    <p>// estimate infrastructure requirements at any scale</p>
+  </header>
+
+  <!-- Presets + Export -->
+  <div class="preset-bar">
+    <span class="preset-label">Presets:</span>
+    <button class="preset-btn" data-preset="startup" onclick="applyPreset('startup')">Small Startup</button>
+    <button class="preset-btn" data-preset="growth" onclick="applyPreset('growth')">Growth Stage</button>
+    <button class="preset-btn" data-preset="scale" onclick="applyPreset('scale')">Scale Stage</button>
+    <button class="export-btn" onclick="exportReport()">&#8595; Export Report</button>
+  </div>
+
+  <div class="layout">
+    <!-- Input Panel -->
+    <div class="panel">
+      <div class="panel-title">Inputs</div>
+
+      <!-- Traffic -->
+      <div class="panel-section">
+        <div class="panel-section-title">Traffic</div>
+
+        <div class="field">
+          <label>Daily Active Users <span>DAU</span></label>
+          <div class="input-wrap">
+            <input type="number" id="dau" value="100000" min="1">
+          </div>
+          <div class="presets-row">
+            <button class="quick-btn" onclick="setVal('dau',1000)">1K</button>
+            <button class="quick-btn" onclick="setVal('dau',10000)">10K</button>
+            <button class="quick-btn" onclick="setVal('dau',100000)">100K</button>
+            <button class="quick-btn" onclick="setVal('dau',1000000)">1M</button>
+            <button class="quick-btn" onclick="setVal('dau',10000000)">10M</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Peak Hours Factor <span>multiplier</span></label>
+          <div class="input-wrap">
+            <input type="number" id="peakFactor" value="3" min="1" max="20" step="0.5" class="has-unit">
+            <span class="input-unit">x</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Requests / User / Day <span>avg</span></label>
+          <div class="input-wrap">
+            <input type="number" id="reqPerUser" value="50" min="1">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Read / Write Ratio <span>reads per 1 write</span></label>
+          <div class="input-wrap">
+            <input type="number" id="readWriteRatio" value="9" min="1" max="100" class="has-unit">
+            <span class="input-unit">:1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payload -->
+      <div class="panel-section">
+        <div class="panel-section-title">Payload</div>
+
+        <div class="field">
+          <label>Avg Request Size <span>inbound</span></label>
+          <div class="input-wrap">
+            <input type="number" id="reqSize" value="2" min="0.1" step="0.1" class="has-unit">
+            <span class="input-unit">KB</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Avg Response Size <span>outbound</span></label>
+          <div class="input-wrap">
+            <input type="number" id="respSize" value="50" min="0.1" step="1" class="has-unit">
+            <span class="input-unit">KB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Storage -->
+      <div class="panel-section">
+        <div class="panel-section-title">Storage</div>
+
+        <div class="field">
+          <label>Data Retention <span>months</span></label>
+          <div class="input-wrap">
+            <input type="number" id="retention" value="24" min="1" class="has-unit">
+            <span class="input-unit">mo</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Growth Rate / Month</label>
+          <div class="input-wrap">
+            <input type="number" id="growthRate" value="10" min="0" max="200" step="1" class="has-unit">
+            <span class="input-unit">%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Infrastructure assumptions -->
+      <div class="panel-section">
+        <div class="panel-section-title">Server Assumptions</div>
+
+        <div class="field">
+          <label>RPS per App Server <span>capacity</span></label>
+          <div class="input-wrap">
+            <input type="number" id="rpsPerServer" value="500" min="10" class="has-unit">
+            <span class="input-unit">rps</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Cache Hot Data <span>% of working set</span></label>
+          <div class="input-wrap">
+            <input type="number" id="cacheHotPct" value="20" min="1" max="100" class="has-unit">
+            <span class="input-unit">%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results">
+
+      <!-- Scale indicator -->
+      <div class="card" id="scale-card">
+        <div class="card-title">Scale Tier <span class="badge" id="tier-badge">CALCULATING</span></div>
+        <div class="scale-indicator">
+          <span class="scale-label">Startup</span>
+          <div class="scale-track">
+            <div class="scale-fill" id="scale-fill" style="width:0%"></div>
+          </div>
+          <span class="scale-label">Hyper-scale</span>
+          <span class="scale-tier" id="scale-tier-label">—</span>
+        </div>
+      </div>
+
+      <!-- Key metrics -->
+      <div class="card">
+        <div class="card-title">Request Throughput</div>
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric-val" id="m-avg-rps">—</div>
+            <div class="metric-lbl">Avg RPS</div>
+            <div class="metric-sub" id="m-avg-rps-sub">requests / second</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val warn" id="m-peak-rps">—</div>
+            <div class="metric-lbl">Peak RPS</div>
+            <div class="metric-sub" id="m-peak-rps-sub">at peak hours</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val purple" id="m-read-rps">—</div>
+            <div class="metric-lbl">Read RPS</div>
+            <div class="metric-sub" id="m-read-rps-sub">from R/W ratio</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val green" id="m-write-rps">—</div>
+            <div class="metric-lbl">Write RPS</div>
+            <div class="metric-sub" id="m-write-rps-sub">from R/W ratio</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RPS math -->
+      <div class="card">
+        <div class="card-title">RPS — Step-by-Step</div>
+        <div class="math-section">
+          <div class="math-block">
+            <div class="math-block-title">Average RPS</div>
+            <div class="math-step">
+              <div class="math-formula">Total requests / day</div>
+              <div class="math-formula"><em id="ms-dau">—</em> DAU × <em id="ms-rpu">—</em> req/user</div>
+              <div class="math-result" id="ms-total-req">—</div>
+            </div>
+            <div class="math-step">
+              <div class="math-formula">Seconds in a day</div>
+              <div class="math-formula">86,400 seconds</div>
+              <div class="math-result">86,400 s</div>
+            </div>
+            <div class="math-step">
+              <div class="math-formula">Avg RPS = total_req / 86400</div>
+              <div class="math-result" id="ms-avg-rps">—</div>
+            </div>
+          </div>
+          <div class="math-block">
+            <div class="math-block-title">Peak RPS</div>
+            <div class="math-step">
+              <div class="math-formula">Assume peak = 20% of day carries</div>
+              <div class="math-formula"><em id="ms-peak-pct">—</em>× of total traffic</div>
+              <div class="math-result" id="ms-peak-concentration">—</div>
+            </div>
+            <div class="math-step">
+              <div class="math-formula">Peak RPS = Avg RPS × peak_factor</div>
+              <div class="math-formula"><em id="ms-avg-rps2">—</em> × <em id="ms-peak-factor">—</em></div>
+              <div class="math-result warn" id="ms-peak-rps">—</div>
+            </div>
+            <div class="math-step">
+              <div class="math-formula">Read RPS (R:W = <em id="ms-rw">—</em>)</div>
+              <div class="math-result purple" id="ms-read-rps">—</div>
+            </div>
+            <div class="math-step">
+              <div class="math-formula">Write RPS</div>
+              <div class="math-result green" id="ms-write-rps">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bandwidth -->
+      <div class="card">
+        <div class="card-title">Bandwidth <span class="badge">MB/s</span></div>
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric-val" id="m-bw-in-avg">—</div>
+            <div class="metric-lbl">Inbound avg</div>
+            <div class="metric-sub">MB/s</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val warn" id="m-bw-in-peak">—</div>
+            <div class="metric-lbl">Inbound peak</div>
+            <div class="metric-sub">MB/s</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val purple" id="m-bw-out-avg">—</div>
+            <div class="metric-lbl">Outbound avg</div>
+            <div class="metric-sub">MB/s</div>
+          </div>
+          <div class="metric">
+            <div class="metric-val green" id="m-bw-out-peak">—</div>
+            <div class="metric-lbl">Outbound peak</div>
+            <div class="metric-sub">MB/s</div>
+          </div>
+        </div>
+        <div class="math-section" style="margin-top:12px">
+          <div class="math-block">
+            <div class="math-block-title">Inbound Bandwidth</div>
+            <div class="math-step">
+              <div class="math-formula">Avg = Avg RPS × req_size</div>
+              <div class="math-formula"><em id="ms-bw-avg-rps">—</em> rps × <em id="ms-req-size">—</em> KB</div>
+              <div class="math-result" id="ms-bw-in-avg">—</div>
+            </div>
+            <div class="math-step">
+              <div class="math-formula">Peak = Peak RPS × req_size</div>
+              <div class="math-result warn" id="ms-bw-in-peak">—</div>
+            </div>
+          </div>
+          <div class="math-block">
+            <div class="math-block-title">Outbound Bandwidth</div>
+            <div class="math-step">
+              <div class="math-formula">Avg = Avg RPS × resp_size</div>
+              <div class="math-formula"><em id="ms-bw-avg-rps2">—</em> rps × <em id="ms-resp-size">—</em> KB</div>
+              <div class="math-result purple" id="ms-bw-out-avg">—</div>
+            </div>
+            <div class="math-step">
+              <div class="math-formula">Peak = Peak RPS × resp_size</div>
+              <div class="math-result green" id="ms-bw-out-peak">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Storage -->
+      <div class="card">
+        <div class="card-title">Storage Growth</div>
+        <div class="storage-grid">
+          <div class="storage-item">
+            <div class="storage-label">Now</div>
+            <div class="storage-val" id="st-now">—</div>
+            <div class="storage-growth" id="st-now-sub">base storage</div>
+          </div>
+          <div class="storage-item">
+            <div class="storage-label">1 Year</div>
+            <div class="storage-val" id="st-1y">—</div>
+            <div class="storage-growth" id="st-1y-sub">—</div>
+          </div>
+          <div class="storage-item">
+            <div class="storage-label">3 Years</div>
+            <div class="storage-val" id="st-3y">—</div>
+            <div class="storage-growth" id="st-3y-sub">—</div>
+          </div>
+          <div class="storage-item">
+            <div class="storage-label">5 Years</div>
+            <div class="storage-val" id="st-5y">—</div>
+            <div class="storage-growth" id="st-5y-sub">—</div>
+          </div>
+        </div>
+        <div class="storage-bar-container" id="storage-bars"></div>
+        <div class="math-section" style="margin-top:12px">
+          <div class="math-block">
+            <div class="math-block-title">Storage Calculation</div>
+            <div class="math-step">
+              <div class="math-formula">Daily data written</div>
+              <div class="math-formula">Write RPS × resp_size × 86400</div>
+              <div class="math-result" id="ms-daily-data">—</div>
+            </div>
+            <div class="math-step">
+              <div class="math-formula">Base storage (now)</div>
+              <div class="math-formula">daily_data × retention_months × 30</div>
+              <div class="math-result" id="ms-base-storage">—</div>
+            </div>
+            <div class="math-step">
+              <div class="math-formula">Monthly compound growth</div>
+              <div class="math-formula">S(t) = S₀ × (1 + r/100)^t</div>
+              <div class="math-result" id="ms-growth-formula">—</div>
+            </div>
+          </div>
+          <div class="math-block">
+            <div class="math-block-title">Cache Memory</div>
+            <div class="math-step">
+              <div class="math-formula">Working set (hot data)</div>
+              <div class="math-formula">base_storage × hot_pct%</div>
+              <div class="math-result" id="ms-cache-mem">—</div>
+            </div>
+            <div class="math-step">
+              <div class="math-formula">Recommended Redis RAM</div>
+              <div class="math-formula">hot_data × 1.2 overhead</div>
+              <div class="math-result green" id="ms-redis-ram">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Infrastructure estimates -->
+      <div class="card">
+        <div class="card-title">Infrastructure Estimate</div>
+        <div class="infra-grid">
+          <div class="infra-card">
+            <div class="infra-card-icon">&#9729;</div>
+            <div class="infra-card-title">App Servers</div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Min servers (avg)</span>
+              <span class="infra-spec-val accent" id="inf-servers-avg">—</span>
+            </div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Servers (peak)</span>
+              <span class="infra-spec-val warn" id="inf-servers-peak">—</span>
+            </div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">With 2x headroom</span>
+              <span class="infra-spec-val" id="inf-servers-safe">—</span>
+            </div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Capacity each</span>
+              <span class="infra-spec-val" id="inf-rps-per-srv">—</span>
+            </div>
+          </div>
+
+          <div class="infra-card">
+            <div class="infra-card-icon">&#128190;</div>
+            <div class="infra-card-title">Database Server</div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">RAM recommended</span>
+              <span class="infra-spec-val green" id="inf-db-ram">—</span>
+            </div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Disk type</span>
+              <span class="infra-spec-val" id="inf-db-disk">—</span>
+            </div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Storage needed (now)</span>
+              <span class="infra-spec-val" id="inf-db-storage">—</span>
+            </div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Read replicas</span>
+              <span class="infra-spec-val accent" id="inf-db-replicas">—</span>
+            </div>
+          </div>
+
+          <div class="infra-card">
+            <div class="infra-card-icon">&#127760;</div>
+            <div class="infra-card-title">CDN</div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Avg egress</span>
+              <span class="infra-spec-val accent" id="inf-cdn-avg">—</span>
+            </div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Peak egress</span>
+              <span class="infra-spec-val warn" id="inf-cdn-peak">—</span>
+            </div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Monthly transfer</span>
+              <span class="infra-spec-val" id="inf-cdn-monthly">—</span>
+            </div>
+          </div>
+
+          <div class="infra-card">
+            <div class="infra-card-icon">&#9889;</div>
+            <div class="infra-card-title">Redis / Cache</div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Memory needed</span>
+              <span class="infra-spec-val green" id="inf-redis-mem">—</span>
+            </div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Recommended tier</span>
+              <span class="infra-spec-val accent" id="inf-redis-tier">—</span>
+            </div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Cache hit target</span>
+              <span class="infra-spec-val">80–95%</span>
+            </div>
+            <div class="infra-spec">
+              <span class="infra-spec-key">Eviction policy</span>
+              <span class="infra-spec-val">allkeys-lru</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Architecture diagram -->
+      <div class="card">
+        <div class="card-title">Architecture Diagram <span class="badge">live</span></div>
+        <div class="arch-diagram" id="arch-diagram">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+
+    </div><!-- /results -->
+  </div><!-- /layout -->
+</div>
+
+<script>
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function fmtNum(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return n.toFixed(0);
+}
+
+function fmtBytes(gb) {
+  if (gb >= 1024) return (gb / 1024).toFixed(2) + ' TB';
+  if (gb >= 1)    return gb.toFixed(2) + ' GB';
+  return (gb * 1024).toFixed(0) + ' MB';
+}
+
+function fmtMBs(mbs) {
+  if (mbs >= 1000) return (mbs / 1000).toFixed(2) + ' GB/s';
+  if (mbs >= 1)    return mbs.toFixed(2) + ' MB/s';
+  return (mbs * 1024).toFixed(0) + ' KB/s';
+}
+
+function fmtRam(gb) {
+  if (gb >= 1) return Math.ceil(gb) + ' GB';
+  return (gb * 1024).toFixed(0) + ' MB';
+}
+
+function setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) { el.value = val; calculate(); }
+}
+
+function getNum(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+// ─── Presets ─────────────────────────────────────────────────────────────────
+const PRESETS = {
+  startup: {
+    dau: 5000, peakFactor: 2, reqPerUser: 20, reqSize: 1, respSize: 30,
+    readWriteRatio: 4, retention: 12, growthRate: 15, rpsPerServer: 500, cacheHotPct: 20
+  },
+  growth: {
+    dau: 500000, peakFactor: 3, reqPerUser: 40, reqSize: 2, respSize: 50,
+    readWriteRatio: 9, retention: 24, growthRate: 10, rpsPerServer: 500, cacheHotPct: 20
+  },
+  scale: {
+    dau: 10000000, peakFactor: 4, reqPerUser: 80, reqSize: 3, respSize: 100,
+    readWriteRatio: 14, retention: 36, growthRate: 5, rpsPerServer: 500, cacheHotPct: 25
+  }
+};
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  Object.entries(p).forEach(([k, v]) => {
+    const el = document.getElementById(k);
+    if (el) el.value = v;
+  });
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-preset="${name}"]`).classList.add('active');
+  calculate();
+}
+
+// ─── Core Calculation ─────────────────────────────────────────────────────────
+function calculate() {
+  const dau          = getNum('dau');
+  const peakFactor   = getNum('peakFactor');
+  const reqPerUser   = getNum('reqPerUser');
+  const reqSizeKB    = getNum('reqSize');
+  const respSizeKB   = getNum('respSize');
+  const rwRatio      = getNum('readWriteRatio');
+  const retentionMo  = getNum('retention');
+  const growthRate   = getNum('growthRate');
+  const rpsPerServer = getNum('rpsPerServer');
+  const cacheHotPct  = getNum('cacheHotPct');
+
+  // ── RPS ──
+  const totalReqDay  = dau * reqPerUser;
+  const avgRPS       = totalReqDay / 86400;
+  const peakRPS      = avgRPS * peakFactor;
+  const readFrac     = rwRatio / (rwRatio + 1);
+  const writeFrac    = 1 / (rwRatio + 1);
+  const readRPS      = peakRPS * readFrac;
+  const writeRPS     = peakRPS * writeFrac;
+
+  // ── Bandwidth (MB/s) ──
+  const bwInAvg    = (avgRPS  * reqSizeKB)  / 1024;
+  const bwInPeak   = (peakRPS * reqSizeKB)  / 1024;
+  const bwOutAvg   = (avgRPS  * respSizeKB) / 1024;
+  const bwOutPeak  = (peakRPS * respSizeKB) / 1024;
+
+  // ── Storage (GB) ──
+  // Daily writes × response size
+  const dailyWriteGB = (writeRPS * respSizeKB * 86400) / (1024 * 1024);
+  const baseStorageGB = dailyWriteGB * retentionMo * 30;
+
+  function storageAt(months) {
+    return baseStorageGB * Math.pow(1 + growthRate / 100, months);
+  }
+
+  const st0  = baseStorageGB;
+  const st1y = storageAt(12);
+  const st3y = storageAt(36);
+  const st5y = storageAt(60);
+
+  // ── Cache ──
+  const hotDataGB  = baseStorageGB * (cacheHotPct / 100);
+  const redisRamGB = hotDataGB * 1.2;
+
+  // ── Infrastructure ──
+  const serversAvg  = Math.ceil(avgRPS  / rpsPerServer);
+  const serversPeak = Math.ceil(peakRPS / rpsPerServer);
+  const serversSafe = serversPeak * 2;
+
+  // DB RAM: working set should fit in RAM (hot data + index overhead)
+  const dbRamGB = Math.max(8, hotDataGB * 1.5);
+
+  // DB disk type recommendation
+  let diskType, diskNote;
+  if (writeRPS > 1000) { diskType = 'NVMe SSD'; diskNote = 'high write IOPS'; }
+  else if (writeRPS > 100) { diskType = 'SSD'; diskNote = 'moderate write load'; }
+  else { diskType = 'SSD (HDD ok)'; diskNote = 'low write load'; }
+
+  // Read replicas
+  const readReplicas = Math.max(1, Math.ceil(readRPS / (rpsPerServer * 5)));
+
+  // CDN (serves mostly reads)
+  const cdnAvgMBs    = bwOutAvg;
+  const cdnPeakMBs   = bwOutPeak;
+  const cdnMonthlyGB = (bwOutAvg * 86400 * 30 * 1024) / 1024; // MB/s -> GB/month
+
+  // Redis tier
+  let redisTier;
+  if (redisRamGB < 1)    redisTier = 'cache.t3.micro (1 GB)';
+  else if (redisRamGB < 6)  redisTier = 'cache.t3.medium (3 GB)';
+  else if (redisRamGB < 13) redisTier = 'cache.r6g.large (13 GB)';
+  else if (redisRamGB < 26) redisTier = 'cache.r6g.xlarge (26 GB)';
+  else if (redisRamGB < 52) redisTier = 'cache.r6g.2xlarge (52 GB)';
+  else redisTier = `cache.r6g.4xlarge+ (${Math.ceil(redisRamGB)} GB)`;
+
+  // ── Scale tier ──
+  let tierName, tierClass, scalePercent;
+  if (dau < 50000) { tierName = 'Small Startup'; tierClass = 'startup'; scalePercent = 10; }
+  else if (dau < 1000000) { tierName = 'Growth Stage'; tierClass = 'growth'; scalePercent = 35; }
+  else if (dau < 10000000) { tierName = 'Scale Stage'; tierClass = 'scale'; scalePercent = 65; }
+  else { tierName = 'Hyper-Scale'; tierClass = 'hyper'; scalePercent = 90; }
+
+  // ── DB RAM friendly display ──
+  function dbRamDisplay(gb) {
+    const options = [8,16,32,64,128,256,512];
+    for (const o of options) if (gb <= o) return o + ' GB';
+    return Math.ceil(gb / 128) * 128 + ' GB';
+  }
+
+  // ─── Update DOM ──────────────────────────────────────────────────────────
+  // Key metrics
+  setEl('m-avg-rps', fmtNum(avgRPS));
+  setEl('m-peak-rps', fmtNum(peakRPS));
+  setEl('m-read-rps', fmtNum(readRPS));
+  setEl('m-write-rps', fmtNum(writeRPS));
+  setEl('m-avg-rps-sub', `${fmtNum(totalReqDay)} req/day`);
+  setEl('m-peak-rps-sub', `${peakFactor}x factor`);
+  setEl('m-read-rps-sub', `${rwRatio}:1 R:W`);
+  setEl('m-write-rps-sub', `1/${rwRatio+1} of peak`);
+
+  // RPS math steps
+  setEl('ms-dau', fmtNum(dau));
+  setEl('ms-rpu', reqPerUser);
+  setEl('ms-total-req', fmtNum(totalReqDay) + ' requests/day');
+  setEl('ms-avg-rps', fmtNum(avgRPS) + ' rps');
+  setEl('ms-peak-pct', peakFactor + 'x');
+  setEl('ms-peak-concentration', `${peakFactor}x concentration factor`);
+  setEl('ms-avg-rps2', fmtNum(avgRPS));
+  setEl('ms-peak-factor', peakFactor + 'x');
+  setEl('ms-peak-rps', fmtNum(peakRPS) + ' rps');
+  setEl('ms-rw', `${rwRatio}:1`);
+  setEl('ms-read-rps', fmtNum(readRPS) + ' rps (reads)');
+  setEl('ms-write-rps', fmtNum(writeRPS) + ' rps (writes)');
+
+  // Bandwidth metrics
+  setEl('m-bw-in-avg',   fmtMBs(bwInAvg));
+  setEl('m-bw-in-peak',  fmtMBs(bwInPeak));
+  setEl('m-bw-out-avg',  fmtMBs(bwOutAvg));
+  setEl('m-bw-out-peak', fmtMBs(bwOutPeak));
+
+  // Bandwidth math
+  setEl('ms-bw-avg-rps',   fmtNum(avgRPS));
+  setEl('ms-req-size',     reqSizeKB);
+  setEl('ms-bw-in-avg',    fmtMBs(bwInAvg));
+  setEl('ms-bw-in-peak',   fmtMBs(bwInPeak));
+  setEl('ms-bw-avg-rps2',  fmtNum(avgRPS));
+  setEl('ms-resp-size',    respSizeKB);
+  setEl('ms-bw-out-avg',   fmtMBs(bwOutAvg));
+  setEl('ms-bw-out-peak',  fmtMBs(bwOutPeak));
+
+  // Storage
+  setEl('st-now',    fmtBytes(st0));
+  setEl('st-1y',     fmtBytes(st1y));
+  setEl('st-3y',     fmtBytes(st3y));
+  setEl('st-5y',     fmtBytes(st5y));
+  setEl('st-now-sub', `${retentionMo}mo retention`);
+  setEl('st-1y-sub',  `+${((st1y/st0 - 1)*100).toFixed(0)}% growth`);
+  setEl('st-3y-sub',  `+${((st3y/st0 - 1)*100).toFixed(0)}% growth`);
+  setEl('st-5y-sub',  `+${((st5y/st0 - 1)*100).toFixed(0)}% growth`);
+
+  // Storage bars
+  renderStorageBars(st0, st1y, st3y, st5y);
+
+  // Storage math
+  setEl('ms-daily-data',    fmtBytes(dailyWriteGB) + '/day');
+  setEl('ms-base-storage',  fmtBytes(baseStorageGB));
+  setEl('ms-growth-formula', `${growthRate}%/mo → ×${(Math.pow(1+growthRate/100,12)).toFixed(1)}/yr`);
+  setEl('ms-cache-mem',     fmtBytes(hotDataGB));
+  setEl('ms-redis-ram',     fmtRam(redisRamGB));
+
+  // Infrastructure
+  setEl('inf-servers-avg',  serversAvg + (serversAvg === 1 ? ' server' : ' servers'));
+  setEl('inf-servers-peak', serversPeak + (serversPeak === 1 ? ' server' : ' servers'));
+  setEl('inf-servers-safe', serversSafe + ' servers (recommended)');
+  setEl('inf-rps-per-srv',  fmtNum(rpsPerServer) + ' rps each');
+  setEl('inf-db-ram',       dbRamDisplay(dbRamGB));
+  setEl('inf-db-disk',      diskType + ' — ' + diskNote);
+  setEl('inf-db-storage',   fmtBytes(st0) + ' raw');
+  setEl('inf-db-replicas',  readReplicas + (readReplicas === 1 ? ' replica' : ' replicas'));
+  setEl('inf-cdn-avg',      fmtMBs(cdnAvgMBs));
+  setEl('inf-cdn-peak',     fmtMBs(cdnPeakMBs));
+  setEl('inf-cdn-monthly',  fmtBytes(cdnMonthlyGB / 1024) + '/mo');
+  setEl('inf-redis-mem',    fmtRam(redisRamGB));
+  setEl('inf-redis-tier',   redisTier);
+
+  // Scale tier
+  setEl('tier-badge', tierName.toUpperCase());
+  document.getElementById('scale-fill').style.width = scalePercent + '%';
+  const scaleTierLabel = document.getElementById('scale-tier-label');
+  scaleTierLabel.textContent = tierName;
+  scaleTierLabel.className = 'scale-tier ' + tierClass;
+
+  // Architecture diagram
+  renderArchDiagram(dau, avgRPS, peakRPS, serversSafe, redisRamGB, hotDataGB, bwOutAvg, st0, rwRatio, readReplicas);
+}
+
+// ─── Storage Bars ─────────────────────────────────────────────────────────────
+function renderStorageBars(st0, st1y, st3y, st5y) {
+  const max = st5y || 1;
+  const container = document.getElementById('storage-bars');
+  const rows = [
+    { label: 'Now', val: st0, cls: '' },
+    { label: '1yr', val: st1y, cls: 'y1' },
+    { label: '3yr', val: st3y, cls: 'y3' },
+    { label: '5yr', val: st5y, cls: 'y5' },
+  ];
+  container.innerHTML = rows.map(r => `
+    <div class="storage-bar-row">
+      <span class="storage-bar-label">${r.label}</span>
+      <div class="storage-bar-track">
+        <div class="storage-bar-fill ${r.cls}" style="width:${(r.val/max*100).toFixed(1)}%"></div>
+      </div>
+      <span class="storage-bar-val">${fmtBytes(r.val)}</span>
+    </div>
+  `).join('');
+}
+
+// ─── Architecture Diagram ─────────────────────────────────────────────────────
+function renderArchDiagram(dau, avgRPS, peakRPS, serverCount, redisRamGB, hotDataGB, bwOutMBs, storageGB, rwRatio, readReplicas) {
+  const d = document.getElementById('arch-diagram');
+
+  const cdnLabel  = fmtMBs(bwOutMBs);
+  const lbLabel   = fmtNum(peakRPS) + ' rps';
+  const appLabel  = serverCount + (serverCount === 1 ? ' server' : ' servers');
+  const cacheLabel = fmtRam(redisRamGB);
+  const dbLabel   = fmtBytes(storageGB);
+  const replicaLabel = readReplicas + (readReplicas === 1 ? ' replica' : ' replicas');
+  const userLabel = fmtNum(dau) + ' DAU';
+
+  d.innerHTML = `
+    <div class="arch-layer">
+      <div class="arch-node">
+        <div class="arch-node-icon">&#128101;</div>
+        <div class="arch-node-title">Users</div>
+        <div class="arch-node-val">${userLabel}</div>
+      </div>
+    </div>
+    <div class="arch-arrow-row"><span class="arch-arrow">&#8595;</span></div>
+    <div class="arch-layer">
+      <div class="arch-node accent-node">
+        <div class="arch-node-icon">&#127760;</div>
+        <div class="arch-node-title">CDN</div>
+        <div class="arch-node-val">${cdnLabel}</div>
+      </div>
+    </div>
+    <div class="arch-arrow-row"><span class="arch-arrow">&#8595;</span></div>
+    <div class="arch-layer">
+      <div class="arch-node purple-node">
+        <div class="arch-node-icon">&#9878;</div>
+        <div class="arch-node-title">Load Balancer</div>
+        <div class="arch-node-val">${lbLabel}</div>
+      </div>
+    </div>
+    <div class="arch-arrow-row"><span class="arch-arrow">&#8595;</span></div>
+    <div class="arch-layer">
+      ${buildAppNodes(serverCount)}
+    </div>
+    <div class="arch-arrow-row"><span class="arch-arrow">&#8595;&nbsp;&nbsp;&#8595;</span></div>
+    <div class="arch-layer">
+      <div class="arch-node green-node">
+        <div class="arch-node-icon">&#9889;</div>
+        <div class="arch-node-title">Redis Cache</div>
+        <div class="arch-node-val">${cacheLabel}</div>
+      </div>
+      <div class="arch-node warn-node">
+        <div class="arch-node-icon">&#128190;</div>
+        <div class="arch-node-title">Primary DB</div>
+        <div class="arch-node-val">${dbLabel}</div>
+      </div>
+      ${readReplicas > 0 ? `
+      <div class="arch-node">
+        <div class="arch-node-icon">&#128203;</div>
+        <div class="arch-node-title">Read Replicas</div>
+        <div class="arch-node-val">${replicaLabel}</div>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+function buildAppNodes(count) {
+  const max = Math.min(count, 6);
+  const nodes = [];
+  for (let i = 0; i < max; i++) {
+    nodes.push(`
+      <div class="arch-node accent-node">
+        <div class="arch-node-icon">&#9729;</div>
+        <div class="arch-node-title">App ${i+1}</div>
+        <div class="arch-node-val">server</div>
+      </div>
+    `);
+  }
+  if (count > max) {
+    nodes.push(`
+      <div class="arch-node">
+        <div class="arch-node-icon">&#8943;</div>
+        <div class="arch-node-title">+${count - max} more</div>
+        <div class="arch-node-val">servers</div>
+      </div>
+    `);
+  }
+  return nodes.join('');
+}
+
+// ─── Export ───────────────────────────────────────────────────────────────────
+function exportReport() {
+  const dau         = getNum('dau');
+  const peakFactor  = getNum('peakFactor');
+  const reqPerUser  = getNum('reqPerUser');
+  const reqSizeKB   = getNum('reqSize');
+  const respSizeKB  = getNum('respSize');
+  const rwRatio     = getNum('readWriteRatio');
+  const retentionMo = getNum('retention');
+  const growthRate  = getNum('growthRate');
+  const rpsPerServer= getNum('rpsPerServer');
+  const cacheHotPct = getNum('cacheHotPct');
+
+  const totalReqDay = dau * reqPerUser;
+  const avgRPS      = totalReqDay / 86400;
+  const peakRPS     = avgRPS * peakFactor;
+  const readRPS     = peakRPS * (rwRatio / (rwRatio + 1));
+  const writeRPS    = peakRPS * (1 / (rwRatio + 1));
+  const bwInAvg     = (avgRPS * reqSizeKB)  / 1024;
+  const bwInPeak    = (peakRPS * reqSizeKB) / 1024;
+  const bwOutAvg    = (avgRPS * respSizeKB) / 1024;
+  const bwOutPeak   = (peakRPS * respSizeKB) / 1024;
+  const dailyWriteGB = (writeRPS * respSizeKB * 86400) / (1024 * 1024);
+  const baseStorageGB = dailyWriteGB * retentionMo * 30;
+  const st1y = baseStorageGB * Math.pow(1 + growthRate / 100, 12);
+  const st3y = baseStorageGB * Math.pow(1 + growthRate / 100, 36);
+  const st5y = baseStorageGB * Math.pow(1 + growthRate / 100, 60);
+  const hotDataGB   = baseStorageGB * (cacheHotPct / 100);
+  const redisRamGB  = hotDataGB * 1.2;
+  const serversPeak = Math.ceil(peakRPS / rpsPerServer);
+  const serversSafe = serversPeak * 2;
+
+  const now = new Date().toISOString().split('T')[0];
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Scalability Report — ${now}</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #111; }
+  h1 { font-size: 28px; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin: 28px 0 10px; border-bottom: 2px solid #eee; padding-bottom: 6px; }
+  .meta { color: #666; font-size: 13px; margin-bottom: 32px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  th { text-align: left; font-size: 12px; color: #888; padding: 6px 8px; border-bottom: 1px solid #eee; }
+  td { padding: 8px; border-bottom: 1px solid #f0f0f0; font-family: monospace; font-size: 14px; }
+  td:first-child { color: #555; font-family: system-ui; }
+  .accent { color: #0891b2; font-weight: 600; }
+  .warn { color: #d97706; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>System Scalability Report</h1>
+<p class="meta">Generated ${now} &mdash; DAU: ${fmtNum(dau)}</p>
+
+<h2>Inputs</h2>
+<table>
+  <tr><th>Parameter</th><th>Value</th></tr>
+  <tr><td>Daily Active Users</td><td class="accent">${fmtNum(dau)}</td></tr>
+  <tr><td>Peak Hours Factor</td><td>${peakFactor}x</td></tr>
+  <tr><td>Requests / User / Day</td><td>${reqPerUser}</td></tr>
+  <tr><td>Avg Request Size</td><td>${reqSizeKB} KB</td></tr>
+  <tr><td>Avg Response Size</td><td>${respSizeKB} KB</td></tr>
+  <tr><td>Read / Write Ratio</td><td>${rwRatio}:1</td></tr>
+  <tr><td>Data Retention</td><td>${retentionMo} months</td></tr>
+  <tr><td>Monthly Growth Rate</td><td>${growthRate}%</td></tr>
+  <tr><td>RPS per App Server</td><td>${fmtNum(rpsPerServer)}</td></tr>
+  <tr><td>Cache Hot %</td><td>${cacheHotPct}%</td></tr>
+</table>
+
+<h2>Throughput</h2>
+<table>
+  <tr><th>Metric</th><th>Value</th></tr>
+  <tr><td>Total requests / day</td><td>${fmtNum(totalReqDay)}</td></tr>
+  <tr><td>Average RPS</td><td class="accent">${fmtNum(avgRPS)} rps</td></tr>
+  <tr><td>Peak RPS</td><td class="warn">${fmtNum(peakRPS)} rps</td></tr>
+  <tr><td>Read RPS (peak)</td><td>${fmtNum(readRPS)} rps</td></tr>
+  <tr><td>Write RPS (peak)</td><td>${fmtNum(writeRPS)} rps</td></tr>
+</table>
+
+<h2>Bandwidth</h2>
+<table>
+  <tr><th>Metric</th><th>Value</th></tr>
+  <tr><td>Inbound avg</td><td>${fmtMBs(bwInAvg)}</td></tr>
+  <tr><td>Inbound peak</td><td class="warn">${fmtMBs(bwInPeak)}</td></tr>
+  <tr><td>Outbound avg</td><td>${fmtMBs(bwOutAvg)}</td></tr>
+  <tr><td>Outbound peak</td><td class="warn">${fmtMBs(bwOutPeak)}</td></tr>
+</table>
+
+<h2>Storage</h2>
+<table>
+  <tr><th>Horizon</th><th>Storage Needed</th></tr>
+  <tr><td>Now (base)</td><td class="accent">${fmtBytes(baseStorageGB)}</td></tr>
+  <tr><td>1 Year</td><td>${fmtBytes(st1y)}</td></tr>
+  <tr><td>3 Years</td><td>${fmtBytes(st3y)}</td></tr>
+  <tr><td>5 Years</td><td class="warn">${fmtBytes(st5y)}</td></tr>
+</table>
+
+<h2>Infrastructure Estimate</h2>
+<table>
+  <tr><th>Component</th><th>Recommendation</th></tr>
+  <tr><td>App Servers (peak + 2x headroom)</td><td class="accent">${serversSafe} servers</td></tr>
+  <tr><td>Redis Memory</td><td>${fmtRam(redisRamGB)}</td></tr>
+  <tr><td>Hot Data (cache)</td><td>${fmtBytes(hotDataGB)}</td></tr>
+  <tr><td>CDN Outbound avg</td><td>${fmtMBs(bwOutAvg)}</td></tr>
+  <tr><td>CDN Outbound peak</td><td class="warn">${fmtMBs(bwOutPeak)}</td></tr>
+</table>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `scalability-report-${now}.html`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ─── Wire up all inputs ───────────────────────────────────────────────────────
+const inputIds = ['dau','peakFactor','reqPerUser','reqSize','respSize',
+  'readWriteRatio','retention','growthRate','rpsPerServer','cacheHotPct'];
+inputIds.forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => { clearPresetActive(); calculate(); });
+});
+
+function clearPresetActive() {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+}
+
+// Initial render
+calculate();
+</script>
+</body>
+</html>

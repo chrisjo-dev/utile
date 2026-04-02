@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Load Balancer Simulator — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.15);
+  --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --purple: #a78bfa;
+  --orange: #fb923c;
+  --radius: 14px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top Bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--accent); }
+.back-link svg { width:16px; height:16px; }
+
+.topbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+
+.topbar-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+/* ── Main Layout ── */
+.main {
+  display: grid;
+  grid-template-columns: 300px 1fr 300px;
+  grid-template-rows: auto 1fr;
+  gap: 0;
+  flex: 1;
+  height: calc(100vh - 57px);
+  overflow: hidden;
+}
+
+/* ── Left Panel ── */
+.panel-left {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Center ── */
+.center-top {
+  grid-column: 2;
+  grid-row: 1;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.canvas-area {
+  grid-column: 2;
+  grid-row: 2;
+  overflow: hidden;
+  position: relative;
+}
+
+#sim-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ── Right Panel ── */
+.panel-right {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Section Headers ── */
+.section-header {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* ── Algorithm Selector ── */
+.algo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.algo-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-2);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 8px 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  line-height: 1.4;
+}
+.algo-btn:hover { border-color: var(--accent); color: var(--text); }
+.algo-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Controls ── */
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.control-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.control-label span {
+  font-family: 'DM Mono', monospace;
+  color: var(--accent);
+  font-size: 11px;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* ── Buttons ── */
+.btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); color: var(--text); }
+.btn.primary {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn.primary:hover { background: rgba(34,211,238,0.15); }
+.btn.danger {
+  background: rgba(248,113,113,0.08);
+  border-color: var(--red);
+  color: var(--red);
+}
+.btn.danger:hover { background: rgba(248,113,113,0.15); }
+.btn.active-btn {
+  background: rgba(74,222,128,0.08);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Weight Inputs ── */
+.weight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.weight-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.weight-item label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.weight-input {
+  width: 100%;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 5px 8px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.weight-input:focus { border-color: var(--accent); }
+
+/* ── Stats Panel ── */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--surface-3);
+}
+.stat-row:last-child { border-bottom: none; }
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.stat-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+/* ── Bar Chart ── */
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bar-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  width: 40px;
+  flex-shrink: 0;
+}
+
+.bar-track {
+  flex: 1;
+  height: 14px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.bar-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-2);
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Algorithm Info ── */
+.algo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.algo-desc {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+.pseudocode {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-2);
+  line-height: 1.7;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 100px;
+  border: 1px solid;
+}
+.tag.pro { border-color: var(--green); color: var(--green); background: rgba(74,222,128,0.08); }
+.tag.con { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.08); }
+.tag.use { border-color: var(--yellow); color: var(--yellow); background: rgba(251,191,36,0.08); }
+
+/* ── Comparison Mode ── */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+
+.compare-algo {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.compare-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.compare-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.compare-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.compare-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.compare-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.compare-fairness {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  margin-top: 6px;
+}
+
+.compare-fairness span {
+  color: var(--accent);
+}
+
+/* ── Center controls ── */
+.mode-indicator {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.05em;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  display: inline-block;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.pulse-dot.stopped { background: var(--text-3); animation: none; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74,222,128,0.4); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 4px rgba(74,222,128,0); }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* ── Failure note ── */
+.failure-note {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <a href="index.html" class="back-link">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M10 12L6 8l4-4"/>
+      </svg>
+      utile
+    </a>
+    <div class="topbar-title">Load Balancer Simulator</div>
+    <div class="topbar-meta" id="req-counter">0 requests</div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="main">
+
+    <!-- Left Panel -->
+    <div class="panel-left">
+
+      <div>
+        <div class="section-header">Algorithm</div>
+        <div class="algo-grid">
+          <button class="algo-btn active" data-algo="rr">Round Robin</button>
+          <button class="algo-btn" data-algo="lc">Least Conn.</button>
+          <button class="algo-btn" data-algo="wrr">Weighted RR</button>
+          <button class="algo-btn" data-algo="ip">IP Hash</button>
+          <button class="algo-btn" data-algo="rand">Random</button>
+          <button class="algo-btn" data-algo="lrt">Least Resp.</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-header">Configuration</div>
+        <div class="control-group">
+          <div class="control-row">
+            <div class="control-label">Servers <span id="server-count-val">3</span></div>
+            <input type="range" id="server-count" min="2" max="6" value="3">
+          </div>
+          <div class="control-row">
+            <div class="control-label">Request Rate <span id="req-rate-val">2/s</span></div>
+            <input type="range" id="req-rate" min="0" max="10" step="0.5" value="2">
+          </div>
+          <div class="control-row">
+            <div class="control-label">Response Time <span id="resp-time-val">200ms</span></div>
+            <input type="range" id="resp-time" min="50" max="1000" step="50" value="200">
+          </div>
+        </div>
+      </div>
+
+      <div id="weight-section" style="display:none;">
+        <div class="section-header">Server Weights</div>
+        <div class="weight-grid" id="weight-grid"></div>
+      </div>
+
+      <div>
+        <div class="section-header">Simulation</div>
+        <div class="btn-row">
+          <button class="btn primary" id="btn-start">Start</button>
+          <button class="btn" id="btn-send">Send 1</button>
+          <button class="btn" id="btn-reset">Reset</button>
+        </div>
+        <div style="margin-top:10px; display:flex; align-items:center; gap:8px;">
+          <span class="pulse-dot stopped" id="running-dot"></span>
+          <span class="mode-indicator" id="running-label">Stopped</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-header">Server Failure</div>
+        <p class="failure-note">Click any server in the diagram to toggle it offline/online.</p>
+      </div>
+
+      <div>
+        <div class="section-header">Mode</div>
+        <div class="btn-row">
+          <button class="btn" id="btn-compare">Compare All</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Center Top Bar -->
+    <div class="center-top">
+      <span class="mode-indicator" id="algo-label" style="color:var(--accent);">Round Robin</span>
+      <span class="mode-indicator">—</span>
+      <span class="mode-indicator" id="center-stats">0 req · 0 in-flight</span>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-area">
+      <canvas id="sim-canvas"></canvas>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="panel-right">
+
+      <div>
+        <div class="section-header">Distribution</div>
+        <div class="bar-chart" id="bar-chart"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="section-header">Statistics</div>
+        <div>
+          <div class="stat-row">
+            <div class="stat-label">Total Requests</div>
+            <div class="stat-value" id="stat-total">0</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">In Flight</div>
+            <div class="stat-value" id="stat-inflight">0</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">Fairness Score</div>
+            <div class="stat-value" id="stat-fairness">—</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">Avg Response</div>
+            <div class="stat-value" id="stat-avg-resp">—</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">Failed Requests</div>
+            <div class="stat-value" id="stat-failed" style="color:var(--red);">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div>
+        <div class="section-header">Algorithm Info</div>
+        <div class="algo-info" id="algo-info"></div>
+      </div>
+
+      <div id="compare-section" style="display:none;">
+        <div class="divider"></div>
+        <div class="section-header">Comparison (same 100 requests)</div>
+        <div class="compare-grid" id="compare-grid"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────
+   STATE
+───────────────────────────────────────────── */
+const canvas = document.getElementById('sim-canvas');
+const ctx = canvas.getContext('2d');
+
+let state = {
+  algo: 'rr',
+  serverCount: 3,
+  reqRate: 2,
+  respTime: 200,
+  running: false,
+  compareMode: false,
+
+  // RR counter
+  rrIndex: 0,
+  // WRR
+  wrrWeights: [1,1,1,1,1,1],
+  wrrCounter: [0,0,0,0,0,0],
+  wrrCurrent: 0,
+
+  servers: [],       // {id, x, y, connections, total, failed, avgRespMs, offline}
+  packets: [],       // {id, progress, fromX, fromY, toX, toY, serverId, phase, clientIP, startTime}
+
+  totalRequests: 0,
+  failedRequests: 0,
+  ipCounter: 0,      // simulated IP hash counter
+  lastRequestTime: 0,
+  animFrame: null,
+  requestInterval: null,
+  packetId: 0,
+  completedResponses: [],  // for avg response time
+};
+
+/* ─────────────────────────────────────────────
+   LAYOUT CONSTANTS
+───────────────────────────────────────────── */
+const LB = { x: 0, y: 0, w: 80, h: 50 };  // will be set in resize
+const CLIENT = { x: 0, y: 0, w: 70, h: 44 };
+
+function getLayout() {
+  const W = canvas.width;
+  const H = canvas.height;
+  const cx = W / 2;
+  const cy = H / 2;
+
+  CLIENT.x = 50;
+  CLIENT.y = cy - 22;
+  CLIENT.w = 80;
+  CLIENT.h = 44;
+
+  LB.x = cx - 40;
+  LB.y = cy - 25;
+  LB.w = 80;
+  LB.h = 50;
+
+  return { W, H, cx, cy };
+}
+
+const SERVER_COLORS = ['#22d3ee','#4ade80','#a78bfa','#fb923c','#f87171','#fbbf24'];
+
+function rebuildServers() {
+  const { W, H, cx, cy } = getLayout();
+  const n = state.serverCount;
+  const rightX = W - 100;
+  const spread = Math.min(H * 0.75, n * 100);
+  const step = spread / (n - 1 || 1);
+  const startY = cy - spread / 2;
+
+  const oldServers = state.servers;
+  state.servers = [];
+  for (let i = 0; i < n; i++) {
+    const old = oldServers[i];
+    state.servers.push({
+      id: i,
+      x: rightX,
+      y: (n === 1 ? cy : startY + i * step),
+      w: 90,
+      h: 52,
+      connections: old ? old.connections : 0,
+      total: old ? old.total : 0,
+      failed: old ? old.failed : 0,
+      avgRespMs: old ? old.avgRespMs : state.respTime,
+      offline: old ? old.offline : false,
+      color: SERVER_COLORS[i % SERVER_COLORS.length],
+      respTimeVariance: Math.random() * 0.4 + 0.8,  // 0.8-1.2x base
+    });
+  }
+}
+
+/* ─────────────────────────────────────────────
+   ALGORITHMS
+───────────────────────────────────────────── */
+const ALGO_INFO = {
+  rr: {
+    name: 'Round Robin',
+    desc: 'Requests are distributed sequentially across all available servers in a circular order. Simple and predictable.',
+    pseudo: `i = (i + 1) % len(servers)
+return servers[i]`,
+    pros: ['Simple', 'Equal distribution', 'No overhead'],
+    cons: ['Ignores server load', 'Bad for varying req weights'],
+    use: ['Stateless services', 'Similar capacity servers'],
+  },
+  lc: {
+    name: 'Least Connections',
+    desc: 'Routes new requests to the server currently handling the fewest active connections. Better for variable-length requests.',
+    pseudo: `min_conn = ∞
+for s in servers:
+  if s.connections < min_conn:
+    best = s
+    min_conn = s.connections
+return best`,
+    pros: ['Adapts to load', 'Good for long requests', 'Fair under variance'],
+    cons: ['Requires connection tracking', 'Slight overhead'],
+    use: ['Database connections', 'Long-lived sessions'],
+  },
+  wrr: {
+    name: 'Weighted Round Robin',
+    desc: 'Like Round Robin but servers receive requests proportional to their weight. Useful when servers have different capacities.',
+    pseudo: `total = sum(weights)
+r = next_counter % total
+for s in servers:
+  r -= s.weight
+  if r < 0: return s`,
+    pros: ['Capacity-aware', 'Flexible', 'Predictable'],
+    cons: ['Manual weight config', 'Static weights'],
+    use: ['Mixed-capacity fleet', 'A/B traffic splits'],
+  },
+  ip: {
+    name: 'IP Hash',
+    desc: 'Server is selected based on a hash of the client IP address. Ensures the same client always hits the same server.',
+    pseudo: `h = hash(client_ip)
+return servers[h % len(servers)]`,
+    pros: ['Session affinity', 'Consistent routing', 'Cache locality'],
+    cons: ['Uneven distribution', 'No failover affinity'],
+    use: ['Session-based apps', 'Shopping carts', 'Auth tokens'],
+  },
+  rand: {
+    name: 'Random',
+    desc: 'Selects a server at random. Approaches uniform distribution with high request volume. Simplest implementation.',
+    pseudo: `return servers[rand() % len(servers)]`,
+    pros: ['Trivial to implement', 'No state needed', 'Approximates uniform'],
+    cons: ['Non-deterministic', 'High variance at low volume'],
+    use: ['Stateless microservices', 'Cache layers'],
+  },
+  lrt: {
+    name: 'Least Response Time',
+    desc: 'Routes to the server with the lowest average response time AND fewest active connections combined.',
+    pseudo: `score = resp_time * (connections + 1)
+return server with min(score)`,
+    pros: ['Perf-aware', 'Adapts dynamically', 'Best UX'],
+    cons: ['Requires metrics', 'More complex'],
+    use: ['Heterogeneous backends', 'High-perf APIs'],
+  },
+};
+
+function selectServer(clientIP) {
+  const online = state.servers.filter(s => !s.offline);
+  if (online.length === 0) return null;
+
+  switch (state.algo) {
+    case 'rr': {
+      const s = online[state.rrIndex % online.length];
+      state.rrIndex++;
+      return s;
+    }
+    case 'lc': {
+      return online.reduce((a, b) => a.connections <= b.connections ? a : b);
+    }
+    case 'wrr': {
+      const weights = online.map(s => state.wrrWeights[s.id] || 1);
+      const total = weights.reduce((a, b) => a + b, 0);
+      let r = state.wrrCurrent % total;
+      state.wrrCurrent++;
+      for (let i = 0; i < online.length; i++) {
+        r -= weights[i];
+        if (r < 0) return online[i];
+      }
+      return online[0];
+    }
+    case 'ip': {
+      // Deterministic hash of IP
+      let h = 0;
+      for (let c of clientIP) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+      return online[h % online.length];
+    }
+    case 'rand': {
+      return online[Math.floor(Math.random() * online.length)];
+    }
+    case 'lrt': {
+      return online.reduce((a, b) => {
+        const sa = a.avgRespMs * (a.connections + 1);
+        const sb = b.avgRespMs * (b.connections + 1);
+        return sa <= sb ? a : b;
+      });
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────
+   PACKET LIFECYCLE
+───────────────────────────────────────────── */
+function generateIP() {
+  return `10.0.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
+}
+
+function sendRequest(ip) {
+  ip = ip || generateIP();
+  const server = selectServer(ip);
+  if (!server) {
+    state.failedRequests++;
+    updateStats();
+    return;
+  }
+
+  const lbCx = LB.x + LB.w / 2;
+  const lbCy = LB.y + LB.h / 2;
+  const sCx = server.x + server.w / 2;
+  const sCy = server.y + server.h / 2;
+  const clientCx = CLIENT.x + CLIENT.w;
+  const clientCy = CLIENT.y + CLIENT.h / 2;
+
+  state.totalRequests++;
+  server.connections++;
+  server.total++;
+
+  const pkt = {
+    id: state.packetId++,
+    phase: 'toLB',       // toLB → toServer → returning → done
+    progress: 0,
+    serverId: server.id,
+    clientIP: ip,
+    startTime: performance.now(),
+    // path segments
+    c2lbFromX: clientCx,
+    c2lbFromY: clientCy,
+    c2lbToX: lbCx,
+    c2lbToY: lbCy,
+    lb2sFromX: lbCx,
+    lb2sFromY: lbCy,
+    lb2sToX: sCx,
+    lb2sToY: sCy,
+    x: clientCx,
+    y: clientCy,
+    color: server.color,
+    speed: 0.6,
+    respDelay: server.avgRespMs * server.respTimeVariance,
+  };
+  state.packets.push(pkt);
+  updateStats();
+}
+
+/* ─────────────────────────────────────────────
+   DRAW
+───────────────────────────────────────────── */
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function drawRoundedRect(x, y, w, h, r, fill, stroke) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
+}
+
+function drawLabel(text, x, y, color, size, font) {
+  ctx.fillStyle = color || '#fafafa';
+  ctx.font = `${size || 11}px ${font || "'DM Mono', monospace"}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x, y);
+}
+
+function drawScene() {
+  const { W, H, cx, cy } = getLayout();
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Wire: Client → LB
+  const clientCx = CLIENT.x + CLIENT.w;
+  const clientCy = CLIENT.y + CLIENT.h / 2;
+  const lbLeft = LB.x;
+  const lbCy = LB.y + LB.h / 2;
+
+  ctx.beginPath();
+  ctx.moveTo(clientCx, clientCy);
+  ctx.lineTo(lbLeft, lbCy);
+  ctx.strokeStyle = '#2e2e33';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 6]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Wires: LB → Servers
+  const lbRx = LB.x + LB.w;
+  const lbCx2 = LB.x + LB.w / 2;
+  for (const s of state.servers) {
+    const sCx = s.x;
+    const sCy = s.y + s.h / 2;
+    ctx.beginPath();
+    ctx.moveTo(lbRx, lbCy);
+    ctx.bezierCurveTo(lbRx + 40, lbCy, sCx - 40, sCy, sCx, sCy);
+    ctx.strokeStyle = s.offline ? '#2e2e3388' : hexToRgba(s.color, 0.2);
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash(s.offline ? [3,5] : []);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Client box
+  drawRoundedRect(CLIENT.x, CLIENT.y, CLIENT.w, CLIENT.h, 8, '#18181b', '#3f3f46');
+  drawLabel('CLIENT', CLIENT.x + CLIENT.w/2, CLIENT.y + 14, '#a1a1aa', 9, "'DM Mono', monospace");
+  drawLabel('→ REQ', CLIENT.x + CLIENT.w/2, CLIENT.y + CLIENT.h - 14, '#71717a', 9, "'DM Mono', monospace");
+
+  // LB box
+  const lbGlow = 'rgba(34,211,238,0.12)';
+  ctx.shadowColor = '#22d3ee';
+  ctx.shadowBlur = 12;
+  drawRoundedRect(LB.x, LB.y, LB.w, LB.h, 10, '#1f1f23', '#22d3ee');
+  ctx.shadowBlur = 0;
+  drawLabel('LB', LB.x + LB.w/2, LB.y + 14, '#22d3ee', 10, "'DM Mono', monospace");
+  drawLabel(ALGO_INFO[state.algo]?.name.replace(' ', '\n'), LB.x + LB.w/2, LB.y + LB.h - 14, '#a1a1aa', 8, "'DM Mono', monospace");
+
+  // Server boxes
+  for (const s of state.servers) {
+    const maxConn = Math.max(1, ...state.servers.map(x => x.total || 1));
+    const loadPct = s.total / maxConn;
+    const borderColor = s.offline ? '#3f3f46' : s.color;
+    const bgColor = s.offline ? '#18181b' : hexToRgba(s.color, 0.06);
+
+    if (!s.offline) {
+      ctx.shadowColor = s.color;
+      ctx.shadowBlur = s.connections > 0 ? 10 : 4;
+    }
+    drawRoundedRect(s.x, s.y, s.w, s.h, 10, bgColor, borderColor);
+    ctx.shadowBlur = 0;
+
+    // Server label
+    const labelColor = s.offline ? '#71717a' : s.color;
+    drawLabel(`SRV ${s.id + 1}`, s.x + s.w/2, s.y + 12, labelColor, 10, "'DM Mono', monospace");
+
+    if (s.offline) {
+      drawLabel('OFFLINE', s.x + s.w/2, s.y + s.h/2, '#f87171', 9, "'DM Mono', monospace");
+    } else {
+      // Connection count
+      drawLabel(`${s.connections} conn`, s.x + s.w/2, s.y + 27, '#a1a1aa', 9, "'DM Mono', monospace");
+
+      // Total requests
+      drawLabel(`${s.total} req`, s.x + s.w/2, s.y + s.h - 16, '#71717a', 9, "'DM Mono', monospace");
+
+      // Mini load bar
+      const barX = s.x + 8;
+      const barY = s.y + s.h - 8;
+      const barW = s.w - 16;
+      const barH = 4;
+      ctx.fillStyle = '#27272a';
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW, barH, 2);
+      ctx.fill();
+      if (loadPct > 0) {
+        ctx.fillStyle = s.color;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW * Math.min(loadPct, 1), barH, 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  // Packets
+  for (const p of state.packets) {
+    const alpha = p.phase === 'returning' ? 0.5 : 1;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = alpha;
+    ctx.fill();
+    // glow
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+    ctx.fillStyle = hexToRgba(p.color, 0.2 * alpha);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   ANIMATION LOOP
+───────────────────────────────────────────── */
+let lastTime = 0;
+
+function tick(ts) {
+  const dt = Math.min(ts - lastTime, 50);
+  lastTime = ts;
+
+  // Advance packets
+  const speedScale = dt / 16;  // normalize to 60fps
+  const toRemove = [];
+
+  for (const p of state.packets) {
+    if (p.phase === 'toLB') {
+      p.progress += 0.04 * speedScale;
+      if (p.progress >= 1) {
+        p.progress = 0;
+        p.phase = 'toServer';
+      }
+      p.x = lerp(p.c2lbFromX, p.c2lbToX, easeInOut(p.progress));
+      p.y = lerp(p.c2lbFromY, p.c2lbToY, easeInOut(p.progress));
+    } else if (p.phase === 'toServer') {
+      // Bezier along the curve
+      p.progress += 0.035 * speedScale;
+      if (p.progress >= 1) {
+        p.progress = 0;
+        p.phase = 'processing';
+        p.processUntil = performance.now() + p.respDelay;
+      }
+      // Use same bezier as wire
+      const lbRx = LB.x + LB.w;
+      const lbCy = LB.y + LB.h / 2;
+      const server = state.servers[p.serverId];
+      if (!server) { toRemove.push(p); continue; }
+      const sCx = server.x;
+      const sCy = server.y + server.h / 2;
+      const t = easeInOut(p.progress);
+      const cp1x = lbRx + 40, cp1y = lbCy;
+      const cp2x = sCx - 40, cp2y = sCy;
+      p.x = bezier(t, lbRx, cp1x, cp2x, sCx);
+      p.y = bezier(t, lbCy, cp1y, cp2y, sCy);
+    } else if (p.phase === 'processing') {
+      const server = state.servers[p.serverId];
+      if (!server) { toRemove.push(p); continue; }
+      p.x = server.x + server.w / 2;
+      p.y = server.y + server.h / 2;
+      if (performance.now() >= p.processUntil) {
+        p.phase = 'returning';
+        p.progress = 0;
+        // Store return path
+        p.retFromX = server.x;
+        p.retFromY = server.y + server.h / 2;
+        p.retToX = CLIENT.x + CLIENT.w;
+        p.retToY = CLIENT.y + CLIENT.h / 2;
+        const elapsed = performance.now() - p.startTime;
+        state.completedResponses.push(elapsed);
+        if (state.completedResponses.length > 200) state.completedResponses.shift();
+        server.connections = Math.max(0, server.connections - 1);
+      }
+    } else if (p.phase === 'returning') {
+      p.progress += 0.05 * speedScale;
+      if (p.progress >= 1) {
+        toRemove.push(p);
+        continue;
+      }
+      p.x = lerp(p.retFromX, p.retToX, easeInOut(p.progress));
+      p.y = lerp(p.retFromY, p.retToY, easeInOut(p.progress));
+    }
+  }
+
+  for (const p of toRemove) {
+    state.packets = state.packets.filter(x => x.id !== p.id);
+  }
+
+  drawScene();
+  updateStats();
+
+  state.animFrame = requestAnimationFrame(tick);
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+function bezier(t, p0, p1, p2, p3) {
+  const mt = 1 - t;
+  return mt*mt*mt*p0 + 3*mt*mt*t*p1 + 3*mt*t*t*p2 + t*t*t*p3;
+}
+
+/* ─────────────────────────────────────────────
+   STATS & UI
+───────────────────────────────────────────── */
+function updateStats() {
+  const total = state.totalRequests;
+  const inflight = state.packets.length;
+
+  document.getElementById('req-counter').textContent = `${total} requests`;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-inflight').textContent = inflight;
+  document.getElementById('stat-failed').textContent = state.failedRequests;
+  document.getElementById('center-stats').textContent = `${total} req · ${inflight} in-flight`;
+
+  // Fairness: Jain's fairness index = (Σxi)² / (n · Σxi²)
+  const counts = state.servers.filter(s => !s.offline).map(s => s.total);
+  if (counts.length > 0 && counts.reduce((a,b)=>a+b,0) > 0) {
+    const sum = counts.reduce((a,b)=>a+b,0);
+    const sumSq = counts.reduce((a,b)=>a+b*b,0);
+    const fairness = (sum*sum) / (counts.length * sumSq);
+    document.getElementById('stat-fairness').textContent = (fairness * 100).toFixed(1) + '%';
+  } else {
+    document.getElementById('stat-fairness').textContent = '—';
+  }
+
+  // Avg response time
+  if (state.completedResponses.length > 0) {
+    const avg = state.completedResponses.reduce((a,b)=>a+b,0) / state.completedResponses.length;
+    document.getElementById('stat-avg-resp').textContent = avg.toFixed(0) + 'ms';
+  } else {
+    document.getElementById('stat-avg-resp').textContent = '—';
+  }
+
+  renderBarChart();
+}
+
+function renderBarChart() {
+  const chart = document.getElementById('bar-chart');
+  const maxTotal = Math.max(1, ...state.servers.map(s => s.total));
+  chart.innerHTML = '';
+
+  for (const s of state.servers) {
+    const pct = s.total / maxTotal;
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <div class="bar-label">SRV ${s.id+1}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(pct*100).toFixed(1)}%; background:${s.offline ? '#3f3f46' : s.color};"></div>
+      </div>
+      <div class="bar-count">${s.total}</div>
+    `;
+    chart.appendChild(row);
+  }
+}
+
+function renderAlgoInfo() {
+  const info = ALGO_INFO[state.algo];
+  if (!info) return;
+
+  const container = document.getElementById('algo-info');
+  container.innerHTML = `
+    <div class="algo-desc">${info.desc}</div>
+    <div class="pseudocode">${escHtml(info.pseudo)}</div>
+    <div class="tag-row">
+      ${info.pros.map(p => `<span class="tag pro">+ ${p}</span>`).join('')}
+    </div>
+    <div class="tag-row">
+      ${info.cons.map(c => `<span class="tag con">− ${c}</span>`).join('')}
+    </div>
+    <div class="tag-row">
+      ${info.use.map(u => `<span class="tag use">${u}</span>`).join('')}
+    </div>
+  `;
+
+  document.getElementById('algo-label').textContent = info.name;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ─────────────────────────────────────────────
+   WEIGHT INPUTS
+───────────────────────────────────────────── */
+function renderWeightInputs() {
+  const show = state.algo === 'wrr';
+  const section = document.getElementById('weight-section');
+  section.style.display = show ? '' : 'none';
+  if (!show) return;
+
+  const grid = document.getElementById('weight-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < state.serverCount; i++) {
+    const item = document.createElement('div');
+    item.className = 'weight-item';
+    item.innerHTML = `
+      <label>SRV ${i+1}</label>
+      <input type="number" class="weight-input" min="1" max="10" value="${state.wrrWeights[i] || 1}" data-idx="${i}">
+    `;
+    grid.appendChild(item);
+  }
+
+  grid.querySelectorAll('.weight-input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const idx = parseInt(inp.dataset.idx);
+      state.wrrWeights[idx] = Math.max(1, parseInt(inp.value) || 1);
+    });
+  });
+}
+
+/* ─────────────────────────────────────────────
+   COMPARISON MODE
+───────────────────────────────────────────── */
+function runComparison() {
+  const algos = ['rr','lc','wrr','ip','rand','lrt'];
+  const N = 100;
+  const nServers = state.serverCount;
+  const results = {};
+
+  for (const algo of algos) {
+    const servers = Array.from({length: nServers}, (_,i) => ({
+      id: i, connections: 0, total: 0,
+      avgRespMs: state.respTime * (0.8 + Math.random() * 0.4),
+    }));
+
+    let rrIdx = 0, wrrCtr = 0;
+    const counts = new Array(nServers).fill(0);
+
+    for (let r = 0; r < N; r++) {
+      const online = servers.filter(s => !s.offline);
+      if (!online.length) break;
+      let selected;
+
+      if (algo === 'rr') {
+        selected = online[rrIdx % online.length]; rrIdx++;
+      } else if (algo === 'lc') {
+        selected = online.reduce((a,b) => a.connections <= b.connections ? a : b);
+      } else if (algo === 'wrr') {
+        const weights = online.map(s => state.wrrWeights[s.id] || 1);
+        const total = weights.reduce((a,b)=>a+b,0);
+        let rem = wrrCtr % total; wrrCtr++;
+        selected = online[online.length - 1];
+        for (let i = 0; i < online.length; i++) { rem -= weights[i]; if (rem < 0) { selected = online[i]; break; } }
+      } else if (algo === 'ip') {
+        const ip = `10.0.${r%255}.${(r*7)%255}`;
+        let h = 0; for (let c of ip) h = (h*31+c.charCodeAt(0))>>>0;
+        selected = online[h % online.length];
+      } else if (algo === 'rand') {
+        selected = online[Math.floor(Math.random() * online.length)];
+      } else if (algo === 'lrt') {
+        selected = online.reduce((a,b) => {
+          return a.avgRespMs*(a.connections+1) <= b.avgRespMs*(b.connections+1) ? a : b;
+        });
+      }
+
+      selected.connections++;
+      selected.total++;
+      counts[selected.id]++;
+      // Simulate connection release with random duration
+      if (Math.random() < 0.4) selected.connections = Math.max(0, selected.connections - 1);
+    }
+
+    const sum = counts.reduce((a,b)=>a+b,0);
+    const sumSq = counts.reduce((a,b)=>a+b*b,0);
+    const fairness = sum > 0 ? (sum*sum)/(nServers*sumSq) : 0;
+    results[algo] = { counts, fairness };
+  }
+
+  renderComparison(results);
+}
+
+function renderComparison(results) {
+  const section = document.getElementById('compare-section');
+  section.style.display = '';
+  const grid = document.getElementById('compare-grid');
+  grid.innerHTML = '';
+
+  const algos = ['rr','lc','wrr','ip','rand','lrt'];
+  const shortNames = {rr:'RR',lc:'Least\nConn',wrr:'WRR',ip:'IP\nHash',rand:'Rand',lrt:'LRT'};
+
+  for (const algo of algos) {
+    const res = results[algo];
+    const maxC = Math.max(1, ...res.counts);
+    const div = document.createElement('div');
+    div.className = 'compare-algo';
+    const barsHtml = res.counts.map((c, i) =>
+      `<div class="compare-bar-row">
+        <div class="compare-bar-track">
+          <div class="compare-bar-fill" style="width:${(c/maxC*100).toFixed(1)}%;background:${SERVER_COLORS[i]};"></div>
+        </div>
+      </div>`
+    ).join('');
+    div.innerHTML = `
+      <div class="compare-name">${shortNames[algo]}</div>
+      <div class="compare-bars">${barsHtml}</div>
+      <div class="compare-fairness">fair: <span>${(res.fairness*100).toFixed(1)}%</span></div>
+    `;
+    grid.appendChild(div);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   CANVAS CLICK (server toggle)
+───────────────────────────────────────────── */
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+
+  for (const s of state.servers) {
+    if (mx >= s.x && mx <= s.x + s.w && my >= s.y && my <= s.y + s.h) {
+      s.offline = !s.offline;
+      if (s.offline) s.connections = 0;
+      updateStats();
+      break;
+    }
+  }
+});
+
+/* ─────────────────────────────────────────────
+   CONTROLS
+───────────────────────────────────────────── */
+document.querySelectorAll('.algo-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.algo-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.algo = btn.dataset.algo;
+    state.rrIndex = 0;
+    state.wrrCurrent = 0;
+    renderAlgoInfo();
+    renderWeightInputs();
+  });
+});
+
+const serverCountSlider = document.getElementById('server-count');
+serverCountSlider.addEventListener('input', () => {
+  state.serverCount = parseInt(serverCountSlider.value);
+  document.getElementById('server-count-val').textContent = state.serverCount;
+  rebuildServers();
+  renderWeightInputs();
+  renderBarChart();
+});
+
+const reqRateSlider = document.getElementById('req-rate');
+reqRateSlider.addEventListener('input', () => {
+  state.reqRate = parseFloat(reqRateSlider.value);
+  document.getElementById('req-rate-val').textContent = state.reqRate + '/s';
+  if (state.running) restartInterval();
+});
+
+const respTimeSlider = document.getElementById('resp-time');
+respTimeSlider.addEventListener('input', () => {
+  state.respTime = parseInt(respTimeSlider.value);
+  document.getElementById('resp-time-val').textContent = state.respTime + 'ms';
+});
+
+const btnStart = document.getElementById('btn-start');
+btnStart.addEventListener('click', () => {
+  if (state.running) {
+    stopSim();
+  } else {
+    startSim();
+  }
+});
+
+document.getElementById('btn-send').addEventListener('click', () => {
+  sendRequest();
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  stopSim();
+  state.packets = [];
+  state.totalRequests = 0;
+  state.failedRequests = 0;
+  state.rrIndex = 0;
+  state.wrrCurrent = 0;
+  state.completedResponses = [];
+  for (const s of state.servers) {
+    s.connections = 0;
+    s.total = 0;
+  }
+  updateStats();
+});
+
+document.getElementById('btn-compare').addEventListener('click', () => {
+  runComparison();
+});
+
+function startSim() {
+  state.running = true;
+  btnStart.textContent = 'Stop';
+  btnStart.classList.add('danger');
+  btnStart.classList.remove('primary');
+  document.getElementById('running-dot').classList.remove('stopped');
+  document.getElementById('running-label').textContent = 'Running';
+  restartInterval();
+}
+
+function stopSim() {
+  state.running = false;
+  btnStart.textContent = 'Start';
+  btnStart.classList.remove('danger');
+  btnStart.classList.add('primary');
+  document.getElementById('running-dot').classList.add('stopped');
+  document.getElementById('running-label').textContent = 'Stopped';
+  if (state.requestInterval) { clearInterval(state.requestInterval); state.requestInterval = null; }
+}
+
+function restartInterval() {
+  if (state.requestInterval) clearInterval(state.requestInterval);
+  if (state.reqRate <= 0) return;
+  const ms = 1000 / state.reqRate;
+  state.requestInterval = setInterval(() => {
+    sendRequest();
+  }, ms);
+}
+
+/* ─────────────────────────────────────────────
+   RESIZE
+───────────────────────────────────────────── */
+function resize() {
+  const area = canvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = area.clientWidth * dpr;
+  canvas.height = area.clientHeight * dpr;
+  canvas.style.width = area.clientWidth + 'px';
+  canvas.style.height = area.clientHeight + 'px';
+  ctx.scale(dpr, dpr);
+  rebuildServers();
+}
+
+const ro = new ResizeObserver(() => {
+  resize();
+});
+ro.observe(canvas.parentElement);
+
+/* ─────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────── */
+function init() {
+  resize();
+  renderAlgoInfo();
+  renderWeightInputs();
+  renderBarChart();
+  state.animFrame = requestAnimationFrame(tick);
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DB Selector — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.18);
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --purple: #a78bfa;
+  --pink: #f472b6;
+  --orange: #fb923c;
+  --radius: 12px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app { position:relative; z-index:1; max-width:1100px; margin:0 auto; padding:36px 20px 80px; }
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 36px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  text-decoration: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  white-space: nowrap;
+}
+.back-btn:hover { color: var(--accent); border-color: rgba(34,211,238,0.3); }
+
+.header-info { flex:1; }
+
+h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+h1 span { color: var(--accent); }
+
+.header-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.card-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.card-body { padding: 20px; }
+
+/* Form grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.field-group { display: flex; flex-direction: column; gap: 8px; }
+
+.field-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* Toggle group */
+.toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.toggle-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 12px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.toggle-btn:hover { color: var(--text); border-color: var(--text-3); }
+.toggle-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* Multi-select toggle */
+.multi-toggle .toggle-btn.active {
+  color: var(--purple);
+  border-color: var(--purple);
+  background: rgba(167,139,250,0.08);
+}
+
+/* Run button */
+.run-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 24px;
+  background: var(--accent);
+  color: #0e0e10;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+}
+.run-btn:hover { opacity: 0.9; }
+.run-btn:active { transform: scale(0.98); }
+
+/* Section tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  animation: fadeUp 0.5s 0.1s ease both;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 9px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: var(--text-3);
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  background: var(--surface-3);
+  color: var(--accent);
+}
+
+/* Results section */
+#results-section, #compare-section { display: none; }
+#results-section.visible, #compare-section.visible { display: block; }
+
+/* Top 3 recommendations */
+.recs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.rec-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: fadeUp 0.4s ease both;
+  transition: border-color 0.2s;
+}
+.rec-card:hover { border-color: var(--accent); }
+.rec-card.rank-1 { border-color: rgba(34,211,238,0.5); }
+
+.rec-header {
+  padding: 16px 18px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rec-rank {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.rank-1 .rec-rank { background: rgba(34,211,238,0.15); color: var(--accent); border: 1px solid rgba(34,211,238,0.3); }
+.rank-2 .rec-rank { background: rgba(167,139,250,0.12); color: var(--purple); border: 1px solid rgba(167,139,250,0.25); }
+.rank-3 .rec-rank { background: rgba(251,191,36,0.1); color: var(--warning); border: 1px solid rgba(251,191,36,0.2); }
+
+.rec-name { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.rec-category {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  margin-top: 2px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rec-score-wrap { margin-left: auto; text-align: right; }
+.rec-score-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--accent);
+}
+.rank-2 .rec-score-num { color: var(--purple); }
+.rank-3 .rec-score-num { color: var(--warning); }
+.rec-score-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.score-bar-wrap { padding: 0 18px 14px; border-bottom: 1px solid var(--border); }
+.score-bar-track {
+  width: 100%;
+  height: 4px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+  transition: width 0.6s ease;
+}
+.rank-2 .score-bar-fill { background: var(--purple); }
+.rank-3 .score-bar-fill { background: var(--warning); }
+
+.rec-body { padding: 14px 18px; }
+
+.rec-section-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 8px;
+  margin-top: 12px;
+}
+.rec-section-title:first-child { margin-top: 0; }
+
+.pros-cons { display: flex; flex-direction: column; gap: 4px; }
+.pro, .con, .avoid {
+  font-size: 12px;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.pro::before { content: '+'; color: var(--success); font-family: 'DM Mono', monospace; flex-shrink:0; }
+.con::before { content: '−'; color: var(--danger); font-family: 'DM Mono', monospace; flex-shrink:0; }
+.avoid::before { content: '✕'; color: var(--warning); font-family: 'DM Mono', monospace; flex-shrink:0; font-size:10px; }
+
+.pro span, .con span, .avoid span { color: var(--text-2); line-height: 1.4; }
+
+/* Radar chart */
+.radar-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+canvas#radarChart {
+  max-width: 420px;
+  width: 100%;
+}
+
+/* Compare section */
+.compare-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+.compare-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.05em;
+}
+
+.compare-db-btn {
+  padding: 6px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.compare-db-btn:hover { color: var(--text); border-color: var(--text-3); }
+.compare-db-btn.selected { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+.compare-db-btn.disabled-btn { opacity: 0.4; cursor: not-allowed; }
+
+.compare-run-btn {
+  margin-left: auto;
+  padding: 7px 16px;
+  background: var(--accent);
+  color: #0e0e10;
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.compare-run-btn:hover { opacity: 0.88; }
+
+.compare-table-wrap { overflow-x: auto; }
+
+table.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+}
+
+table.compare-table th {
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 11px 16px;
+  text-align: left;
+  font-weight: 500;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+table.compare-table th.db-col { color: var(--accent); font-size: 12px; font-weight: 600; }
+
+table.compare-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-2);
+  vertical-align: top;
+  line-height: 1.5;
+}
+table.compare-table tr:last-child td { border-bottom: none; }
+table.compare-table tr:hover td { background: var(--surface-2); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.05em;
+}
+.badge-green { background: rgba(52,211,153,0.12); color: var(--success); border: 1px solid rgba(52,211,153,0.2); }
+.badge-red { background: rgba(248,113,113,0.1); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
+.badge-yellow { background: rgba(251,191,36,0.1); color: var(--warning); border: 1px solid rgba(251,191,36,0.2); }
+.badge-blue { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(34,211,238,0.2); }
+.badge-gray { background: var(--surface-3); color: var(--text-3); border: 1px solid var(--border); }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.empty-state .icon {
+  font-size: 40px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* Responsive */
+@media(max-width:640px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .recs-grid { grid-template-columns: 1fr; }
+  h1 { font-size: 22px; }
+  .rec-score-num { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <a class="back-btn" href="./index.html">← Home</a>
+    <div class="header-info">
+      <h1>DB <span>Selector</span></h1>
+      <div class="header-sub">Database selection guide · 15 databases · local only</div>
+    </div>
+  </header>
+
+  <!-- Requirements Form -->
+  <div class="card" style="animation: fadeUp 0.5s 0.05s ease both;">
+    <div class="card-header">
+      <span class="card-title">Requirements</span>
+      <span class="card-tag">Step 1</span>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+
+        <div class="field-group">
+          <div class="field-label">Data Structure</div>
+          <div class="toggle-group" id="f-structure">
+            <button class="toggle-btn active" data-val="structured">Structured</button>
+            <button class="toggle-btn" data-val="semi">Semi-structured</button>
+            <button class="toggle-btn" data-val="unstructured">Unstructured</button>
+            <button class="toggle-btn" data-val="graph">Graph</button>
+            <button class="toggle-btn" data-val="timeseries">Time-series</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Query Patterns <span style="color:var(--text-3);font-size:9px;margin-left:4px;">(multi-select)</span></div>
+          <div class="toggle-group multi-toggle" id="f-query">
+            <button class="toggle-btn active" data-val="key-lookup">Key lookup</button>
+            <button class="toggle-btn" data-val="complex">Complex queries</button>
+            <button class="toggle-btn" data-val="fulltext">Full-text search</button>
+            <button class="toggle-btn" data-val="graph-traversal">Graph traversal</button>
+            <button class="toggle-btn" data-val="aggregations">Aggregations</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Data Scale</div>
+          <div class="toggle-group" id="f-scale">
+            <button class="toggle-btn active" data-val="small">&lt; 1 GB</button>
+            <button class="toggle-btn" data-val="medium">1 GB – 1 TB</button>
+            <button class="toggle-btn" data-val="large">1 TB+</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Read / Write Ratio</div>
+          <div class="toggle-group" id="f-rw">
+            <button class="toggle-btn active" data-val="read-heavy">Read-heavy</button>
+            <button class="toggle-btn" data-val="write-heavy">Write-heavy</button>
+            <button class="toggle-btn" data-val="balanced">Balanced</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Consistency Requirement</div>
+          <div class="toggle-group" id="f-consistency">
+            <button class="toggle-btn active" data-val="strong">Strong</button>
+            <button class="toggle-btn" data-val="eventual">Eventual</button>
+            <button class="toggle-btn" data-val="flexible">Flexible</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Latency Requirement</div>
+          <div class="toggle-group" id="f-latency">
+            <button class="toggle-btn" data-val="sub1ms">&lt; 1 ms</button>
+            <button class="toggle-btn active" data-val="sub10ms">&lt; 10 ms</button>
+            <button class="toggle-btn" data-val="sub100ms">&lt; 100 ms</button>
+            <button class="toggle-btn" data-val="flexible">Flexible</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">ACID Transactions</div>
+          <div class="toggle-group" id="f-transactions">
+            <button class="toggle-btn active" data-val="yes">Yes — required</button>
+            <button class="toggle-btn" data-val="no">No — not needed</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Open Source Preference</div>
+          <div class="toggle-group" id="f-oss">
+            <button class="toggle-btn" data-val="yes">Open source only</button>
+            <button class="toggle-btn" data-val="no">Managed / commercial OK</button>
+            <button class="toggle-btn active" data-val="any">No preference</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:24px;">
+        <button class="run-btn" id="runBtn" onclick="runRecommendation()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Find Best Databases
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View tabs -->
+  <div class="tabs" id="viewTabs" style="display:none;">
+    <button class="tab-btn active" onclick="switchTab('results')">Top Recommendations</button>
+    <button class="tab-btn" onclick="switchTab('compare')">Head-to-Head Compare</button>
+  </div>
+
+  <!-- Results section -->
+  <div id="results-section">
+
+    <!-- Radar + top rec -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;" id="topGrid">
+      <div class="card" style="animation: fadeUp 0.4s ease both;">
+        <div class="card-header">
+          <span class="card-title">Fit Analysis — Top Pick</span>
+          <span class="card-tag">Radar</span>
+        </div>
+        <div class="radar-wrap">
+          <canvas id="radarChart" width="420" height="380"></canvas>
+        </div>
+      </div>
+      <div id="top1CardWrap"></div>
+    </div>
+
+    <!-- Top 3 grid -->
+    <div class="recs-grid" id="recsGrid"></div>
+
+  </div>
+
+  <!-- Compare section -->
+  <div id="compare-section">
+    <div class="card" style="animation: fadeUp 0.4s ease both;">
+      <div class="card-header">
+        <span class="card-title">Head-to-Head Comparison</span>
+        <span class="card-tag">Compare</span>
+      </div>
+      <div class="compare-controls" id="compareControls">
+        <span class="compare-label">Select 2–3 databases:</span>
+      </div>
+      <div class="compare-table-wrap" id="compareTableWrap">
+        <div class="empty-state">
+          <span class="icon">⚡</span>
+          Select 2 or 3 databases above, then click Compare
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── Database Knowledge Base ────────────────────────────────────────────────
+
+const DB_CATALOG = [
+  {
+    id: 'postgresql',
+    name: 'PostgreSQL',
+    category: 'Relational SQL',
+    oss: true,
+    managed: true,
+    profile: {
+      structure: ['structured', 'semi'],
+      query: ['key-lookup', 'complex', 'aggregations', 'fulltext'],
+      scale: ['small', 'medium'],
+      rw: ['read-heavy', 'balanced', 'write-heavy'],
+      consistency: ['strong', 'flexible'],
+      latency: ['sub10ms', 'sub100ms', 'flexible'],
+      transactions: true,
+    },
+    scores: {
+      structured: 5, semi: 3, unstructured: 1, graph: 2, timeseries: 2,
+      'key-lookup': 4, 'complex': 5, 'fulltext': 3, 'graph-traversal': 2, 'aggregations': 5,
+      small: 5, medium: 4, large: 2,
+      'read-heavy': 4, 'write-heavy': 3, balanced: 5,
+      strong: 5, eventual: 1, flexible: 4,
+      'sub1ms': 2, 'sub10ms': 4, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 5, no_transactions: 3,
+      oss: 5, managed: 4, any: 5,
+    },
+    pros: ['ACID compliant with advanced transactions', 'Rich SQL + JSON support (JSONB)', 'Excellent ecosystem & community', 'Powerful aggregations & window functions', 'Row-level security & extensions (PostGIS, pgvector)'],
+    cons: ['Vertical scaling is the primary path', 'Sharding requires Citus or external tooling', 'Heavier resource footprint than SQLite/MySQL'],
+    avoid: ['When you need sub-millisecond pure key-value access', 'When horizontal write scaling > 1 TB/s is required', 'For pure graph traversal workloads'],
+  },
+  {
+    id: 'mysql',
+    name: 'MySQL',
+    category: 'Relational SQL',
+    oss: true,
+    managed: true,
+    profile: {
+      structure: ['structured'],
+      query: ['key-lookup', 'complex', 'aggregations'],
+      scale: ['small', 'medium'],
+      rw: ['read-heavy', 'balanced'],
+      consistency: ['strong', 'flexible'],
+      latency: ['sub10ms', 'sub100ms', 'flexible'],
+      transactions: true,
+    },
+    scores: {
+      structured: 5, semi: 2, unstructured: 1, graph: 1, timeseries: 1,
+      'key-lookup': 5, 'complex': 4, 'fulltext': 3, 'graph-traversal': 1, 'aggregations': 4,
+      small: 5, medium: 4, large: 2,
+      'read-heavy': 5, 'write-heavy': 3, balanced: 4,
+      strong: 4, eventual: 2, flexible: 4,
+      'sub1ms': 2, 'sub10ms': 5, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 5, no_transactions: 3,
+      oss: 5, managed: 4, any: 5,
+    },
+    pros: ['Battle-tested web stack staple (LAMP)', 'Very fast read queries with proper indexing', 'Excellent read replicas support', 'Wide managed hosting availability (RDS, PlanetScale)', 'InnoDB storage engine with ACID compliance'],
+    cons: ['Weaker JSON support than PostgreSQL', 'Limited window functions historically', 'Oracle ownership concerns for some teams'],
+    avoid: ['Complex analytical workloads', 'When JSONB-style semi-structured queries are frequent', 'When advanced geospatial queries are required'],
+  },
+  {
+    id: 'sqlite',
+    name: 'SQLite',
+    category: 'Embedded SQL',
+    oss: true,
+    managed: false,
+    profile: {
+      structure: ['structured'],
+      query: ['key-lookup', 'complex', 'aggregations'],
+      scale: ['small'],
+      rw: ['read-heavy', 'balanced'],
+      consistency: ['strong'],
+      latency: ['sub1ms', 'sub10ms', 'sub100ms', 'flexible'],
+      transactions: true,
+    },
+    scores: {
+      structured: 5, semi: 2, unstructured: 1, graph: 1, timeseries: 2,
+      'key-lookup': 5, 'complex': 3, 'fulltext': 2, 'graph-traversal': 1, 'aggregations': 3,
+      small: 5, medium: 2, large: 0,
+      'read-heavy': 4, 'write-heavy': 2, balanced: 3,
+      strong: 5, eventual: 1, flexible: 3,
+      'sub1ms': 5, 'sub10ms': 5, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 4, no_transactions: 4,
+      oss: 5, managed: 1, any: 4,
+    },
+    pros: ['Zero-config, serverless, embedded', 'Fastest local reads — file-based', 'Perfect for prototyping & mobile/desktop apps', 'Full ACID transactions in a single file', 'No network overhead'],
+    cons: ['Single-writer concurrency — blocks on writes', 'No network server mode built-in', 'Not suitable for high write concurrency'],
+    avoid: ['Multi-user web applications with concurrent writes', 'Datasets exceeding a few GB', 'When you need replication or HA'],
+  },
+  {
+    id: 'mongodb',
+    name: 'MongoDB',
+    category: 'Document Store',
+    oss: true,
+    managed: true,
+    profile: {
+      structure: ['semi', 'unstructured'],
+      query: ['key-lookup', 'complex', 'aggregations', 'fulltext'],
+      scale: ['small', 'medium', 'large'],
+      rw: ['write-heavy', 'balanced', 'read-heavy'],
+      consistency: ['strong', 'eventual', 'flexible'],
+      latency: ['sub10ms', 'sub100ms', 'flexible'],
+      transactions: true,
+    },
+    scores: {
+      structured: 3, semi: 5, unstructured: 4, graph: 2, timeseries: 3,
+      'key-lookup': 4, 'complex': 4, 'fulltext': 3, 'graph-traversal': 2, 'aggregations': 4,
+      small: 4, medium: 5, large: 4,
+      'read-heavy': 4, 'write-heavy': 4, balanced: 5,
+      strong: 3, eventual: 4, flexible: 5,
+      'sub1ms': 2, 'sub10ms': 4, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 3, no_transactions: 4,
+      oss: 5, managed: 5, any: 5,
+    },
+    pros: ['Flexible schema — evolve data freely', 'Horizontal sharding built-in', 'Rich aggregation pipeline', 'Atlas managed cloud with global clusters', 'BSON allows nested complex documents'],
+    cons: ['Multi-document transactions have overhead', 'SSPL license (not fully open source)', 'Memory-hungry for large datasets without tuning'],
+    avoid: ['Strict relational/JOIN-heavy workloads', 'When strong ACID across many documents is critical', 'Graph traversal deeper than 2–3 hops'],
+  },
+  {
+    id: 'couchdb',
+    name: 'CouchDB',
+    category: 'Document Store',
+    oss: true,
+    managed: false,
+    profile: {
+      structure: ['semi'],
+      query: ['key-lookup', 'complex'],
+      scale: ['small', 'medium'],
+      rw: ['write-heavy', 'balanced'],
+      consistency: ['eventual', 'flexible'],
+      latency: ['sub100ms', 'flexible'],
+      transactions: false,
+    },
+    scores: {
+      structured: 2, semi: 4, unstructured: 3, graph: 1, timeseries: 1,
+      'key-lookup': 4, 'complex': 3, 'fulltext': 2, 'graph-traversal': 1, 'aggregations': 2,
+      small: 4, medium: 3, large: 2,
+      'read-heavy': 3, 'write-heavy': 4, balanced: 3,
+      strong: 1, eventual: 5, flexible: 3,
+      'sub1ms': 1, 'sub10ms': 2, 'sub100ms': 4, flexible_lat: 5,
+      transactions: 1, no_transactions: 4,
+      oss: 5, managed: 2, any: 4,
+    },
+    pros: ['MVCC — no locks, excellent offline-first sync', 'HTTP/JSON native API', 'Multi-master replication (CouchDB Cluster)', 'Great for mobile offline sync (PouchDB)', 'Built-in conflict resolution'],
+    cons: ['No strong consistency', 'Limited query options compared to MongoDB', 'Smaller ecosystem'],
+    avoid: ['When strong consistency is required', 'Complex aggregations at scale', 'Graph or time-series workloads'],
+  },
+  {
+    id: 'redis',
+    name: 'Redis',
+    category: 'Key-Value / Cache',
+    oss: true,
+    managed: true,
+    profile: {
+      structure: ['structured', 'semi'],
+      query: ['key-lookup'],
+      scale: ['small', 'medium'],
+      rw: ['read-heavy', 'write-heavy', 'balanced'],
+      consistency: ['strong', 'flexible'],
+      latency: ['sub1ms', 'sub10ms'],
+      transactions: false,
+    },
+    scores: {
+      structured: 3, semi: 2, unstructured: 1, graph: 1, timeseries: 3,
+      'key-lookup': 5, 'complex': 1, 'fulltext': 1, 'graph-traversal': 1, 'aggregations': 2,
+      small: 5, medium: 4, large: 2,
+      'read-heavy': 5, 'write-heavy': 5, balanced: 5,
+      strong: 3, eventual: 3, flexible: 5,
+      'sub1ms': 5, 'sub10ms': 5, 'sub100ms': 3, flexible_lat: 3,
+      transactions: 2, no_transactions: 5,
+      oss: 5, managed: 5, any: 5,
+    },
+    pros: ['In-memory — sub-millisecond reads/writes', 'Rich data structures (lists, sets, sorted sets, streams)', 'Pub/sub and Lua scripting', 'Redis Cluster for horizontal scaling', 'Excellent for caching, sessions, leaderboards'],
+    cons: ['Data size limited by RAM', 'Durability options require tuning (AOF/RDB)', 'Not designed for complex queries or JOINs'],
+    avoid: ['Primary persistent database for complex queries', 'When dataset exceeds available memory', 'When you need ACID multi-table transactions'],
+  },
+  {
+    id: 'dynamodb',
+    name: 'DynamoDB',
+    category: 'Key-Value / Wide-column',
+    oss: false,
+    managed: true,
+    profile: {
+      structure: ['structured', 'semi'],
+      query: ['key-lookup'],
+      scale: ['small', 'medium', 'large'],
+      rw: ['read-heavy', 'write-heavy', 'balanced'],
+      consistency: ['strong', 'eventual', 'flexible'],
+      latency: ['sub10ms', 'sub100ms'],
+      transactions: true,
+    },
+    scores: {
+      structured: 3, semi: 4, unstructured: 2, graph: 1, timeseries: 3,
+      'key-lookup': 5, 'complex': 2, 'fulltext': 1, 'graph-traversal': 1, 'aggregations': 2,
+      small: 3, medium: 5, large: 5,
+      'read-heavy': 5, 'write-heavy': 5, balanced: 5,
+      strong: 4, eventual: 5, flexible: 5,
+      'sub1ms': 2, 'sub10ms': 5, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 3, no_transactions: 5,
+      oss: 0, managed: 5, any: 4,
+    },
+    pros: ['Serverless, fully managed by AWS', 'Single-digit millisecond at any scale', 'Automatic scaling (on-demand mode)', 'Global Tables for multi-region active-active', 'DynamoDB Streams for change data capture'],
+    cons: ['AWS vendor lock-in', 'Query patterns must be designed upfront', 'Expensive at high throughput without careful design'],
+    avoid: ['Complex relational queries & JOINs', 'Ad-hoc analytics workloads', 'When open source is required'],
+  },
+  {
+    id: 'cassandra',
+    name: 'Cassandra',
+    category: 'Wide-column',
+    oss: true,
+    managed: true,
+    profile: {
+      structure: ['structured', 'semi'],
+      query: ['key-lookup', 'aggregations'],
+      scale: ['large'],
+      rw: ['write-heavy', 'balanced'],
+      consistency: ['eventual', 'flexible'],
+      latency: ['sub10ms', 'sub100ms', 'flexible'],
+      transactions: false,
+    },
+    scores: {
+      structured: 4, semi: 3, unstructured: 1, graph: 1, timeseries: 4,
+      'key-lookup': 5, 'complex': 2, 'fulltext': 1, 'graph-traversal': 1, 'aggregations': 3,
+      small: 1, medium: 3, large: 5,
+      'read-heavy': 3, 'write-heavy': 5, balanced: 4,
+      strong: 2, eventual: 5, flexible: 4,
+      'sub1ms': 1, 'sub10ms': 4, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 1, no_transactions: 5,
+      oss: 5, managed: 4, any: 5,
+    },
+    pros: ['Masterless, no SPOF — linearly scalable', 'Extremely high write throughput', 'Tunable consistency (ALL, QUORUM, ONE)', 'Excellent for time-series & IoT data at petabyte scale', 'Multi-datacenter replication built-in'],
+    cons: ['CQL is limited — no JOINs or subqueries', 'Eventual consistency by default', 'Operational complexity — requires tuning'],
+    avoid: ['OLTP with complex queries or transactions', 'Small datasets (cluster overhead not worth it)', 'Read-heavy workloads with many access patterns'],
+  },
+  {
+    id: 'hbase',
+    name: 'HBase',
+    category: 'Wide-column',
+    oss: true,
+    managed: true,
+    profile: {
+      structure: ['structured', 'semi'],
+      query: ['key-lookup'],
+      scale: ['large'],
+      rw: ['write-heavy', 'balanced'],
+      consistency: ['strong', 'flexible'],
+      latency: ['sub10ms', 'sub100ms', 'flexible'],
+      transactions: false,
+    },
+    scores: {
+      structured: 4, semi: 3, unstructured: 1, graph: 1, timeseries: 3,
+      'key-lookup': 5, 'complex': 1, 'fulltext': 1, 'graph-traversal': 1, 'aggregations': 2,
+      small: 0, medium: 2, large: 5,
+      'read-heavy': 3, 'write-heavy': 5, balanced: 3,
+      strong: 4, eventual: 2, flexible: 3,
+      'sub1ms': 1, 'sub10ms': 3, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 1, no_transactions: 4,
+      oss: 5, managed: 3, any: 4,
+    },
+    pros: ['Hadoop ecosystem integration (MapReduce, Spark)', 'Strong consistency on row-level operations', 'Handles billions of rows at petabyte scale', 'Column-family design for sparse data', 'Battle-tested at Facebook (Messenger), Alibaba'],
+    cons: ['Heavy ops burden — HDFS + ZooKeeper required', 'No SQL support — Java API or HBase Shell', 'Overkill for anything under 100 GB'],
+    avoid: ['Small to medium datasets', 'Teams without Hadoop operational expertise', 'When you need SQL or analytical queries directly'],
+  },
+  {
+    id: 'neo4j',
+    name: 'Neo4j',
+    category: 'Graph',
+    oss: true,
+    managed: true,
+    profile: {
+      structure: ['graph'],
+      query: ['graph-traversal', 'complex'],
+      scale: ['small', 'medium'],
+      rw: ['read-heavy', 'balanced'],
+      consistency: ['strong'],
+      latency: ['sub10ms', 'sub100ms', 'flexible'],
+      transactions: true,
+    },
+    scores: {
+      structured: 2, semi: 3, unstructured: 1, graph: 5, timeseries: 1,
+      'key-lookup': 3, 'complex': 4, 'fulltext': 2, 'graph-traversal': 5, 'aggregations': 3,
+      small: 4, medium: 4, large: 2,
+      'read-heavy': 5, 'write-heavy': 2, balanced: 3,
+      strong: 5, eventual: 1, flexible: 3,
+      'sub1ms': 1, 'sub10ms': 3, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 5, no_transactions: 3,
+      oss: 4, managed: 5, any: 5,
+    },
+    pros: ['Cypher query language — intuitive graph queries', 'ACID transactions for graph mutations', 'Native graph storage (index-free adjacency)', 'Best for social networks, recommendation engines, fraud detection', 'Excellent visualization tooling'],
+    cons: ['Sharding is limited — mostly single-server', 'Memory-intensive for large graphs', 'Enterprise features require paid license'],
+    avoid: ['Tabular/relational data without many relationships', 'When horizontal scaling beyond one server is required', 'Purely key-value or document workloads'],
+  },
+  {
+    id: 'neptune',
+    name: 'Amazon Neptune',
+    category: 'Graph',
+    oss: false,
+    managed: true,
+    profile: {
+      structure: ['graph'],
+      query: ['graph-traversal', 'complex'],
+      scale: ['small', 'medium', 'large'],
+      rw: ['read-heavy', 'balanced'],
+      consistency: ['strong', 'flexible'],
+      latency: ['sub10ms', 'sub100ms', 'flexible'],
+      transactions: true,
+    },
+    scores: {
+      structured: 2, semi: 3, unstructured: 1, graph: 5, timeseries: 1,
+      'key-lookup': 3, 'complex': 4, 'fulltext': 2, 'graph-traversal': 5, 'aggregations': 3,
+      small: 3, medium: 5, large: 4,
+      'read-heavy': 5, 'write-heavy': 2, balanced: 4,
+      strong: 4, eventual: 2, flexible: 4,
+      'sub1ms': 1, 'sub10ms': 4, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 4, no_transactions: 3,
+      oss: 0, managed: 5, any: 3,
+    },
+    pros: ['Fully managed — no infrastructure ops', 'Supports Gremlin and SPARQL and openCypher', 'Multi-AZ high availability with up to 15 replicas', 'Integrates with AWS ecosystem (SageMaker, Lambda)', 'Scales storage automatically'],
+    cons: ['AWS vendor lock-in', 'No open source version', 'Cold start latency on serverless variant'],
+    avoid: ['Open source requirement', 'Non-AWS infrastructure environments', 'Teams not on the AWS ecosystem'],
+  },
+  {
+    id: 'influxdb',
+    name: 'InfluxDB',
+    category: 'Time-series',
+    oss: true,
+    managed: true,
+    profile: {
+      structure: ['timeseries'],
+      query: ['aggregations', 'key-lookup'],
+      scale: ['small', 'medium', 'large'],
+      rw: ['write-heavy', 'balanced'],
+      consistency: ['eventual', 'flexible'],
+      latency: ['sub10ms', 'sub100ms', 'flexible'],
+      transactions: false,
+    },
+    scores: {
+      structured: 1, semi: 2, unstructured: 1, graph: 0, timeseries: 5,
+      'key-lookup': 3, 'complex': 2, 'fulltext': 1, 'graph-traversal': 0, 'aggregations': 5,
+      small: 4, medium: 5, large: 4,
+      'read-heavy': 3, 'write-heavy': 5, balanced: 4,
+      strong: 1, eventual: 5, flexible: 4,
+      'sub1ms': 2, 'sub10ms': 4, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 1, no_transactions: 5,
+      oss: 5, managed: 5, any: 5,
+    },
+    pros: ['Purpose-built for time-series — TSM storage engine', 'Flux & InfluxQL query languages for time-based analysis', 'Built-in retention policies and downsampling', 'Excellent for metrics, monitoring, IoT', 'Telegraf agent integration for data collection'],
+    cons: ['Limited to time-series use cases', 'Clustering requires InfluxDB Enterprise', 'v1 vs v2/v3 API fragmentation'],
+    avoid: ['General-purpose data storage', 'Relational or graph workloads', 'When you need multi-table JOINs'],
+  },
+  {
+    id: 'timescaledb',
+    name: 'TimescaleDB',
+    category: 'Time-series SQL',
+    oss: true,
+    managed: true,
+    profile: {
+      structure: ['timeseries', 'structured'],
+      query: ['aggregations', 'complex', 'key-lookup'],
+      scale: ['small', 'medium', 'large'],
+      rw: ['write-heavy', 'balanced'],
+      consistency: ['strong', 'flexible'],
+      latency: ['sub10ms', 'sub100ms', 'flexible'],
+      transactions: true,
+    },
+    scores: {
+      structured: 4, semi: 2, unstructured: 1, graph: 0, timeseries: 5,
+      'key-lookup': 4, 'complex': 4, 'fulltext': 2, 'graph-traversal': 0, 'aggregations': 5,
+      small: 4, medium: 5, large: 4,
+      'read-heavy': 3, 'write-heavy': 5, balanced: 4,
+      strong: 5, eventual: 1, flexible: 4,
+      'sub1ms': 1, 'sub10ms': 4, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 5, no_transactions: 4,
+      oss: 5, managed: 5, any: 5,
+    },
+    pros: ['PostgreSQL extension — full SQL on time-series', 'Automatic partitioning (hypertables)', 'Built-in time aggregation functions', 'ACID transactions inherited from PostgreSQL', 'Easy migration for existing Postgres users'],
+    cons: ['Single-node write bottleneck without Timescale Cloud', 'Extension dependency on PostgreSQL version', 'Less optimized than InfluxDB for pure metrics ingestion'],
+    avoid: ['Pure graph or document workloads', 'When InfluxDB line protocol ingestion speed is required', 'Truly massive write-only streams without SQL needs'],
+  },
+  {
+    id: 'cockroachdb',
+    name: 'CockroachDB',
+    category: 'Distributed SQL',
+    oss: true,
+    managed: true,
+    profile: {
+      structure: ['structured'],
+      query: ['key-lookup', 'complex', 'aggregations'],
+      scale: ['medium', 'large'],
+      rw: ['read-heavy', 'write-heavy', 'balanced'],
+      consistency: ['strong'],
+      latency: ['sub10ms', 'sub100ms', 'flexible'],
+      transactions: true,
+    },
+    scores: {
+      structured: 5, semi: 2, unstructured: 1, graph: 1, timeseries: 2,
+      'key-lookup': 4, 'complex': 5, 'fulltext': 2, 'graph-traversal': 1, 'aggregations': 4,
+      small: 2, medium: 5, large: 5,
+      'read-heavy': 4, 'write-heavy': 4, balanced: 5,
+      strong: 5, eventual: 1, flexible: 3,
+      'sub1ms': 1, 'sub10ms': 3, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 5, no_transactions: 3,
+      oss: 5, managed: 5, any: 5,
+    },
+    pros: ['Serializable distributed transactions at scale', 'PostgreSQL-compatible wire protocol', 'Survives datacenter failures (multi-region)', 'Automatic sharding with no manual intervention', 'Strong consistency with distributed ACID'],
+    cons: ['Higher latency than single-node Postgres', 'Complex licensing (BSL for enterprise features)', 'Overkill for small-to-medium single-region workloads'],
+    avoid: ['Single-region apps where Postgres suffices', 'Sub-millisecond latency requirements', 'Graph or document-centric data models'],
+  },
+  {
+    id: 'elasticsearch',
+    name: 'Elasticsearch',
+    category: 'Search Engine',
+    oss: true,
+    managed: true,
+    profile: {
+      structure: ['semi', 'unstructured'],
+      query: ['fulltext', 'complex', 'aggregations'],
+      scale: ['small', 'medium', 'large'],
+      rw: ['read-heavy', 'balanced'],
+      consistency: ['eventual', 'flexible'],
+      latency: ['sub10ms', 'sub100ms', 'flexible'],
+      transactions: false,
+    },
+    scores: {
+      structured: 2, semi: 4, unstructured: 5, graph: 1, timeseries: 3,
+      'key-lookup': 3, 'complex': 4, 'fulltext': 5, 'graph-traversal': 1, 'aggregations': 5,
+      small: 3, medium: 5, large: 5,
+      'read-heavy': 5, 'write-heavy': 3, balanced: 4,
+      strong: 1, eventual: 5, flexible: 4,
+      'sub1ms': 1, 'sub10ms': 4, 'sub100ms': 5, flexible_lat: 5,
+      transactions: 1, no_transactions: 5,
+      oss: 4, managed: 5, any: 5,
+    },
+    pros: ['Best-in-class full-text search with relevance scoring', 'Powerful aggregations for analytics dashboards', 'Distributed by default — scales horizontally', 'Kibana for visualization (ELK stack)', 'REST API — language agnostic'],
+    cons: ['Near-real-time — not suitable for strong consistency', 'Complex cluster management (shards, replicas)', 'SSPL license since v7.11 (not OSI approved)'],
+    avoid: ['Primary transactional database', 'When strong consistency or ACID is required', 'Simple key-value lookup without search needs'],
+  },
+];
+
+// ─── Scoring Engine ──────────────────────────────────────────────────────────
+
+function getRequirements() {
+  return {
+    structure: getSingleValue('f-structure'),
+    query: getMultiValues('f-query'),
+    scale: getSingleValue('f-scale'),
+    rw: getSingleValue('f-rw'),
+    consistency: getSingleValue('f-consistency'),
+    latency: getSingleValue('f-latency'),
+    transactions: getSingleValue('f-transactions') === 'yes',
+    oss: getSingleValue('f-oss'),
+  };
+}
+
+function scoreDatabase(db, req) {
+  const s = db.scores;
+  let total = 0;
+  let maxPossible = 0;
+
+  // Data structure (weight 20)
+  const structScore = s[req.structure] ?? 0;
+  total += structScore * 20;
+  maxPossible += 5 * 20;
+
+  // Query patterns (weight 18 each, average)
+  const queryScores = req.query.map(q => s[q] ?? 0);
+  const avgQuery = queryScores.reduce((a, b) => a + b, 0) / queryScores.length;
+  total += avgQuery * 18;
+  maxPossible += 5 * 18;
+
+  // Scale (weight 16)
+  const scaleScore = s[req.scale] ?? 0;
+  total += scaleScore * 16;
+  maxPossible += 5 * 16;
+
+  // R/W ratio (weight 10)
+  const rwScore = s[req.rw] ?? 0;
+  total += rwScore * 10;
+  maxPossible += 5 * 10;
+
+  // Consistency (weight 14)
+  const consistScore = s[req.consistency] ?? 0;
+  total += consistScore * 14;
+  maxPossible += 5 * 14;
+
+  // Latency (weight 12)
+  const latKey = req.latency === 'flexible' ? 'flexible_lat' : req.latency;
+  const latScore = s[latKey] ?? 0;
+  total += latScore * 12;
+  maxPossible += 5 * 12;
+
+  // Transactions (weight 10)
+  const txScore = req.transactions ? (s['transactions'] ?? 0) : (s['no_transactions'] ?? 0);
+  total += txScore * 10;
+  maxPossible += 5 * 10;
+
+  // OSS preference (weight 8)
+  let ossScore = 0;
+  if (req.oss === 'yes') ossScore = db.oss ? 5 : 0;
+  else if (req.oss === 'no') ossScore = db.managed ? 5 : (db.oss ? 3 : 0);
+  else ossScore = s['any'] ?? 3;
+  total += ossScore * 8;
+  maxPossible += 5 * 8;
+
+  const pct = Math.round((total / maxPossible) * 100);
+  return Math.min(pct, 99);
+}
+
+// Radar axes: how well top rec meets each requirement dimension
+function getRadarScores(db, req) {
+  const s = db.scores;
+  return [
+    { label: 'Structure fit', score: (s[req.structure] ?? 0) / 5 },
+    { label: 'Query match', score: (req.query.map(q => s[q] ?? 0).reduce((a,b)=>a+b,0) / req.query.length) / 5 },
+    { label: 'Scale', score: (s[req.scale] ?? 0) / 5 },
+    { label: 'Consistency', score: (s[req.consistency] ?? 0) / 5 },
+    { label: 'Latency', score: (s[req.latency === 'flexible' ? 'flexible_lat' : req.latency] ?? 0) / 5 },
+    { label: 'Transactions', score: (req.transactions ? (s['transactions']??0) : (s['no_transactions']??0)) / 5 },
+  ];
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function getSingleValue(groupId) {
+  const active = document.querySelector(`#${groupId} .toggle-btn.active`);
+  return active ? active.dataset.val : null;
+}
+
+function getMultiValues(groupId) {
+  const active = document.querySelectorAll(`#${groupId} .toggle-btn.active`);
+  return Array.from(active).map(b => b.dataset.val);
+}
+
+function initToggleGroup(groupId, multi = false) {
+  const group = document.getElementById(groupId);
+  group.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (multi) {
+        btn.classList.toggle('active');
+        // Ensure at least one active
+        const anyActive = group.querySelectorAll('.toggle-btn.active').length;
+        if (anyActive === 0) btn.classList.add('active');
+      } else {
+        group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+    });
+  });
+}
+
+// ─── Main Recommendation ─────────────────────────────────────────────────────
+
+let currentResults = [];
+let currentReq = null;
+
+function runRecommendation() {
+  currentReq = getRequirements();
+
+  // Score all databases
+  const scored = DB_CATALOG.map(db => ({
+    db,
+    score: scoreDatabase(db, currentReq),
+  })).sort((a, b) => b.score - a.score);
+
+  currentResults = scored;
+
+  // Show results
+  document.getElementById('viewTabs').style.display = 'flex';
+  switchTab('results');
+  renderResults(scored, currentReq);
+  buildCompareControls(scored);
+}
+
+function renderResults(scored, req) {
+  const top3 = scored.slice(0, 3);
+  const top1 = top3[0];
+
+  // Radar chart
+  drawRadar(getRadarScores(top1.db, req), top1.db.name);
+
+  // Top1 card in grid left
+  document.getElementById('top1CardWrap').innerHTML = renderRecCard(top1, 0);
+
+  // Bottom recs (rank 2 and 3)
+  const recsGrid = document.getElementById('recsGrid');
+  recsGrid.innerHTML = top3.slice(1).map((r, i) => renderRecCard(r, i + 1)).join('');
+
+  document.getElementById('results-section').classList.add('visible');
+
+  // Responsive: stack on mobile
+  const topGrid = document.getElementById('topGrid');
+  if (window.innerWidth < 700) {
+    topGrid.style.gridTemplateColumns = '1fr';
+  }
+}
+
+function renderRecCard(result, idx) {
+  const { db, score } = result;
+  const rankClass = ['rank-1', 'rank-2', 'rank-3'][idx] || '';
+  const rankNum = ['#1', '#2', '#3'][idx] || `#${idx+1}`;
+
+  return `
+    <div class="rec-card ${rankClass}" style="animation-delay:${idx * 0.08}s">
+      <div class="rec-header">
+        <div class="rec-rank">${rankNum}</div>
+        <div>
+          <div class="rec-name">${db.name}</div>
+          <div class="rec-category">${db.category}</div>
+        </div>
+        <div class="rec-score-wrap">
+          <div class="rec-score-num">${score}%</div>
+          <div class="rec-score-label">match</div>
+        </div>
+      </div>
+      <div class="score-bar-wrap">
+        <div class="score-bar-track">
+          <div class="score-bar-fill" style="width:${score}%"></div>
+        </div>
+      </div>
+      <div class="rec-body">
+        <div class="rec-section-title">Strengths</div>
+        <div class="pros-cons">
+          ${db.pros.map(p => `<div class="pro"><span>${p}</span></div>`).join('')}
+        </div>
+        <div class="rec-section-title">Weaknesses</div>
+        <div class="pros-cons">
+          ${db.cons.map(c => `<div class="con"><span>${c}</span></div>`).join('')}
+        </div>
+        <div class="rec-section-title">When NOT to use</div>
+        <div class="pros-cons">
+          ${db.avoid.map(a => `<div class="avoid"><span>${a}</span></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─── Radar Chart ──────────────────────────────────────────────────────────────
+
+function drawRadar(axes, dbName) {
+  const canvas = document.getElementById('radarChart');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const cx = W / 2;
+  const cy = H / 2 + 10;
+  const R = Math.min(W, H) * 0.33;
+  const n = axes.length;
+
+  const angleStep = (Math.PI * 2) / n;
+  const startAngle = -Math.PI / 2;
+
+  const getPoint = (i, r) => ({
+    x: cx + Math.cos(startAngle + i * angleStep) * r,
+    y: cy + Math.sin(startAngle + i * angleStep) * r,
+  });
+
+  // Grid rings
+  for (let ring = 1; ring <= 5; ring++) {
+    const rr = (ring / 5) * R;
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const p = getPoint(i, rr);
+      i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = ring === 5 ? 'rgba(34,211,238,0.15)' : 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Axis lines
+  for (let i = 0; i < n; i++) {
+    const p = getPoint(i, R);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(p.x, p.y);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Data polygon
+  ctx.beginPath();
+  axes.forEach(({ score }, i) => {
+    const p = getPoint(i, score * R);
+    i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(34,211,238,0.12)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(34,211,238,0.7)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Data points
+  axes.forEach(({ score }, i) => {
+    const p = getPoint(i, score * R);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#22d3ee';
+    ctx.fill();
+  });
+
+  // Labels
+  ctx.font = '600 11px Syne, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  axes.forEach(({ label, score }, i) => {
+    const labelR = R + 28;
+    const p = getPoint(i, labelR);
+    ctx.fillStyle = '#a1a1aa';
+    ctx.fillText(label, p.x, p.y - 5);
+    ctx.font = '500 10px DM Mono, monospace';
+    ctx.fillStyle = '#22d3ee';
+    ctx.fillText(`${Math.round(score * 100)}%`, p.x, p.y + 9);
+    ctx.font = '600 11px Syne, sans-serif';
+  });
+
+  // Center label
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '700 13px Syne, sans-serif';
+  ctx.fillStyle = '#fafafa';
+  ctx.fillText(dbName, cx, cy);
+}
+
+// ─── Compare ─────────────────────────────────────────────────────────────────
+
+let selectedCompare = new Set();
+
+function buildCompareControls(scored) {
+  selectedCompare.clear();
+  // Pre-select top 3
+  scored.slice(0, 3).forEach(r => selectedCompare.add(r.db.id));
+
+  const controls = document.getElementById('compareControls');
+  const buttons = DB_CATALOG.map(db => {
+    const isSel = selectedCompare.has(db.id);
+    return `<button class="compare-db-btn${isSel ? ' selected' : ''}" data-id="${db.id}" onclick="toggleCompareDb(this)">${db.name}</button>`;
+  }).join('');
+
+  controls.innerHTML = `
+    <span class="compare-label">Select 2–3 databases:</span>
+    ${buttons}
+    <button class="compare-run-btn" onclick="renderCompareTable()">Compare</button>`;
+}
+
+function toggleCompareDb(btn) {
+  const id = btn.dataset.id;
+  if (selectedCompare.has(id)) {
+    if (selectedCompare.size <= 2) return; // keep minimum 2
+    selectedCompare.delete(id);
+    btn.classList.remove('selected');
+  } else {
+    if (selectedCompare.size >= 3) {
+      // Deselect the oldest non-fixed
+      const first = [...selectedCompare][0];
+      selectedCompare.delete(first);
+      document.querySelector(`.compare-db-btn[data-id="${first}"]`)?.classList.remove('selected');
+    }
+    selectedCompare.add(id);
+    btn.classList.add('selected');
+  }
+}
+
+function renderCompareTable() {
+  const ids = [...selectedCompare];
+  const dbs = ids.map(id => DB_CATALOG.find(d => d.id === id)).filter(Boolean);
+
+  if (dbs.length < 2) {
+    document.getElementById('compareTableWrap').innerHTML = `<div class="empty-state"><span class="icon">⚡</span>Select at least 2 databases to compare</div>`;
+    return;
+  }
+
+  const rows = [
+    { label: 'Category', fn: db => `<span class="badge badge-blue">${db.category}</span>` },
+    { label: 'Open Source', fn: db => db.oss ? `<span class="badge badge-green">Yes</span>` : `<span class="badge badge-gray">No</span>` },
+    { label: 'Managed Cloud', fn: db => db.managed ? `<span class="badge badge-green">Available</span>` : `<span class="badge badge-gray">Self-hosted</span>` },
+    { label: 'ACID Transactions', fn: db => db.profile.transactions ? `<span class="badge badge-green">Yes</span>` : `<span class="badge badge-yellow">Limited/No</span>` },
+    { label: 'Data Structures', fn: db => db.profile.structure.map(s => `<span class="badge badge-gray" style="margin:1px">${s}</span>`).join(' ') },
+    { label: 'Query Strengths', fn: db => db.profile.query.map(q => `<span class="badge badge-gray" style="margin:1px">${q}</span>`).join(' ') },
+    { label: 'Best Scale', fn: db => db.profile.scale.map(s => `<span class="badge badge-blue" style="margin:1px">${s}</span>`).join(' ') },
+    { label: 'Read/Write', fn: db => db.profile.rw.map(r => `<span class="badge badge-gray" style="margin:1px">${r}</span>`).join(' ') },
+    { label: 'Consistency', fn: db => db.profile.consistency.map(c => {
+        const cls = c === 'strong' ? 'badge-green' : c === 'eventual' ? 'badge-yellow' : 'badge-blue';
+        return `<span class="badge ${cls}" style="margin:1px">${c}</span>`;
+      }).join(' ')
+    },
+    { label: 'Latency', fn: db => db.profile.latency.map(l => `<span class="badge badge-gray" style="margin:1px">${l}</span>`).join(' ') },
+    { label: 'Match Score', fn: db => {
+        if (!currentReq) return `<span class="badge badge-gray">—</span>`;
+        const sc = scoreDatabase(db, currentReq);
+        const cls = sc >= 70 ? 'badge-green' : sc >= 50 ? 'badge-yellow' : 'badge-red';
+        return `<span class="badge ${cls}">${sc}%</span>`;
+      }
+    },
+    { label: 'Top Pros', fn: db => `<ul style="padding-left:14px;color:var(--success);font-size:11px;line-height:1.8">${db.pros.slice(0,3).map(p=>`<li style="color:var(--text-2)">${p}</li>`).join('')}</ul>` },
+    { label: 'Top Cons', fn: db => `<ul style="padding-left:14px;font-size:11px;line-height:1.8">${db.cons.map(c=>`<li style="color:var(--text-2)">${c}</li>`).join('')}</ul>` },
+    { label: 'Avoid When', fn: db => `<ul style="padding-left:14px;font-size:11px;line-height:1.8">${db.avoid.slice(0,2).map(a=>`<li style="color:var(--text-3)">${a}</li>`).join('')}</ul>` },
+  ];
+
+  let html = '<table class="compare-table"><thead><tr>';
+  html += '<th>Attribute</th>';
+  dbs.forEach(db => { html += `<th class="db-col">${db.name}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  rows.forEach(row => {
+    html += `<tr><td style="color:var(--text-3);white-space:nowrap;font-size:11px">${row.label}</td>`;
+    dbs.forEach(db => { html += `<td>${row.fn(db)}</td>`; });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('compareTableWrap').innerHTML = html;
+}
+
+// ─── Tab Switching ────────────────────────────────────────────────────────────
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (tab === 'results' && i === 0) || (tab === 'compare' && i === 1));
+  });
+  const rs = document.getElementById('results-section');
+  const cs = document.getElementById('compare-section');
+  if (tab === 'results') {
+    rs.classList.add('visible');
+    cs.classList.remove('visible');
+  } else {
+    rs.classList.remove('visible');
+    cs.classList.add('visible');
+    renderCompareTable();
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+initToggleGroup('f-structure');
+initToggleGroup('f-query', true);
+initToggleGroup('f-scale');
+initToggleGroup('f-rw');
+initToggleGroup('f-consistency');
+initToggleGroup('f-latency');
+initToggleGroup('f-transactions');
+initToggleGroup('f-oss');
+</script>
+</body>
+</html>

@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.18);
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --radius: 14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+.wrap { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 36px 20px 60px; }
+
+/* Header */
+header { text-align: center; margin-bottom: 36px; }
+header h1 { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
+header h1 span { color: var(--accent); }
+header p { color: var(--text-3); font-size: 13px; font-family: 'DM Mono', monospace; margin-top: 6px; }
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 20px; border-radius: 9px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; font-family: 'Syne', sans-serif;
+  transition: opacity .15s, background .15s, transform .1s;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn-pri { background: var(--accent); color: #0e0e10; }
+.btn-pri:hover:not(:disabled) { opacity: .88; }
+.btn-sec { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.btn-sec:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+.btn-danger:hover:not(:disabled) { background: rgba(248,113,113,0.08); }
+.btn-sm { padding: 7px 14px; font-size: 12px; }
+
+/* Layout */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 680px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+
+/* Camera section */
+.camera-section { display: flex; flex-direction: column; gap: 14px; }
+.camera-wrap {
+  position: relative;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  border: 1px solid var(--border);
+}
+#videoEl {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+#overlayCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.camera-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.camera-placeholder svg { opacity: 0.3; }
+.camera-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Output section */
+.output-section { display: flex; flex-direction: column; gap: 14px; }
+.output-wrap {
+  position: relative;
+  background: #111;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 3/4;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#outputCanvas {
+  max-width: 100%; max-height: 100%;
+  display: block;
+  border-radius: 6px;
+}
+#cornerCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  cursor: crosshair;
+}
+.output-placeholder {
+  color: var(--text-3);
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  text-align: center;
+  padding: 20px;
+  pointer-events: none;
+}
+.output-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Status badge */
+.status-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-family: 'DM Mono', monospace;
+  padding: 4px 10px; border-radius: 20px;
+  background: var(--surface-2); color: var(--text-3);
+  border: 1px solid var(--border);
+}
+.status-badge.active { background: rgba(34,211,238,0.1); color: var(--accent); border-color: rgba(34,211,238,0.3); }
+.status-badge.ok { background: rgba(52,211,153,0.1); color: var(--success); border-color: rgba(52,211,153,0.3); }
+.status-badge.warn { background: rgba(251,191,36,0.1); color: var(--warning); border-color: rgba(251,191,36,0.3); }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.dot.pulse { animation: pulse-dot 1.4s ease-in-out infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* Controls */
+.controls-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+@media (max-width: 480px) { .controls-grid { grid-template-columns: 1fr; } }
+.ctrl-group { display: flex; flex-direction: column; gap: 6px; }
+.ctrl-label {
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.6px;
+}
+select, input[type=range] { width: 100%; }
+select {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 7px; padding: 8px 10px; color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 12px; outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2371717a'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  padding-right: 28px;
+}
+select:focus { border-color: var(--accent); }
+input[type=range] {
+  -webkit-appearance: none; appearance: none;
+  height: 4px; border-radius: 2px;
+  background: var(--surface-3);
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px;
+  border-radius: 50%; background: var(--accent); cursor: pointer;
+  border: 2px solid var(--bg);
+}
+input[type=range]::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; border: 2px solid var(--bg);
+}
+.range-row { display: flex; align-items: center; gap: 8px; }
+.range-row input { flex: 1; }
+.range-val {
+  font-size: 11px; font-family: 'DM Mono', monospace;
+  color: var(--text-2); min-width: 30px; text-align: right;
+}
+
+/* Threshold slider (only visible in BW mode) */
+#thresholdGroup { display: none; }
+
+/* History */
+.history-section { margin-top: 28px; }
+.section-title {
+  font-size: 12px; font-family: 'DM Mono', monospace;
+  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.6px;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.history-grid { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.history-grid::-webkit-scrollbar { height: 4px; }
+.history-grid::-webkit-scrollbar-track { background: var(--surface-2); border-radius: 2px; }
+.history-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.thumb-item {
+  flex-shrink: 0;
+  width: 90px;
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  transition: border-color .15s, transform .15s;
+  position: relative;
+}
+.thumb-item:hover { border-color: var(--accent); transform: scale(1.03); }
+.thumb-item img { width: 100%; display: block; aspect-ratio: 3/4; object-fit: cover; }
+.thumb-item .thumb-del {
+  position: absolute; top: 4px; right: 4px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(0,0,0,0.7); color: var(--danger);
+  border: none; cursor: pointer; font-size: 10px;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .15s;
+}
+.thumb-item:hover .thumb-del { opacity: 1; }
+.history-empty { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text-3); padding: 16px 0; }
+
+/* Notification toast */
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 20px;
+  font-size: 13px; font-family: 'DM Mono', monospace;
+  color: var(--text); z-index: 999;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: rgba(52,211,153,0.4); color: var(--success); }
+.toast.error { border-color: rgba(248,113,113,0.4); color: var(--danger); }
+
+/* Corner handle */
+.corner-handle-hint {
+  font-size: 11px; font-family: 'DM Mono', monospace;
+  color: var(--warning); text-align: center;
+  padding: 6px 10px; background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.2); border-radius: 7px;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Document <span>Scanner</span></h1>
+    <p>camera · edge detection · perspective correction · export</p>
+  </header>
+
+  <div class="main-grid">
+
+    <!-- Left: camera -->
+    <div class="camera-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div class="section-title" style="margin:0;font-size:11px">Camera</div>
+        <span id="camStatus" class="status-badge">
+          <span class="dot"></span> idle
+        </span>
+      </div>
+
+      <div class="camera-wrap">
+        <video id="videoEl" autoplay playsinline muted></video>
+        <canvas id="overlayCanvas"></canvas>
+        <div class="camera-placeholder" id="cameraPlaceholder">
+          <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.07A1 1 0 0121 8.84V15a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+          </svg>
+          <span>Camera not started</span>
+        </div>
+      </div>
+
+      <div class="camera-actions">
+        <button class="btn btn-pri" id="btnStart">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>
+          Start Camera
+        </button>
+        <button class="btn btn-sec" id="btnStop" disabled>Stop</button>
+        <button class="btn btn-sec" id="btnFlip" disabled title="Flip front/back">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Flip
+        </button>
+      </div>
+
+      <button class="btn btn-pri" id="btnCapture" disabled style="width:100%;justify-content:center;padding:12px">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+        Capture &amp; Scan
+      </button>
+    </div>
+
+    <!-- Right: output + controls -->
+    <div class="output-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div class="section-title" style="margin:0;font-size:11px">Result</div>
+        <span id="scanStatus" class="status-badge">
+          <span class="dot"></span> no scan
+        </span>
+      </div>
+
+      <div class="output-wrap" id="outputWrap">
+        <canvas id="outputCanvas" style="display:none"></canvas>
+        <canvas id="cornerCanvas" style="display:none"></canvas>
+        <div class="output-placeholder" id="outputPlaceholder">
+          Capture a document<br>to see the result here
+        </div>
+      </div>
+
+      <div id="cornerHint" class="corner-handle-hint" style="display:none">
+        Auto-detection failed. Drag the corner handles to select your document.
+        <button class="btn btn-sm btn-sec" id="btnApplyCorners" style="margin-top:8px;width:100%;justify-content:center">Apply Manual Corners</button>
+      </div>
+
+      <!-- Post-processing controls -->
+      <div class="card" id="controlsCard" style="display:none">
+        <div class="controls-grid">
+          <div class="ctrl-group">
+            <div class="ctrl-label">Mode</div>
+            <select id="modeSelect">
+              <option value="color">Color</option>
+              <option value="gray">Grayscale</option>
+              <option value="bw">B&amp;W</option>
+            </select>
+          </div>
+          <div class="ctrl-group">
+            <div class="ctrl-label">Brightness</div>
+            <div class="range-row">
+              <input type="range" id="brightnessSlider" min="-100" max="100" value="0">
+              <span class="range-val" id="brightnessVal">0</span>
+            </div>
+          </div>
+          <div class="ctrl-group">
+            <div class="ctrl-label">Contrast</div>
+            <div class="range-row">
+              <input type="range" id="contrastSlider" min="-100" max="100" value="0">
+              <span class="range-val" id="contrastVal">0</span>
+            </div>
+          </div>
+        </div>
+        <div class="ctrl-group" id="thresholdGroup" style="margin-top:10px">
+          <div class="ctrl-label">B&amp;W Threshold</div>
+          <div class="range-row">
+            <input type="range" id="thresholdSlider" min="0" max="255" value="128">
+            <span class="range-val" id="thresholdVal">128</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="output-actions" id="outputActions" style="display:none">
+        <button class="btn btn-pri" id="btnDownloadPng">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          PNG
+        </button>
+        <button class="btn btn-sec" id="btnDownloadPdf">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          PDF
+        </button>
+        <button class="btn btn-sec btn-sm" id="btnRescan">Re-scan</button>
+        <button class="btn btn-danger btn-sm" id="btnDiscard">Discard</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- History -->
+  <div class="history-section">
+    <div class="section-title">Scan History</div>
+    <div id="historyGrid" class="history-grid">
+      <div class="history-empty" id="historyEmpty">No scans yet</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// =====================================================================
+// State
+// =====================================================================
+let stream = null;
+let facingMode = 'environment';
+let capturedImageData = null;   // raw ImageData from camera
+let rawCanvas = null;           // full-res canvas of captured frame
+let processedCanvas = null;     // perspective-corrected canvas
+let corners = null;             // [{x,y}] 4 corners in capturedImageData coords
+let manualCorners = null;       // corner handles for manual mode
+let draggingIdx = -1;
+let history = [];               // array of dataURL
+const MAX_HISTORY = 5;
+
+const videoEl   = document.getElementById('videoEl');
+const overlay   = document.getElementById('overlayCanvas');
+const octx      = overlay.getContext('2d');
+const outputC   = document.getElementById('outputCanvas');
+const cornerC   = document.getElementById('cornerCanvas');
+const outCtx    = outputC.getContext('2d');
+const ccCtx     = cornerC.getContext('2d');
+
+// =====================================================================
+// Camera
+// =====================================================================
+document.getElementById('btnStart').addEventListener('click', startCamera);
+document.getElementById('btnStop').addEventListener('click', stopCamera);
+document.getElementById('btnFlip').addEventListener('click', flipCamera);
+document.getElementById('btnCapture').addEventListener('click', captureFrame);
+
+async function startCamera() {
+  try {
+    if (stream) stopCamera();
+    const constraints = {
+      video: {
+        facingMode: { ideal: facingMode },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    };
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+    videoEl.srcObject = stream;
+    await videoEl.play();
+    document.getElementById('cameraPlaceholder').style.display = 'none';
+    setStatus('camStatus', 'active', 'live');
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnStop').disabled = false;
+    document.getElementById('btnFlip').disabled = false;
+    document.getElementById('btnCapture').disabled = false;
+    requestAnimationFrame(drawOverlay);
+  } catch (e) {
+    showToast('Camera error: ' + e.message, 'error');
+  }
+}
+
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  videoEl.srcObject = null;
+  document.getElementById('cameraPlaceholder').style.display = 'flex';
+  setStatus('camStatus', '', 'idle');
+  document.getElementById('btnStart').disabled = false;
+  document.getElementById('btnStop').disabled = true;
+  document.getElementById('btnFlip').disabled = true;
+  document.getElementById('btnCapture').disabled = true;
+  octx.clearRect(0, 0, overlay.width, overlay.height);
+}
+
+async function flipCamera() {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  await startCamera();
+}
+
+// Draw guide overlay on live camera
+let overlayAnim = 0;
+function drawOverlay() {
+  if (!stream) return;
+  const vw = videoEl.videoWidth || videoEl.clientWidth;
+  const vh = videoEl.videoHeight || videoEl.clientHeight;
+  overlay.width  = videoEl.clientWidth;
+  overlay.height = videoEl.clientHeight;
+  const dw = overlay.width;
+  const dh = overlay.height;
+
+  octx.clearRect(0, 0, dw, dh);
+  // Guide rectangle: inset 12%
+  const mx = dw * 0.10, my = dh * 0.08;
+  const rw = dw - mx * 2, rh = dh - my * 2;
+  // Dim surround
+  octx.fillStyle = 'rgba(0,0,0,0.30)';
+  octx.fillRect(0, 0, dw, dh);
+  octx.clearRect(mx, my, rw, rh);
+
+  // Animated border
+  overlayAnim = (overlayAnim + 1) % 60;
+  const alpha = 0.6 + 0.4 * Math.sin(overlayAnim / 60 * Math.PI * 2);
+  octx.strokeStyle = `rgba(34,211,238,${alpha})`;
+  octx.lineWidth = 2;
+  octx.setLineDash([]);
+  octx.strokeRect(mx, my, rw, rh);
+
+  // Corner accents
+  const cl = 18;
+  octx.strokeStyle = 'rgba(34,211,238,1)';
+  octx.lineWidth = 3;
+  const corners2 = [[mx,my],[mx+rw,my],[mx+rw,my+rh],[mx,my+rh]];
+  const dirs = [[1,1],[-1,1],[-1,-1],[1,-1]];
+  corners2.forEach(([cx,cy],[dx,dy]=dirs[corners2.indexOf([cx,cy])]) => {});
+  [[mx,my,1,1],[mx+rw,my,-1,1],[mx+rw,my+rh,-1,-1],[mx,my+rh,1,-1]].forEach(([cx,cy,dx,dy]) => {
+    octx.beginPath(); octx.moveTo(cx,cy+dy*cl); octx.lineTo(cx,cy); octx.lineTo(cx+dx*cl,cy);
+    octx.stroke();
+  });
+
+  requestAnimationFrame(drawOverlay);
+}
+
+// =====================================================================
+// Capture
+// =====================================================================
+function captureFrame() {
+  if (!stream || videoEl.videoWidth === 0) { showToast('Camera not ready', 'error'); return; }
+  const vw = videoEl.videoWidth;
+  const vh = videoEl.videoHeight;
+  rawCanvas = document.createElement('canvas');
+  rawCanvas.width = vw; rawCanvas.height = vh;
+  const rctx = rawCanvas.getContext('2d');
+  rctx.drawImage(videoEl, 0, 0, vw, vh);
+  capturedImageData = rctx.getImageData(0, 0, vw, vh);
+  setStatus('scanStatus', 'active', 'detecting…');
+  setTimeout(() => runAutoDetect(vw, vh), 30);
+}
+
+// =====================================================================
+// Edge Detection & Corner Finding
+// =====================================================================
+function runAutoDetect(w, h) {
+  const gray = toGrayscale(capturedImageData);
+  const blurred = gaussianBlur(gray, w, h, 1);
+  const edges = cannyEdges(blurred, w, h, 20, 60);
+  const detectedCorners = findDocumentCorners(edges, w, h);
+
+  if (detectedCorners) {
+    corners = detectedCorners;
+    document.getElementById('cornerHint').style.display = 'none';
+    applyPerspective(corners, w, h);
+    setStatus('scanStatus', 'ok', 'auto-detected');
+    showToast('Document detected and corrected', 'success');
+  } else {
+    // Fall back to manual with default corners
+    const pad = 0.1;
+    manualCorners = [
+      { x: w * pad,       y: h * pad },
+      { x: w * (1-pad),   y: h * pad },
+      { x: w * (1-pad),   y: h * (1-pad) },
+      { x: w * pad,       y: h * (1-pad) }
+    ];
+    corners = manualCorners;
+    showManualCorners(w, h);
+    setStatus('scanStatus', 'warn', 'manual');
+    showToast('Auto-detect failed. Adjust corners manually.', 'warn');
+  }
+}
+
+function toGrayscale(imgData) {
+  const d = imgData.data;
+  const len = imgData.width * imgData.height;
+  const out = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    const p = i * 4;
+    out[i] = (d[p] * 77 + d[p+1] * 150 + d[p+2] * 29) >> 8;
+  }
+  return out;
+}
+
+function gaussianBlur(gray, w, h, sigma) {
+  const kSize = Math.max(3, Math.ceil(sigma * 3) * 2 + 1);
+  const half = (kSize - 1) / 2;
+  const kernel = [];
+  let sum = 0;
+  for (let i = 0; i < kSize; i++) {
+    const x = i - half;
+    const v = Math.exp(-(x*x) / (2*sigma*sigma));
+    kernel.push(v); sum += v;
+  }
+  for (let i = 0; i < kSize; i++) kernel[i] /= sum;
+
+  const tmp = new Float32Array(w * h);
+  const out = new Uint8Array(w * h);
+
+  // Horizontal
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let acc = 0;
+      for (let k = 0; k < kSize; k++) {
+        const sx = Math.min(w-1, Math.max(0, x + k - half));
+        acc += gray[y * w + sx] * kernel[k];
+      }
+      tmp[y * w + x] = acc;
+    }
+  }
+  // Vertical
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let acc = 0;
+      for (let k = 0; k < kSize; k++) {
+        const sy = Math.min(h-1, Math.max(0, y + k - half));
+        acc += tmp[sy * w + x] * kernel[k];
+      }
+      out[y * w + x] = acc;
+    }
+  }
+  return out;
+}
+
+function cannyEdges(gray, w, h, lowT, highT) {
+  // Sobel gradients
+  const gx = new Float32Array(w * h);
+  const gy = new Float32Array(w * h);
+  const mag = new Float32Array(w * h);
+  const ang = new Float32Array(w * h);
+
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const idx = y * w + x;
+      const a = gray[(y-1)*w+(x-1)], b = gray[(y-1)*w+x], c = gray[(y-1)*w+(x+1)];
+      const d = gray[y*w+(x-1)],                           f = gray[y*w+(x+1)];
+      const g = gray[(y+1)*w+(x-1)], hh = gray[(y+1)*w+x], ii = gray[(y+1)*w+(x+1)];
+      const sx = -a - 2*d - g + c + 2*f + ii;
+      const sy = -a - 2*b - c + g + 2*hh + ii;
+      gx[idx] = sx; gy[idx] = sy;
+      mag[idx] = Math.sqrt(sx*sx + sy*sy);
+      ang[idx] = Math.atan2(sy, sx);
+    }
+  }
+
+  // Non-maximum suppression
+  const nms = new Float32Array(w * h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const idx = y * w + x;
+      const a = ang[idx] * 180 / Math.PI;
+      const norm = ((a % 180) + 180) % 180;
+      let n1, n2;
+      if (norm < 22.5 || norm >= 157.5)      { n1 = mag[y*w+(x-1)]; n2 = mag[y*w+(x+1)]; }
+      else if (norm < 67.5)                   { n1 = mag[(y-1)*w+(x+1)]; n2 = mag[(y+1)*w+(x-1)]; }
+      else if (norm < 112.5)                  { n1 = mag[(y-1)*w+x]; n2 = mag[(y+1)*w+x]; }
+      else                                    { n1 = mag[(y-1)*w+(x-1)]; n2 = mag[(y+1)*w+(x+1)]; }
+      nms[idx] = (mag[idx] >= n1 && mag[idx] >= n2) ? mag[idx] : 0;
+    }
+  }
+
+  // Double threshold + hysteresis
+  const strong = new Uint8Array(w * h);
+  const weak   = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    if (nms[i] >= highT) strong[i] = 255;
+    else if (nms[i] >= lowT) weak[i] = 255;
+  }
+  const edges = new Uint8Array(w * h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const idx = y * w + x;
+      if (strong[idx]) { edges[idx] = 255; continue; }
+      if (weak[idx]) {
+        const ns = [
+          strong[(y-1)*w+(x-1)], strong[(y-1)*w+x], strong[(y-1)*w+(x+1)],
+          strong[y*w+(x-1)],                         strong[y*w+(x+1)],
+          strong[(y+1)*w+(x-1)], strong[(y+1)*w+x], strong[(y+1)*w+(x+1)]
+        ];
+        if (ns.some(v => v)) edges[idx] = 255;
+      }
+    }
+  }
+  return edges;
+}
+
+function findDocumentCorners(edges, w, h) {
+  // Accumulate edge points in sub-sampled grid to find the convex hull
+  // Then pick 4 extremal points that form a quadrilateral
+  const step = 4;
+  const pts = [];
+  for (let y = 0; y < h; y += step) {
+    for (let x = 0; x < w; x += step) {
+      if (edges[y * w + x]) pts.push({ x, y });
+    }
+  }
+
+  if (pts.length < 50) return null;
+
+  // Score-based: find point maximizing sum of distances to image corners
+  // that approximates document corners
+  const imageCorners = [
+    { x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }
+  ];
+  const docCorners = imageCorners.map(ic => {
+    let best = null; let bestD = Infinity;
+    for (const p of pts) {
+      const d = dist(p, ic);
+      if (d < bestD) { bestD = d; best = p; }
+    }
+    return best;
+  });
+
+  // Validate: corners should span at least 30% of image
+  const xs = docCorners.map(p => p.x);
+  const ys = docCorners.map(p => p.y);
+  const spanX = Math.max(...xs) - Math.min(...xs);
+  const spanY = Math.max(...ys) - Math.min(...ys);
+  if (spanX < w * 0.3 || spanY < h * 0.3) return null;
+
+  // Check convexity using cross products
+  const ordered = orderCorners(docCorners);
+  if (!isConvex(ordered)) return null;
+
+  return ordered;
+}
+
+function dist(a, b) {
+  return Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2);
+}
+
+function orderCorners(pts) {
+  // Order: top-left, top-right, bottom-right, bottom-left
+  const cx = pts.reduce((s,p) => s+p.x, 0) / pts.length;
+  const cy = pts.reduce((s,p) => s+p.y, 0) / pts.length;
+  const byAngle = [...pts].sort((a,b) => {
+    const aa = Math.atan2(a.y - cy, a.x - cx);
+    const ab = Math.atan2(b.y - cy, b.x - cx);
+    return aa - ab;
+  });
+  // Rotate so top-left is first
+  const sums = byAngle.map(p => p.x + p.y);
+  const tlIdx = sums.indexOf(Math.min(...sums));
+  const rot = [];
+  for (let i = 0; i < 4; i++) rot.push(byAngle[(tlIdx + i) % 4]);
+  return rot;
+}
+
+function isConvex(pts) {
+  const n = pts.length;
+  let sign = 0;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i+1)%n], c = pts[(i+2)%n];
+    const cross = (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
+    if (cross !== 0) {
+      const s = cross > 0 ? 1 : -1;
+      if (sign === 0) sign = s;
+      else if (sign !== s) return false;
+    }
+  }
+  return true;
+}
+
+// =====================================================================
+// Perspective Transform (Homography)
+// =====================================================================
+function applyPerspective(srcCorners, srcW, srcH) {
+  // srcCorners: [tl, tr, br, bl] in source image coords
+  const [tl, tr, br, bl] = srcCorners;
+
+  // Determine output dimensions from corner distances
+  const widthTop  = dist(tl, tr);
+  const widthBot  = dist(bl, br);
+  const outW = Math.round(Math.max(widthTop, widthBot));
+  const heightL = dist(tl, bl);
+  const heightR = dist(tr, br);
+  const outH = Math.round(Math.max(heightL, heightR));
+
+  if (outW < 10 || outH < 10) { showToast('Invalid corners', 'error'); return; }
+
+  // Compute homography from dst -> src (inverse mapping)
+  const dstPts = [
+    { x: 0, y: 0 }, { x: outW, y: 0 },
+    { x: outW, y: outH }, { x: 0, y: outH }
+  ];
+  const H = computeHomography(dstPts, srcCorners);
+  if (!H) { showToast('Homography failed', 'error'); return; }
+
+  processedCanvas = document.createElement('canvas');
+  processedCanvas.width = outW;
+  processedCanvas.height = outH;
+  const pctx = processedCanvas.getContext('2d');
+  const outImg = pctx.createImageData(outW, outH);
+  const srcData = capturedImageData.data;
+
+  for (let dy = 0; dy < outH; dy++) {
+    for (let dx = 0; dx < outW; dx++) {
+      // Map dst -> src via homography
+      const { x: sx, y: sy } = applyH(H, dx, dy);
+      const sxi = Math.round(sx);
+      const syi = Math.round(sy);
+      if (sxi < 0 || sxi >= srcW || syi < 0 || syi >= srcH) continue;
+      const si = (syi * srcW + sxi) * 4;
+      const di = (dy * outW + dx) * 4;
+      outImg.data[di]   = srcData[si];
+      outImg.data[di+1] = srcData[si+1];
+      outImg.data[di+2] = srcData[si+2];
+      outImg.data[di+3] = 255;
+    }
+  }
+  pctx.putImageData(outImg, 0, 0);
+
+  showResult(processedCanvas);
+}
+
+function computeHomography(src, dst) {
+  // Build 8x8 system Ah = b using DLT
+  const A = [];
+  const b_vec = [];
+  for (let i = 0; i < 4; i++) {
+    const { x: x1, y: y1 } = src[i];
+    const { x: x2, y: y2 } = dst[i];
+    A.push([ x1, y1, 1, 0, 0, 0, -x2*x1, -x2*y1 ]);
+    b_vec.push(x2);
+    A.push([ 0, 0, 0, x1, y1, 1, -y2*x1, -y2*y1 ]);
+    b_vec.push(y2);
+  }
+  const h = gaussElim(A, b_vec);
+  if (!h) return null;
+  return [h[0],h[1],h[2], h[3],h[4],h[5], h[6],h[7],1];
+}
+
+function gaussElim(A, b) {
+  const n = b.length;
+  const M = A.map((row, i) => [...row, b[i]]);
+  for (let col = 0; col < n; col++) {
+    // Pivot
+    let maxRow = col;
+    for (let row = col+1; row < n; row++) {
+      if (Math.abs(M[row][col]) > Math.abs(M[maxRow][col])) maxRow = row;
+    }
+    [M[col], M[maxRow]] = [M[maxRow], M[col]];
+    if (Math.abs(M[col][col]) < 1e-10) return null;
+    for (let row = col+1; row < n; row++) {
+      const f = M[row][col] / M[col][col];
+      for (let j = col; j <= n; j++) M[row][j] -= f * M[col][j];
+    }
+  }
+  const x = new Array(n).fill(0);
+  for (let i = n-1; i >= 0; i--) {
+    x[i] = M[i][n];
+    for (let j = i+1; j < n; j++) x[i] -= M[i][j] * x[j];
+    x[i] /= M[i][i];
+  }
+  return x;
+}
+
+function applyH(H, x, y) {
+  const w = H[6]*x + H[7]*y + H[8];
+  return {
+    x: (H[0]*x + H[1]*y + H[2]) / w,
+    y: (H[3]*x + H[4]*y + H[5]) / w
+  };
+}
+
+// =====================================================================
+// Manual Corner Handles
+// =====================================================================
+function showManualCorners(srcW, srcH) {
+  // Show the captured image in the output canvas for reference
+  outputC.width  = rawCanvas.width;
+  outputC.height = rawCanvas.height;
+  outCtx.drawImage(rawCanvas, 0, 0);
+  outputC.style.display = 'block';
+  document.getElementById('outputPlaceholder').style.display = 'none';
+  document.getElementById('cornerHint').style.display = 'block';
+
+  // Sync cornerCanvas to outputCanvas display size
+  cornerC.width  = rawCanvas.width;
+  cornerC.height = rawCanvas.height;
+  cornerC.style.display = 'block';
+
+  drawManualHandles();
+
+  cornerC.addEventListener('mousedown', onHandleMouseDown);
+  cornerC.addEventListener('mousemove', onHandleMouseMove);
+  cornerC.addEventListener('mouseup',   onHandleMouseUp);
+  cornerC.addEventListener('touchstart', onHandleTouchStart, { passive: false });
+  cornerC.addEventListener('touchmove',  onHandleTouchMove,  { passive: false });
+  cornerC.addEventListener('touchend',   onHandleTouchEnd);
+}
+
+function cornerCanvasCoords(e) {
+  const rect = cornerC.getBoundingClientRect();
+  const scaleX = cornerC.width  / rect.width;
+  const scaleY = cornerC.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top)  * scaleY
+  };
+}
+
+function onHandleMouseDown(e) {
+  const { x, y } = cornerCanvasCoords(e);
+  draggingIdx = findNearestHandle(x, y);
+}
+function onHandleMouseMove(e) {
+  if (draggingIdx < 0) return;
+  const { x, y } = cornerCanvasCoords(e);
+  manualCorners[draggingIdx] = {
+    x: Math.max(0, Math.min(cornerC.width, x)),
+    y: Math.max(0, Math.min(cornerC.height, y))
+  };
+  drawManualHandles();
+}
+function onHandleMouseUp() { draggingIdx = -1; }
+
+function onHandleTouchStart(e) {
+  e.preventDefault();
+  const t = e.touches[0];
+  const { x, y } = cornerCanvasCoords(t);
+  draggingIdx = findNearestHandle(x, y);
+}
+function onHandleTouchMove(e) {
+  e.preventDefault();
+  if (draggingIdx < 0) return;
+  const t = e.touches[0];
+  const { x, y } = cornerCanvasCoords(t);
+  manualCorners[draggingIdx] = {
+    x: Math.max(0, Math.min(cornerC.width, x)),
+    y: Math.max(0, Math.min(cornerC.height, y))
+  };
+  drawManualHandles();
+}
+function onHandleTouchEnd() { draggingIdx = -1; }
+
+function findNearestHandle(x, y) {
+  let best = -1, bestD = 40 * (cornerC.width / cornerC.getBoundingClientRect().width) * 2;
+  manualCorners.forEach((c, i) => {
+    const d = dist({ x, y }, c);
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  return best;
+}
+
+function drawManualHandles() {
+  ccCtx.clearRect(0, 0, cornerC.width, cornerC.height);
+  // Semi-transparent overlay
+  ccCtx.fillStyle = 'rgba(0,0,0,0.35)';
+  ccCtx.fillRect(0, 0, cornerC.width, cornerC.height);
+  // Draw polygon
+  ccCtx.beginPath();
+  ccCtx.moveTo(manualCorners[0].x, manualCorners[0].y);
+  for (let i = 1; i < 4; i++) ccCtx.lineTo(manualCorners[i].x, manualCorners[i].y);
+  ccCtx.closePath();
+  ccCtx.fillStyle = 'rgba(34,211,238,0.08)';
+  ccCtx.fill();
+  ccCtx.strokeStyle = '#22d3ee';
+  ccCtx.lineWidth = 2;
+  ccCtx.setLineDash([6,4]);
+  ccCtx.stroke();
+  ccCtx.setLineDash([]);
+  // Handles
+  const labels = ['TL','TR','BR','BL'];
+  manualCorners.forEach((c, i) => {
+    ccCtx.beginPath();
+    ccCtx.arc(c.x, c.y, 16, 0, Math.PI * 2);
+    ccCtx.fillStyle = 'rgba(34,211,238,0.25)';
+    ccCtx.fill();
+    ccCtx.strokeStyle = '#22d3ee';
+    ccCtx.lineWidth = 2.5;
+    ccCtx.stroke();
+    ccCtx.fillStyle = '#22d3ee';
+    ccCtx.font = 'bold 12px DM Mono, monospace';
+    ccCtx.textAlign = 'center';
+    ccCtx.textBaseline = 'middle';
+    ccCtx.fillText(labels[i], c.x, c.y);
+  });
+}
+
+document.getElementById('btnApplyCorners').addEventListener('click', () => {
+  const srcW = rawCanvas.width, srcH = rawCanvas.height;
+  corners = orderCorners(manualCorners);
+  cornerC.style.display = 'none';
+  removeHandleListeners();
+  document.getElementById('cornerHint').style.display = 'none';
+  applyPerspective(corners, srcW, srcH);
+  setStatus('scanStatus', 'ok', 'manual corrected');
+  showToast('Perspective applied', 'success');
+});
+
+function removeHandleListeners() {
+  cornerC.removeEventListener('mousedown', onHandleMouseDown);
+  cornerC.removeEventListener('mousemove', onHandleMouseMove);
+  cornerC.removeEventListener('mouseup',   onHandleMouseUp);
+  cornerC.removeEventListener('touchstart', onHandleTouchStart);
+  cornerC.removeEventListener('touchmove',  onHandleTouchMove);
+  cornerC.removeEventListener('touchend',   onHandleTouchEnd);
+}
+
+// =====================================================================
+// Show Result
+// =====================================================================
+function showResult(srcCanvas) {
+  outputC.width  = srcCanvas.width;
+  outputC.height = srcCanvas.height;
+  outCtx.drawImage(srcCanvas, 0, 0);
+  outputC.style.display = 'block';
+  cornerC.style.display = 'none';
+  document.getElementById('outputPlaceholder').style.display = 'none';
+  document.getElementById('controlsCard').style.display = 'block';
+  document.getElementById('outputActions').style.display = 'flex';
+  applyPostProcessing();
+}
+
+// =====================================================================
+// Post-processing
+// =====================================================================
+const modeSelect       = document.getElementById('modeSelect');
+const brightnessSlider = document.getElementById('brightnessSlider');
+const contrastSlider   = document.getElementById('contrastSlider');
+const thresholdSlider  = document.getElementById('thresholdSlider');
+const brightnessVal    = document.getElementById('brightnessVal');
+const contrastVal      = document.getElementById('contrastVal');
+const thresholdVal     = document.getElementById('thresholdVal');
+const thresholdGroup   = document.getElementById('thresholdGroup');
+
+modeSelect.addEventListener('change', () => {
+  thresholdGroup.style.display = modeSelect.value === 'bw' ? 'block' : 'none';
+  applyPostProcessing();
+});
+brightnessSlider.addEventListener('input', () => {
+  brightnessVal.textContent = brightnessSlider.value;
+  applyPostProcessing();
+});
+contrastSlider.addEventListener('input', () => {
+  contrastVal.textContent = contrastSlider.value;
+  applyPostProcessing();
+});
+thresholdSlider.addEventListener('input', () => {
+  thresholdVal.textContent = thresholdSlider.value;
+  applyPostProcessing();
+});
+
+function applyPostProcessing() {
+  if (!processedCanvas) return;
+  const mode       = modeSelect.value;
+  const brightness = parseInt(brightnessSlider.value);
+  const contrast   = parseInt(contrastSlider.value);
+  const threshold  = parseInt(thresholdSlider.value);
+
+  const w = processedCanvas.width, h = processedCanvas.height;
+  const tmpCtx = processedCanvas.getContext('2d');
+  const src = tmpCtx.getImageData(0, 0, w, h);
+  const dst = outCtx.createImageData(w, h);
+  const s = src.data, d = dst.data;
+
+  // Contrast factor
+  const cf = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+  for (let i = 0; i < w * h; i++) {
+    let r = s[i*4], g = s[i*4+1], b = s[i*4+2];
+    // Brightness
+    r = clamp(r + brightness); g = clamp(g + brightness); b = clamp(b + brightness);
+    // Contrast
+    r = clamp(cf * (r - 128) + 128); g = clamp(cf * (g - 128) + 128); b = clamp(cf * (b - 128) + 128);
+
+    if (mode === 'gray') {
+      const v = (r * 77 + g * 150 + b * 29) >> 8;
+      d[i*4] = d[i*4+1] = d[i*4+2] = v;
+    } else if (mode === 'bw') {
+      const v = (r * 77 + g * 150 + b * 29) >> 8;
+      const bw = v >= threshold ? 255 : 0;
+      d[i*4] = d[i*4+1] = d[i*4+2] = bw;
+    } else {
+      d[i*4] = r; d[i*4+1] = g; d[i*4+2] = b;
+    }
+    d[i*4+3] = 255;
+  }
+
+  outputC.width = w; outputC.height = h;
+  outCtx.putImageData(dst, 0, 0);
+}
+
+function clamp(v) { return Math.max(0, Math.min(255, Math.round(v))); }
+
+// =====================================================================
+// Re-scan / Discard
+// =====================================================================
+document.getElementById('btnRescan').addEventListener('click', () => {
+  if (!rawCanvas) return;
+  runAutoDetect(rawCanvas.width, rawCanvas.height);
+});
+
+document.getElementById('btnDiscard').addEventListener('click', () => {
+  processedCanvas = null;
+  capturedImageData = null;
+  rawCanvas = null;
+  corners = null;
+  manualCorners = null;
+  outputC.style.display = 'none';
+  cornerC.style.display = 'none';
+  document.getElementById('outputPlaceholder').style.display = 'block';
+  document.getElementById('controlsCard').style.display = 'none';
+  document.getElementById('outputActions').style.display = 'none';
+  document.getElementById('cornerHint').style.display = 'none';
+  removeHandleListeners();
+  setStatus('scanStatus', '', 'no scan');
+  // Reset controls
+  modeSelect.value = 'color';
+  brightnessSlider.value = 0; brightnessVal.textContent = '0';
+  contrastSlider.value = 0; contrastVal.textContent = '0';
+  thresholdSlider.value = 128; thresholdVal.textContent = '128';
+  thresholdGroup.style.display = 'none';
+});
+
+// =====================================================================
+// Download
+// =====================================================================
+document.getElementById('btnDownloadPng').addEventListener('click', () => {
+  if (!outputC.width) return;
+  addToHistory();
+  const a = document.createElement('a');
+  a.href = outputC.toDataURL('image/png');
+  a.download = 'scan_' + timestamp() + '.png';
+  a.click();
+  showToast('Downloaded as PNG', 'success');
+});
+
+document.getElementById('btnDownloadPdf').addEventListener('click', () => {
+  if (!outputC.width) return;
+  addToHistory();
+  downloadAsPdf();
+});
+
+function downloadAsPdf() {
+  const imgData = outputC.toDataURL('image/jpeg', 0.92);
+  const w = outputC.width;
+  const h = outputC.height;
+
+  // Use jsPDF from CDN
+  if (window.jspdf && window.jspdf.jsPDF) {
+    buildPdf(window.jspdf.jsPDF, imgData, w, h);
+  } else {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    script.onload = () => buildPdf(window.jspdf.jsPDF, imgData, w, h);
+    script.onerror = () => {
+      showToast('jsPDF load failed, downloading PNG instead', 'warn');
+      const a = document.createElement('a');
+      a.href = outputC.toDataURL('image/png');
+      a.download = 'scan_' + timestamp() + '.png';
+      a.click();
+    };
+    document.head.appendChild(script);
+  }
+}
+
+function buildPdf(jsPDF, imgData, w, h) {
+  const portrait = h >= w;
+  const pxPerMm = 3.7795275591;
+  const pageW = w / pxPerMm;
+  const pageH = h / pxPerMm;
+  const doc = new jsPDF({ orientation: portrait ? 'portrait' : 'landscape', unit: 'mm', format: [pageW, pageH] });
+  doc.addImage(imgData, 'JPEG', 0, 0, pageW, pageH, undefined, 'FAST');
+  doc.save('scan_' + timestamp() + '.pdf');
+  showToast('Downloaded as PDF', 'success');
+}
+
+function timestamp() {
+  const d = new Date();
+  return d.getFullYear() + pad2(d.getMonth()+1) + pad2(d.getDate()) + '_' + pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds());
+}
+function pad2(n) { return String(n).padStart(2,'0'); }
+
+// =====================================================================
+// History
+// =====================================================================
+function addToHistory() {
+  const dataUrl = outputC.toDataURL('image/jpeg', 0.8);
+  history.unshift(dataUrl);
+  if (history.length > MAX_HISTORY) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const grid = document.getElementById('historyGrid');
+  const empty = document.getElementById('historyEmpty');
+  if (history.length === 0) {
+    empty.style.display = 'block';
+    grid.querySelectorAll('.thumb-item').forEach(el => el.remove());
+    return;
+  }
+  empty.style.display = 'none';
+  grid.querySelectorAll('.thumb-item').forEach(el => el.remove());
+  history.forEach((url, idx) => {
+    const item = document.createElement('div');
+    item.className = 'thumb-item';
+    const img = document.createElement('img');
+    img.src = url;
+    img.title = 'Scan ' + (idx + 1);
+    img.addEventListener('click', () => loadFromHistory(idx));
+    const del = document.createElement('button');
+    del.className = 'thumb-del';
+    del.title = 'Remove';
+    del.textContent = '×';
+    del.addEventListener('click', e => {
+      e.stopPropagation();
+      history.splice(idx, 1);
+      renderHistory();
+    });
+    item.appendChild(img);
+    item.appendChild(del);
+    grid.appendChild(item);
+  });
+}
+
+function loadFromHistory(idx) {
+  const url = history[idx];
+  const img = new Image();
+  img.onload = () => {
+    processedCanvas = document.createElement('canvas');
+    processedCanvas.width = img.width;
+    processedCanvas.height = img.height;
+    processedCanvas.getContext('2d').drawImage(img, 0, 0);
+    showResult(processedCanvas);
+    setStatus('scanStatus', 'ok', 'from history');
+    showToast('Loaded scan ' + (idx + 1), 'success');
+  };
+  img.src = url;
+}
+
+// =====================================================================
+// Utilities
+// =====================================================================
+function setStatus(id, cls, text) {
+  const el = document.getElementById(id);
+  el.className = 'status-badge' + (cls ? ' ' + cls : '');
+  const dot = el.querySelector('.dot');
+  if (dot) {
+    dot.className = 'dot' + (cls === 'active' ? ' pulse' : '');
+  }
+  el.innerHTML = `<span class="dot${cls === 'active' ? ' pulse' : ''}"></span> ${text}`;
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>

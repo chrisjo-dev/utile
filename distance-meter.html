@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Distance Meter — utile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272a;
+  --border: #2e2e33;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34,211,238,0.08);
+  --accent-glow: rgba(34,211,238,0.15);
+  --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --radius: 14px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top Bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--accent); }
+.back-link svg { width: 16px; height: 16px; }
+
+.topbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.topbar-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  padding: 3px 10px;
+  border-radius: 99px;
+  letter-spacing: 0.06em;
+}
+
+/* ── Main Layout ── */
+.main {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 0;
+  flex: 1;
+  height: calc(100vh - 57px);
+}
+
+/* ── Camera Panel ── */
+.camera-panel {
+  position: relative;
+  background: #000;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+
+#videoEl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+}
+
+#videoCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#overlayCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.camera-start-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: var(--surface);
+  z-index: 10;
+}
+
+.camera-start-overlay.hidden { display: none; }
+
+.camera-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+.camera-icon svg { width: 28px; height: 28px; }
+
+.camera-start-overlay p {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text-2);
+  text-align: center;
+  max-width: 260px;
+  line-height: 1.6;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-primary:hover { opacity: 0.85; }
+.btn-primary:active { transform: scale(0.97); }
+
+/* ── Side Panel ── */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+/* ── Distance Display ── */
+.distance-display {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+.distance-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.distance-value {
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 40px rgba(34,211,238,0.3);
+  transition: color 0.2s;
+}
+
+.distance-value.no-data { color: var(--text-3); }
+
+.distance-unit {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-left: 4px;
+}
+
+.distance-range {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 8px;
+}
+
+.unit-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.unit-btn {
+  padding: 5px 16px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.05em;
+}
+.unit-btn.active {
+  background: var(--accent-dim);
+  border-color: rgba(34,211,238,0.4);
+  color: var(--accent);
+}
+
+/* ── Section ── */
+.section {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+/* ── Object Presets ── */
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.preset-btn {
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.preset-btn span {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.preset-btn:hover {
+  border-color: rgba(34,211,238,0.3);
+  color: var(--text);
+}
+
+.preset-btn.active {
+  background: var(--accent-dim);
+  border-color: rgba(34,211,238,0.4);
+  color: var(--accent);
+}
+.preset-btn.active span { color: rgba(34,211,238,0.6); }
+
+.custom-height-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-height-row label {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.input-field {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.input-field:focus {
+  border-color: rgba(34,211,238,0.4);
+}
+.input-field::placeholder { color: var(--text-3); }
+
+.input-suffix {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* ── FOV Section ── */
+.fov-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.fov-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.03em;
+}
+.fov-btn:hover { border-color: rgba(34,211,238,0.3); color: var(--text); }
+.fov-btn.active {
+  background: var(--accent-dim);
+  border-color: rgba(34,211,238,0.4);
+  color: var(--accent);
+}
+
+.fov-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fov-value-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(34,211,238,0.2);
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(34,211,238,0.4);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(34,211,238,0.4);
+  cursor: pointer;
+  border: none;
+}
+
+/* ── Breakdown ── */
+.breakdown-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 10px;
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.breakdown-key {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+}
+
+.breakdown-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.formula-box {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  line-height: 1.7;
+}
+
+.formula-box .formula-line {
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+/* ── Instructions ── */
+.instructions {
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.instruction-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.instruction-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.instruction-text {
+  font-size: 12px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
+/* ── Responsive ── */
+@media (max-width: 800px) {
+  .main {
+    grid-template-columns: 1fr;
+    grid-template-rows: 55vw 1fr;
+    height: auto;
+  }
+  .camera-panel { border-right: none; border-bottom: 1px solid var(--border); }
+  .side-panel { max-height: none; }
+  .distance-value { font-size: 42px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <a href="index.html" class="back-link">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 12L6 8l4-4"/>
+      </svg>
+      utile
+    </a>
+    <span class="topbar-title">Distance Meter</span>
+    <span class="topbar-badge">RANGEFINDER</span>
+  </header>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Camera Panel -->
+    <div class="camera-panel" id="cameraPanel">
+      <video id="videoEl" autoplay playsinline muted></video>
+      <canvas id="videoCanvas"></canvas>
+      <canvas id="overlayCanvas"></canvas>
+
+      <!-- Start Overlay -->
+      <div class="camera-start-overlay" id="startOverlay">
+        <div class="camera-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 7l-7 5 7 5V7z"/>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          </svg>
+        </div>
+        <p>Allow camera access to use the optical rangefinder. Point the camera at a known object.</p>
+        <button class="btn-primary" id="startCameraBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="10 8 16 12 10 16 10 8"/>
+          </svg>
+          Start Camera
+        </button>
+      </div>
+    </div>
+
+    <!-- Side Panel -->
+    <div class="side-panel">
+
+      <!-- Distance Display -->
+      <div class="distance-display">
+        <div class="distance-label">Estimated Distance</div>
+        <div>
+          <span class="distance-value no-data" id="distanceValue">—</span>
+          <span class="distance-unit" id="distanceUnit">m</span>
+        </div>
+        <div class="distance-range" id="distanceRange">&nbsp;</div>
+        <div class="unit-toggle">
+          <button class="unit-btn active" id="btnMeters" onclick="setUnit('m')">meters</button>
+          <button class="unit-btn" id="btnFeet" onclick="setUnit('ft')">feet</button>
+        </div>
+      </div>
+
+      <!-- Object Height -->
+      <div class="section">
+        <div class="section-title">Known Object Height</div>
+        <div class="preset-grid">
+          <button class="preset-btn active" data-height="170" onclick="selectPreset(this, 170)">
+            Person<span>170 cm</span>
+          </button>
+          <button class="preset-btn" data-height="200" onclick="selectPreset(this, 200)">
+            Door<span>200 cm</span>
+          </button>
+          <button class="preset-btn" data-height="150" onclick="selectPreset(this, 150)">
+            Car<span>150 cm</span>
+          </button>
+          <button class="preset-btn" data-height="0" id="customPresetBtn" onclick="selectPreset(this, 0)">
+            Custom<span id="customPresetLabel">— cm</span>
+          </button>
+        </div>
+        <div class="custom-height-row">
+          <label>Custom:</label>
+          <input type="number" class="input-field" id="customHeightInput" placeholder="e.g. 185" min="1" max="2000">
+          <span class="input-suffix">cm</span>
+        </div>
+      </div>
+
+      <!-- FOV Settings -->
+      <div class="section">
+        <div class="section-title">Camera Vertical FOV</div>
+        <div class="fov-presets">
+          <button class="fov-btn" onclick="setFov(this, 49)" title="iPhone 15 (main lens)">iPhone 15</button>
+          <button class="fov-btn" onclick="setFov(this, 46)" title="iPhone 14 Pro">iPhone 14P</button>
+          <button class="fov-btn" onclick="setFov(this, 52)" title="Samsung S24">S24</button>
+          <button class="fov-btn" onclick="setFov(this, 55)" title="Pixel 8">Pixel 8</button>
+          <button class="fov-btn active" onclick="setFov(this, 60)" title="Generic default">Default</button>
+          <button class="fov-btn" onclick="setFov(this, 75)" title="Wide angle">Wide</button>
+        </div>
+        <div class="fov-slider-row">
+          <input type="range" id="fovSlider" min="20" max="100" value="60" step="1" oninput="onFovSlider()">
+          <span class="fov-value-badge" id="fovBadge">60°</span>
+        </div>
+      </div>
+
+      <!-- Calculation Breakdown -->
+      <div class="section">
+        <div class="section-title">Calculation Breakdown</div>
+        <div class="breakdown-grid">
+          <div class="breakdown-row">
+            <span class="breakdown-key">PIXEL SPAN</span>
+            <span class="breakdown-val" id="bdPixelSpan">—</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-key">IMAGE HEIGHT</span>
+            <span class="breakdown-val" id="bdImageHeight">—</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-key">REAL HEIGHT</span>
+            <span class="breakdown-val" id="bdRealHeight">170 cm</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-key">FOV</span>
+            <span class="breakdown-val" id="bdFov">60°</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-key">UNCERTAINTY</span>
+            <span class="breakdown-val" id="bdUncertainty">±10%</span>
+          </div>
+        </div>
+        <div class="formula-box">
+          <div class="formula-line">d = (H_real × H_img) / (2 × H_px × tan(vFOV/2))</div>
+          <div>H_real = object real height (cm)</div>
+          <div>H_img = image pixel height</div>
+          <div>H_px = object pixel span</div>
+          <div>vFOV = vertical field of view</div>
+        </div>
+      </div>
+
+      <!-- Instructions -->
+      <div class="instructions">
+        <div class="instruction-item">
+          <span class="instruction-num">1</span>
+          <span class="instruction-text">Start camera and point it at a known object</span>
+        </div>
+        <div class="instruction-item">
+          <span class="instruction-num">2</span>
+          <span class="instruction-text">Drag the <span style="color:var(--accent)">cyan line</span> to the top and <span style="color:var(--yellow)">yellow line</span> to the bottom of the object</span>
+        </div>
+        <div class="instruction-item">
+          <span class="instruction-num">3</span>
+          <span class="instruction-text">Select the matching preset or enter the real height</span>
+        </div>
+        <div class="instruction-item">
+          <span class="instruction-num">4</span>
+          <span class="instruction-text">Read the distance. Adjust FOV for your phone model for better accuracy</span>
+        </div>
+      </div>
+
+    </div><!-- /side-panel -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  cameraRunning: false,
+  unit: 'm',
+  objectHeightCm: 170,
+  fovDeg: 60,
+  // Lines as fraction of canvas height (0..1)
+  topLine: 0.3,
+  bottomLine: 0.7,
+  dragging: null, // 'top' | 'bottom' | null
+  dragStartY: 0,
+  dragStartFrac: 0,
+};
+
+// ── DOM refs ────────────────────────────────────────────────────────────────
+const videoEl       = document.getElementById('videoEl');
+const videoCanvas   = document.getElementById('videoCanvas');
+const overlayCanvas = document.getElementById('overlayCanvas');
+const startOverlay  = document.getElementById('startOverlay');
+const vCtx          = videoCanvas.getContext('2d');
+const oCtx          = overlayCanvas.getContext('2d');
+
+// ── Camera ─────────────────────────────────────────────────────────────────
+document.getElementById('startCameraBtn').addEventListener('click', startCamera);
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false,
+    });
+    videoEl.srcObject = stream;
+    await videoEl.play();
+    state.cameraRunning = true;
+    startOverlay.classList.add('hidden');
+    resizeCanvases();
+    requestAnimationFrame(videoLoop);
+  } catch (err) {
+    alert('Camera access denied or unavailable: ' + err.message);
+  }
+}
+
+function resizeCanvases() {
+  const panel = document.getElementById('cameraPanel');
+  const w = panel.clientWidth;
+  const h = panel.clientHeight;
+  videoCanvas.width  = w;
+  videoCanvas.height = h;
+  overlayCanvas.width  = w;
+  overlayCanvas.height = h;
+}
+
+window.addEventListener('resize', () => {
+  resizeCanvases();
+  drawOverlay();
+});
+
+// ── Video render loop ───────────────────────────────────────────────────────
+function videoLoop() {
+  if (!state.cameraRunning) return;
+  const w = videoCanvas.width;
+  const h = videoCanvas.height;
+
+  // Scale video to cover canvas
+  const vw = videoEl.videoWidth  || w;
+  const vh = videoEl.videoHeight || h;
+  const scale = Math.max(w / vw, h / vh);
+  const sw = vw * scale;
+  const sh = vh * scale;
+  const sx = (w - sw) / 2;
+  const sy = (h - sh) / 2;
+
+  vCtx.drawImage(videoEl, sx, sy, sw, sh);
+  requestAnimationFrame(videoLoop);
+}
+
+// ── Overlay draw ────────────────────────────────────────────────────────────
+function drawOverlay() {
+  const W = overlayCanvas.width;
+  const H = overlayCanvas.height;
+  oCtx.clearRect(0, 0, W, H);
+
+  const topY    = state.topLine    * H;
+  const bottomY = state.bottomLine * H;
+  const midX    = W / 2;
+  const midY    = H / 2;
+
+  // ── Crosshair ──
+  oCtx.save();
+  oCtx.strokeStyle = 'rgba(255,255,255,0.18)';
+  oCtx.lineWidth = 1;
+  oCtx.setLineDash([6, 6]);
+  oCtx.beginPath(); oCtx.moveTo(midX, 0); oCtx.lineTo(midX, H); oCtx.stroke();
+  oCtx.beginPath(); oCtx.moveTo(0, midY); oCtx.lineTo(W, midY); oCtx.stroke();
+  oCtx.restore();
+
+  // ── Crosshair center dot ──
+  oCtx.save();
+  oCtx.strokeStyle = 'rgba(255,255,255,0.3)';
+  oCtx.lineWidth = 1;
+  const cs = 10;
+  oCtx.beginPath(); oCtx.moveTo(midX - cs, midY); oCtx.lineTo(midX + cs, midY); oCtx.stroke();
+  oCtx.beginPath(); oCtx.moveTo(midX, midY - cs); oCtx.lineTo(midX, midY + cs); oCtx.stroke();
+  oCtx.restore();
+
+  // ── Span fill between lines ──
+  oCtx.save();
+  oCtx.fillStyle = 'rgba(34,211,238,0.04)';
+  oCtx.fillRect(0, topY, W, bottomY - topY);
+  oCtx.restore();
+
+  // ── Top line (cyan) ──
+  drawLine(topY, W, '#22d3ee', 'TOP', true);
+
+  // ── Bottom line (yellow) ──
+  drawLine(bottomY, W, '#fbbf24', 'BOTTOM', false);
+
+  // ── Span bracket on right ──
+  const bracketX = W - 28;
+  const padding  = 8;
+  oCtx.save();
+  oCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+  oCtx.lineWidth = 1;
+  oCtx.beginPath();
+  oCtx.moveTo(bracketX, topY + padding);
+  oCtx.lineTo(bracketX + 8, topY + padding);
+  oCtx.moveTo(bracketX + 4, topY + padding);
+  oCtx.lineTo(bracketX + 4, bottomY - padding);
+  oCtx.moveTo(bracketX, bottomY - padding);
+  oCtx.lineTo(bracketX + 8, bottomY - padding);
+  oCtx.stroke();
+  oCtx.restore();
+
+  // ── Pixel span label ──
+  const spanPx = Math.abs(bottomY - topY);
+  if (spanPx > 30) {
+    oCtx.save();
+    oCtx.font = '500 10px "DM Mono", monospace';
+    oCtx.fillStyle = 'rgba(255,255,255,0.5)';
+    oCtx.textAlign = 'center';
+    oCtx.fillText(Math.round(spanPx) + 'px', bracketX + 4, (topY + bottomY) / 2 + 4);
+    oCtx.restore();
+  }
+}
+
+function drawLine(y, W, color, label, isTop) {
+  // Glow shadow
+  oCtx.save();
+  oCtx.shadowColor = color;
+  oCtx.shadowBlur  = 8;
+  oCtx.strokeStyle = color;
+  oCtx.lineWidth   = 2;
+  oCtx.setLineDash([]);
+  oCtx.beginPath();
+  oCtx.moveTo(0, y);
+  oCtx.lineTo(W, y);
+  oCtx.stroke();
+  oCtx.restore();
+
+  // Handle circle on left
+  oCtx.save();
+  oCtx.fillStyle = color;
+  oCtx.shadowColor = color;
+  oCtx.shadowBlur = 10;
+  oCtx.beginPath();
+  oCtx.arc(28, y, 8, 0, Math.PI * 2);
+  oCtx.fill();
+  oCtx.restore();
+
+  // Handle arrows (up/down hint)
+  oCtx.save();
+  oCtx.fillStyle = '#000';
+  oCtx.font = 'bold 8px sans-serif';
+  oCtx.textAlign = 'center';
+  oCtx.textBaseline = 'middle';
+  oCtx.fillText(isTop ? '↕' : '↕', 28, y);
+  oCtx.restore();
+
+  // Label pill
+  const labelW = 54;
+  const labelH = 18;
+  const lx = W / 2 - labelW / 2;
+  const ly = isTop ? y - labelH - 4 : y + 4;
+  oCtx.save();
+  oCtx.fillStyle = color;
+  oCtx.beginPath();
+  oCtx.roundRect(lx, ly, labelW, labelH, 4);
+  oCtx.fill();
+  oCtx.font = '500 9px "DM Mono", monospace';
+  oCtx.fillStyle = '#000';
+  oCtx.textAlign = 'center';
+  oCtx.textBaseline = 'middle';
+  oCtx.fillText(label, lx + labelW / 2, ly + labelH / 2);
+  oCtx.restore();
+}
+
+// ── Drag logic ──────────────────────────────────────────────────────────────
+function getEventY(e) {
+  if (e.touches) {
+    return e.touches[0].clientY;
+  }
+  return e.clientY;
+}
+
+function canvasFracFromClientY(clientY) {
+  const rect = overlayCanvas.getBoundingClientRect();
+  return (clientY - rect.top) / rect.height;
+}
+
+function hitTestLine(frac, lineFrac) {
+  // hit within 20px of line (as fraction)
+  const H = overlayCanvas.height || overlayCanvas.getBoundingClientRect().height;
+  const thresh = 20 / H;
+  return Math.abs(frac - lineFrac) < thresh;
+}
+
+overlayCanvas.addEventListener('mousedown', onDragStart);
+overlayCanvas.addEventListener('touchstart', onDragStart, { passive: false });
+
+function onDragStart(e) {
+  e.preventDefault();
+  const y = getEventY(e);
+  const frac = canvasFracFromClientY(y);
+  const topDist    = Math.abs(frac - state.topLine);
+  const bottomDist = Math.abs(frac - state.bottomLine);
+  const H = overlayCanvas.getBoundingClientRect().height;
+  const thresh = 20 / H;
+
+  if (topDist < thresh && topDist <= bottomDist) {
+    state.dragging = 'top';
+  } else if (bottomDist < thresh && bottomDist <= topDist) {
+    state.dragging = 'bottom';
+  } else {
+    // Drag whichever is closer
+    state.dragging = topDist <= bottomDist ? 'top' : 'bottom';
+  }
+}
+
+window.addEventListener('mousemove', onDragMove);
+window.addEventListener('touchmove', onDragMove, { passive: false });
+
+function onDragMove(e) {
+  if (!state.dragging) return;
+  e.preventDefault();
+  const y = getEventY(e);
+  let frac = canvasFracFromClientY(y);
+  frac = Math.max(0.01, Math.min(0.99, frac));
+
+  if (state.dragging === 'top') {
+    state.topLine = Math.min(frac, state.bottomLine - 0.02);
+  } else {
+    state.bottomLine = Math.max(frac, state.topLine + 0.02);
+  }
+  drawOverlay();
+  calculate();
+}
+
+window.addEventListener('mouseup', () => { state.dragging = null; });
+window.addEventListener('touchend', () => { state.dragging = null; });
+
+// Change cursor when hovering near lines
+overlayCanvas.addEventListener('mousemove', (e) => {
+  if (state.dragging) return;
+  const frac = canvasFracFromClientY(e.clientY);
+  const H = overlayCanvas.getBoundingClientRect().height;
+  const thresh = 20 / H;
+  const nearTop    = Math.abs(frac - state.topLine)    < thresh;
+  const nearBottom = Math.abs(frac - state.bottomLine) < thresh;
+  overlayCanvas.style.cursor = (nearTop || nearBottom) ? 'ns-resize' : 'default';
+});
+
+// ── Calculation ─────────────────────────────────────────────────────────────
+function calculate() {
+  const H         = overlayCanvas.height || 1;
+  const pixelSpan = Math.abs(state.bottomLine - state.topLine) * H;
+  const imgHeight = H;
+  const fovRad    = (state.fovDeg * Math.PI) / 180;
+  const realCm    = state.objectHeightCm;
+
+  // Update breakdown regardless
+  document.getElementById('bdPixelSpan').textContent  = Math.round(pixelSpan) + ' px';
+  document.getElementById('bdImageHeight').textContent = Math.round(imgHeight) + ' px';
+  document.getElementById('bdRealHeight').textContent  = realCm + ' cm';
+  document.getElementById('bdFov').textContent         = state.fovDeg + '°';
+
+  if (pixelSpan < 5 || realCm <= 0) {
+    showNoData();
+    return;
+  }
+
+  // distance = (H_real × H_img) / (2 × H_px × tan(vFOV/2))
+  const distCm = (realCm * imgHeight) / (2 * pixelSpan * Math.tan(fovRad / 2));
+  const distM  = distCm / 100;
+
+  // Uncertainty ±10%
+  const lowM  = distM * 0.9;
+  const highM = distM * 1.1;
+
+  const distEl  = document.getElementById('distanceValue');
+  const rangeEl = document.getElementById('distanceRange');
+  const unitEl  = document.getElementById('distanceUnit');
+
+  distEl.classList.remove('no-data');
+
+  if (state.unit === 'm') {
+    distEl.textContent   = distM.toFixed(1);
+    unitEl.textContent   = 'm';
+    rangeEl.textContent  = `Range: ${lowM.toFixed(1)} – ${highM.toFixed(1)} m  (±10% FOV variance)`;
+    document.getElementById('bdUncertainty').textContent = `${lowM.toFixed(1)} – ${highM.toFixed(1)} m`;
+  } else {
+    const distFt  = distM * 3.28084;
+    const lowFt   = lowM  * 3.28084;
+    const highFt  = highM * 3.28084;
+    distEl.textContent  = distFt.toFixed(1);
+    unitEl.textContent  = 'ft';
+    rangeEl.textContent = `Range: ${lowFt.toFixed(1)} – ${highFt.toFixed(1)} ft  (±10% FOV variance)`;
+    document.getElementById('bdUncertainty').textContent = `${lowFt.toFixed(1)} – ${highFt.toFixed(1)} ft`;
+  }
+}
+
+function showNoData() {
+  const distEl = document.getElementById('distanceValue');
+  distEl.textContent = '—';
+  distEl.classList.add('no-data');
+  document.getElementById('distanceRange').innerHTML = '&nbsp;';
+  document.getElementById('bdUncertainty').textContent = '±10%';
+}
+
+// ── Controls ─────────────────────────────────────────────────────────────────
+function setUnit(u) {
+  state.unit = u;
+  document.getElementById('btnMeters').classList.toggle('active', u === 'm');
+  document.getElementById('btnFeet').classList.toggle('active',   u === 'ft');
+  document.getElementById('distanceUnit').textContent = u;
+  calculate();
+}
+
+function selectPreset(btn, height) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  if (height === 0) {
+    // Custom — read from input
+    const val = parseFloat(document.getElementById('customHeightInput').value);
+    state.objectHeightCm = val > 0 ? val : 0;
+  } else {
+    state.objectHeightCm = height;
+    document.getElementById('customHeightInput').value = '';
+  }
+  document.getElementById('bdRealHeight').textContent = state.objectHeightCm + ' cm';
+  calculate();
+}
+
+document.getElementById('customHeightInput').addEventListener('input', function() {
+  const val = parseFloat(this.value);
+  if (val > 0) {
+    state.objectHeightCm = val;
+    // Activate custom preset
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('customPresetBtn').classList.add('active');
+    document.getElementById('customPresetLabel').textContent = val + ' cm';
+    document.getElementById('bdRealHeight').textContent = val + ' cm';
+    calculate();
+  }
+});
+
+function setFov(btn, deg) {
+  document.querySelectorAll('.fov-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.fovDeg = deg;
+  document.getElementById('fovSlider').value = deg;
+  document.getElementById('fovBadge').textContent = deg + '°';
+  document.getElementById('bdFov').textContent = deg + '°';
+  calculate();
+}
+
+function onFovSlider() {
+  const deg = parseInt(document.getElementById('fovSlider').value);
+  state.fovDeg = deg;
+  document.getElementById('fovBadge').textContent = deg + '°';
+  document.getElementById('bdFov').textContent = deg + '°';
+  // Deactivate all fov presets
+  document.querySelectorAll('.fov-btn').forEach(b => b.classList.remove('active'));
+  calculate();
+}
+
+// ── Init overlay on load ────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  resizeCanvases();
+  drawOverlay();
+  calculate();
+});
+
+// Redraw overlay when panel size changes (e.g. sidebar toggle)
+const ro = new ResizeObserver(() => {
+  resizeCanvases();
+  drawOverlay();
+  calculate();
+});
+ro.observe(document.getElementById('cameraPanel'));
+</script>
+</body>
+</html>
