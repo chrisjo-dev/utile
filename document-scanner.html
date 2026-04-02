@@ -266,6 +266,43 @@ input[type=range]::-moz-range-thumb {
 .toast.success { border-color: rgba(52,211,153,0.4); color: var(--success); }
 .toast.error { border-color: rgba(248,113,113,0.4); color: var(--danger); }
 
+/* OCR */
+.ocr-section { margin-top: 20px; }
+.ocr-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.ocr-lang {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 7px; padding: 5px 10px; color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  outline: none; cursor: pointer;
+}
+.ocr-lang:focus { border-color: var(--accent); }
+.ocr-progress {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--accent); display: none;
+}
+.ocr-progress.show { display: flex; align-items: center; gap: 6px; }
+.ocr-progress-bar {
+  width: 80px; height: 4px; background: var(--surface-3); border-radius: 2px; overflow: hidden;
+}
+.ocr-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.2s; width: 0%; }
+.ocr-result {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px;
+  display: none;
+}
+.ocr-result.show { display: block; }
+.ocr-text {
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  color: var(--text-2); line-height: 1.8;
+  white-space: pre-wrap; word-break: break-word;
+  max-height: 240px; overflow-y: auto;
+  margin-bottom: 10px;
+}
+.ocr-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
 /* Corner handle */
 .corner-handle-hint {
   font-size: 11px; font-family: 'DM Mono', monospace;
@@ -394,6 +431,32 @@ input[type=range]::-moz-range-thumb {
       </div>
     </div>
 
+  </div>
+
+  <!-- OCR -->
+  <div class="ocr-section" id="ocrSection" style="display:none">
+    <div class="ocr-header">
+      <div class="section-title" style="margin:0;font-size:11px">OCR — 텍스트 추출</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <select class="ocr-lang" id="ocrLang">
+          <option value="kor+eng">한국어 + 영어</option>
+          <option value="eng">English</option>
+          <option value="kor">한국어</option>
+        </select>
+        <button class="btn btn-sec btn-sm" id="btnOcr">OCR 실행</button>
+      </div>
+    </div>
+    <div class="ocr-progress" id="ocrProgress">
+      <div class="ocr-progress-bar"><div class="ocr-progress-fill" id="ocrProgressFill"></div></div>
+      <span id="ocrProgressText">0%</span>
+    </div>
+    <div class="ocr-result" id="ocrResult">
+      <div class="ocr-text" id="ocrText"></div>
+      <div class="ocr-actions">
+        <button class="btn btn-sec btn-sm" id="btnCopyOcr">복사</button>
+        <button class="btn btn-sec btn-sm" id="btnDownloadTxt">TXT 다운로드</button>
+      </div>
+    </div>
   </div>
 
   <!-- History -->
@@ -1013,6 +1076,9 @@ function showResult(srcCanvas) {
   document.getElementById('outputPlaceholder').style.display = 'none';
   document.getElementById('controlsCard').style.display = 'block';
   document.getElementById('outputActions').style.display = 'flex';
+  document.getElementById('ocrSection').style.display = 'block';
+  document.getElementById('ocrResult').classList.remove('show');
+  document.getElementById('ocrText').textContent = '';
   applyPostProcessing();
 }
 
@@ -1107,6 +1173,7 @@ document.getElementById('btnDiscard').addEventListener('click', () => {
   document.getElementById('controlsCard').style.display = 'none';
   document.getElementById('outputActions').style.display = 'none';
   document.getElementById('cornerHint').style.display = 'none';
+  document.getElementById('ocrSection').style.display = 'none';
   removeHandleListeners();
   setStatus('scanStatus', '', 'no scan');
   // Reset controls
@@ -1254,6 +1321,83 @@ function showToast(msg, type) {
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.classList.remove('show'), 2800);
 }
+
+// =====================================================================
+// OCR — Tesseract.js
+// =====================================================================
+
+document.getElementById('btnOcr').addEventListener('click', runOcr);
+
+async function runOcr() {
+  if (!outputC.width) return;
+  const lang = document.getElementById('ocrLang').value;
+  const btn = document.getElementById('btnOcr');
+  const progress = document.getElementById('ocrProgress');
+  const fill = document.getElementById('ocrProgressFill');
+  const ptext = document.getElementById('ocrProgressText');
+  const result = document.getElementById('ocrResult');
+  const textEl = document.getElementById('ocrText');
+
+  btn.disabled = true;
+  progress.classList.add('show');
+  result.classList.remove('show');
+  fill.style.width = '0%';
+  ptext.textContent = '0%';
+
+  try {
+    // Lazy-load Tesseract.js
+    if (!window.Tesseract) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+
+    const worker = await Tesseract.createWorker(lang, 1, {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const pct = Math.round(m.progress * 100);
+          fill.style.width = pct + '%';
+          ptext.textContent = pct + '%';
+        }
+      }
+    });
+
+    const { data: { text } } = await worker.recognize(outputC);
+    await worker.terminate();
+
+    fill.style.width = '100%';
+    ptext.textContent = '100%';
+
+    const cleaned = text.trim();
+    textEl.textContent = cleaned || '// 텍스트를 찾을 수 없습니다';
+    result.classList.add('show');
+    showToast('OCR 완료', 'success');
+  } catch (e) {
+    showToast('OCR 오류: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => progress.classList.remove('show'), 800);
+  }
+}
+
+document.getElementById('btnCopyOcr').addEventListener('click', () => {
+  const text = document.getElementById('ocrText').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('클립보드에 복사됨', 'success'));
+});
+
+document.getElementById('btnDownloadTxt').addEventListener('click', () => {
+  const text = document.getElementById('ocrText').textContent;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ocr_' + timestamp() + '.txt';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  showToast('TXT 다운로드됨', 'success');
+});
 </script>
 </body>
 </html>
