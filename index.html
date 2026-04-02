@@ -336,6 +336,10 @@ footer {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.section-header + .grid + .section-header {
+  margin-top: 48px;
+}
 </style>
 </head>
 <body>
@@ -365,19 +369,11 @@ footer {
     </div>
   </header>
 
-  <div class="section-header">
-    <span class="section-tag">Tools</span>
+  <div class="section-header" style="animation-delay:0.1s">
+    <span class="section-tag">생산성</span>
     <div class="section-line"></div>
   </div>
-
-  <div class="grid" id="tool-grid">
-    <a class="card" href="./image-optimizer.html">
-      <div class="card-icon">🖼</div>
-      <div class="card-label">media</div>
-      <div class="card-name">Image Optimizer</div>
-      <div class="card-desc">브라우저에서 바로 이미지 압축 & 포맷 변환. 서버 업로드 없음.</div>
-      <span class="card-arrow">↗</span>
-    </a>
+  <div class="grid">
     <a class="card" href="./focus-monitor.html">
       <div class="card-icon">🐱</div>
       <div class="card-label">productivity</div>
@@ -390,6 +386,34 @@ footer {
       <div class="card-label">analytics</div>
       <div class="card-name">Focus Stats</div>
       <div class="card-desc">집중 세션 통계 & 히스토리. 이탈 원인 분석, 시간대별 집중력 히트맵.</div>
+      <span class="card-arrow">↗</span>
+    </a>
+    <a class="card" href="./pomodoro.html">
+      <div class="card-icon">🍅</div>
+      <div class="card-label">productivity</div>
+      <div class="card-name">Pomodoro Timer</div>
+      <div class="card-desc">SVG 링 타이머. 집중 25분 / 짧은 휴식 / 긴 휴식. 세션 카운터 & 알림음.</div>
+      <span class="card-arrow">↗</span>
+    </a>
+    <a class="card" href="./flashcards.html">
+      <div class="card-icon">🃏</div>
+      <div class="card-label">study</div>
+      <div class="card-name">Flashcards</div>
+      <div class="card-desc">SM-2 스페이스드 리피티션 플래시카드. 덱 관리, 3D 플립, 복습 스케줄링, 통계.</div>
+      <span class="card-arrow">↗</span>
+    </a>
+  </div>
+
+  <div class="section-header" style="animation-delay:0.15s">
+    <span class="section-tag">미디어 & 문서</span>
+    <div class="section-line"></div>
+  </div>
+  <div class="grid">
+    <a class="card" href="./image-optimizer.html">
+      <div class="card-icon">🖼</div>
+      <div class="card-label">media</div>
+      <div class="card-name">Image Optimizer</div>
+      <div class="card-desc">브라우저에서 바로 이미지 압축 & 포맷 변환. 서버 업로드 없음.</div>
       <span class="card-arrow">↗</span>
     </a>
     <a class="card" href="./pdf-tools.html">
@@ -413,62 +437,13 @@ footer {
       <div class="card-desc">텍스트 & URL을 QR코드로 변환. 크기·오류정정·색상 설정 & PNG 다운로드.</div>
       <span class="card-arrow">↗</span>
     </a>
-    <a class="card" href="./pomodoro.html">
-      <div class="card-icon">🍅</div>
-      <div class="card-label">productivity</div>
-      <div class="card-name">Pomodoro Timer</div>
-      <div class="card-desc">SVG 링 타이머. 집중 25분 / 짧은 휴식 / 긴 휴식. 세션 카운터 & 알림음.</div>
-      <span class="card-arrow">↗</span>
-    </a>
-    <a class="card" href="./mermaid-renderer.html">
-      <div class="card-icon">🔀</div>
-      <div class="card-label">developer</div>
-      <div class="card-name">Mermaid Renderer</div>
-      <div class="card-desc">Mermaid 다이어그램 실시간 렌더링. 분할 에디터, 예제 5종, SVG 다운로드.</div>
-      <span class="card-arrow">↗</span>
-    </a>
-    <a class="card" href="./dns-lookup.html">
-      <div class="card-icon">🌐</div>
-      <div class="card-label">network</div>
-      <div class="card-name">DNS Lookup</div>
-      <div class="card-desc">DNS over HTTPS로 A/AAAA/MX/CNAME/TXT/NS 레코드 조회. 히스토리 저장.</div>
-      <span class="card-arrow">↗</span>
-    </a>
-    <a class="card" href="./cidr-calculator.html">
-      <div class="card-icon">🔢</div>
-      <div class="card-label">network</div>
-      <div class="card-name">CIDR Calculator</div>
-      <div class="card-desc">서브넷 마스크·브로드캐스트·호스트 범위 계산. 바이너리 비트 시각화.</div>
-      <span class="card-arrow">↗</span>
-    </a>
-    <a class="card" href="./compound-interest.html">
-      <div class="card-icon">📈</div>
-      <div class="card-label">finance</div>
-      <div class="card-name">복리 계산기</div>
-      <div class="card-desc">원금·이율·기간·추가납입 입력으로 복리 수익 시각화. 연도별 차트.</div>
-      <span class="card-arrow">↗</span>
-    </a>
-    <a class="card" href="./loan-calculator.html">
-      <div class="card-icon">🏦</div>
-      <div class="card-label">finance</div>
-      <div class="card-name">대출 계산기</div>
-      <div class="card-desc">원리금균등·원금균등·만기일시 상환 방식별 월납입액 & 상환 스케줄.</div>
-      <span class="card-arrow">↗</span>
-    </a>
-    <a class="card" href="./system-design-advisor.html">
-      <div class="card-icon">🏗</div>
-      <div class="card-label">developer</div>
-      <div class="card-name">System Design Advisor</div>
-      <div class="card-desc">동시접속자·읽기쓰기 비율·지역 입력 → 아키텍처 추천 + 면접 포인트.</div>
-      <span class="card-arrow">↗</span>
-    </a>
-    <a class="card" href="./cap-theorem.html">
-      <div class="card-icon">△</div>
-      <div class="card-label">developer</div>
-      <div class="card-name">CAP Theorem</div>
-      <div class="card-desc">CAP 정리 인터랙티브 삼각형. CA/CP/AP 존, DB 예시, 파티션 시뮬레이터.</div>
-      <span class="card-arrow">↗</span>
-    </a>
+  </div>
+
+  <div class="section-header" style="animation-delay:0.2s">
+    <span class="section-tag">카메라</span>
+    <div class="section-line"></div>
+  </div>
+  <div class="grid">
     <a class="card" href="./security-camera.html">
       <div class="card-icon">📹</div>
       <div class="card-label">camera</div>
@@ -490,11 +465,74 @@ footer {
       <div class="card-desc">카메라 모션 분석으로 운동 반복 횟수 자동 카운트. 세트 기록, 음성 카운트, 칼로리 추정.</div>
       <span class="card-arrow">↗</span>
     </a>
-    <a class="card" href="./flashcards.html">
-      <div class="card-icon">🃏</div>
-      <div class="card-label">study</div>
-      <div class="card-name">Flashcards</div>
-      <div class="card-desc">SM-2 스페이스드 리피티션 플래시카드. 덱 관리, 3D 플립, 복습 스케줄링, 통계.</div>
+  </div>
+
+  <div class="section-header" style="animation-delay:0.25s">
+    <span class="section-tag">금융</span>
+    <div class="section-line"></div>
+  </div>
+  <div class="grid">
+    <a class="card" href="./compound-interest.html">
+      <div class="card-icon">📈</div>
+      <div class="card-label">finance</div>
+      <div class="card-name">복리 계산기</div>
+      <div class="card-desc">원금·이율·기간·추가납입 입력으로 복리 수익 시각화. 연도별 차트.</div>
+      <span class="card-arrow">↗</span>
+    </a>
+    <a class="card" href="./loan-calculator.html">
+      <div class="card-icon">🏦</div>
+      <div class="card-label">finance</div>
+      <div class="card-name">대출 계산기</div>
+      <div class="card-desc">원리금균등·원금균등·만기일시 상환 방식별 월납입액 & 상환 스케줄.</div>
+      <span class="card-arrow">↗</span>
+    </a>
+  </div>
+
+  <div class="section-header" style="animation-delay:0.3s">
+    <span class="section-tag">네트워크</span>
+    <div class="section-line"></div>
+  </div>
+  <div class="grid">
+    <a class="card" href="./dns-lookup.html">
+      <div class="card-icon">🌐</div>
+      <div class="card-label">network</div>
+      <div class="card-name">DNS Lookup</div>
+      <div class="card-desc">DNS over HTTPS로 A/AAAA/MX/CNAME/TXT/NS 레코드 조회. 히스토리 저장.</div>
+      <span class="card-arrow">↗</span>
+    </a>
+    <a class="card" href="./cidr-calculator.html">
+      <div class="card-icon">🔢</div>
+      <div class="card-label">network</div>
+      <div class="card-name">CIDR Calculator</div>
+      <div class="card-desc">서브넷 마스크·브로드캐스트·호스트 범위 계산. 바이너리 비트 시각화.</div>
+      <span class="card-arrow">↗</span>
+    </a>
+  </div>
+
+  <div class="section-header" style="animation-delay:0.35s">
+    <span class="section-tag">개발자</span>
+    <div class="section-line"></div>
+  </div>
+  <div class="grid">
+    <a class="card" href="./mermaid-renderer.html">
+      <div class="card-icon">🔀</div>
+      <div class="card-label">developer</div>
+      <div class="card-name">Mermaid Renderer</div>
+      <div class="card-desc">Mermaid 다이어그램 실시간 렌더링. 분할 에디터, 예제 5종, SVG 다운로드.</div>
+      <span class="card-arrow">↗</span>
+    </a>
+    <a class="card" href="./system-design-advisor.html">
+      <div class="card-icon">🏗</div>
+      <div class="card-label">developer</div>
+      <div class="card-name">System Design Advisor</div>
+      <div class="card-desc">동시접속자·읽기쓰기 비율·지역 입력 → 아키텍처 추천 + 면접 포인트.</div>
+      <span class="card-arrow">↗</span>
+    </a>
+    <a class="card" href="./cap-theorem.html">
+      <div class="card-icon">△</div>
+      <div class="card-label">developer</div>
+      <div class="card-name">CAP Theorem</div>
+      <div class="card-desc">CAP 정리 인터랙티브 삼각형. CA/CP/AP 존, DB 예시, 파티션 시뮬레이터.</div>
       <span class="card-arrow">↗</span>
     </a>
     <a class="card" href="./system-design-builder.html">
