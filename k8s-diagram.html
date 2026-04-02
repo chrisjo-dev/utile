@@ -2144,10 +2144,11 @@ function generateYaml() {
   const tmpl = YAML_TEMPLATES[kind];
   if (!tmpl) return;
   const yaml = tmpl(values);
+  window._lastGenYaml = yaml;
   const out = document.getElementById('gen-output');
   out.innerHTML = `
     <div class="yaml-block" style="max-height:300px;overflow-y:auto">
-      <button class="copy-btn" onclick="navigator.clipboard.writeText(${JSON.stringify(yaml)}).then(()=>{this.textContent='Copied!';setTimeout(()=>{this.textContent='Copy'},1500)})">Copy</button>
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(window._lastGenYaml).then(()=>{this.textContent='Copied!';setTimeout(()=>{this.textContent='Copy'},1500)})">Copy</button>
       ${syntaxHighlightYaml(yaml)}
     </div>
   `;
