@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="IP 주소와 CIDR 표기를 입력하면 서브넷 마스크, 브로드캐스트, 호스트 범위를 계산하는 네트워크 도구입니다.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CIDR Calculator — utile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -404,6 +405,17 @@ td.dim { color: var(--text-3); }
   .binary-display { font-size: 10px; }
   .bin-bit { width: 8px; }
 }
+</style>
+<style id="tool-help-css">
+.tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
+.tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
+.tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+</style>
+<style id="site-footer-css">
+.site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
+.site-footer a{color:var(--text-3,#71717a);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
+.site-footer a:hover{color:var(--accent,#22d3ee);}
+.sf-sep{display:inline-block;width:18px;}
 </style>
 </head>
 <body>
@@ -817,5 +829,19 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
 // Init
 buildRefTable();
 </script>
+
+<div class="tool-help">
+  <h2>이 도구는</h2>
+  <p>CIDR 표기(예: 192.168.1.0/24)를 입력하면 네트워크 주소, 서브넷 마스크, 브로드캐스트 주소, 사용 가능한 호스트 범위를 계산합니다. 사용법: IP 주소와 프리픽스 길이를 입력하면 자동으로 모든 서브넷 정보를 계산합니다. 바이너리 비트 시각화로 마스킹 과정을 직관적으로 확인할 수 있습니다.</p>
+</div>
+<div class="site-footer">
+  <a href="https://www.wspace.ai.kr/">wspace 홈</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/about/">소개</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/privacy/">개인정보처리방침</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/contact/">연락처</a>
+</div>
 </body>
 </html>

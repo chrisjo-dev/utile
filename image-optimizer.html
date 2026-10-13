@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="브라우저에서 바로 이미지를 압축하고 포맷을 변환하는 도구입니다. 파일이 서버로 업로드되지 않습니다.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Image Optimizer</title>
 <style>
@@ -104,6 +105,17 @@ header p { color: var(--text-3); font-size:13px; margin-top:4px; }
   .settings { grid-template-columns:1fr 1fr; }
   .summary.show { grid-template-columns:repeat(2,1fr); }
 }
+</style>
+<style id="tool-help-css">
+.tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
+.tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
+.tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+</style>
+<style id="site-footer-css">
+.site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
+.site-footer a{color:var(--text-3,#71717a);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
+.site-footer a:hover{color:var(--accent,#22d3ee);}
+.sf-sep{display:inline-block;width:18px;}
 </style>
 </head>
 <body>
@@ -357,5 +369,19 @@ $('bClr').addEventListener('click', () => {
   files.length=0; render(); $('sum').classList.remove('show');
 });
 </script>
+
+<div class="tool-help">
+  <h2>이 도구는</h2>
+  <p>이미지를 WebP·JPEG·PNG 등으로 변환하고 품질을 조절해 파일 크기를 줄여줍니다. 사용법: 이미지 파일을 드래그하거나 파일 선택 버튼으로 업로드합니다. 품질 슬라이더와 출력 포맷을 선택한 뒤 변환 버튼을 누르면 결과를 바로 다운로드할 수 있습니다. 이미지 데이터는 브라우저 안에서만 처리되며 서버로 전송되지 않습니다.</p>
+</div>
+<div class="site-footer">
+  <a href="https://www.wspace.ai.kr/">wspace 홈</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/about/">소개</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/privacy/">개인정보처리방침</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/contact/">연락처</a>
+</div>
 </body>
 </html>

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="SM-2 알고리즘 기반의 스페이스드 리피티션 플래시카드 앱입니다. 덱 관리, 3D 플립, 복습 스케줄링을 지원합니다.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flashcards — utile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -961,6 +962,17 @@ kbd {
 .no-due .no-due-icon { font-size: 40px; margin-bottom: 16px; }
 .no-due .no-due-title { font-size: 16px; color: var(--text-2); margin-bottom: 8px; }
 .no-due .no-due-sub { font-size: 12px; }
+</style>
+<style id="tool-help-css">
+.tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
+.tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
+.tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+</style>
+<style id="site-footer-css">
+.site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
+.site-footer a{color:var(--text-3,#71717a);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
+.site-footer a:hover{color:var(--accent,#22d3ee);}
+.sf-sep{display:inline-block;width:18px;}
 </style>
 </head>
 <body>
@@ -2038,5 +2050,19 @@ function shuffle(arr) {
 
 renderDashboard();
 </script>
+
+<div class="tool-help">
+  <h2>이 도구는</h2>
+  <p>SM-2 스페이스드 리피티션 알고리즘으로 최적 복습 간격을 계산해 장기 기억을 돕는 플래시카드 앱입니다. 사용법: 새 덱을 만들고 앞면(질문)과 뒷면(답변)을 입력해 카드를 추가합니다. 복습 시 카드를 클릭하면 3D 플립으로 답변이 나타나며, 기억 난이도를 선택하면 다음 복습 일정이 계산됩니다. 덱 데이터는 브라우저 로컬 저장소에 저장되며 외부 서버로 전송되지 않습니다.</p>
+</div>
+<div class="site-footer">
+  <a href="https://www.wspace.ai.kr/">wspace 홈</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/about/">소개</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/privacy/">개인정보처리방침</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/contact/">연락처</a>
+</div>
 </body>
 </html>

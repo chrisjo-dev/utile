@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="DNS, TLS, CDN, DB 등 각 구간의 지연 시간을 합산해 워터폴 차트와 P50/P95/P99 지연을 분석하는 도구입니다.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Latency Calculator — utile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -778,6 +779,17 @@ h1 span { color: var(--accent); }
   .ms-input { width: 50px; }
 }
 </style>
+<style id="tool-help-css">
+.tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
+.tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
+.tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+</style>
+<style id="site-footer-css">
+.site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
+.site-footer a{color:var(--text-3,#71717a);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
+.site-footer a:hover{color:var(--accent,#22d3ee);}
+.sf-sep{display:inline-block;width:18px;}
+</style>
 </head>
 <body>
 <div class="app">
@@ -1420,5 +1432,19 @@ buildComponentSelect();
 loadPreset('basic');
 renderCompare();
 </script>
+
+<div class="tool-help">
+  <h2>이 도구는</h2>
+  <p>DNS 조회, TCP 연결, TLS 핸드셰이크, CDN 응답, DB 쿼리 등 각 네트워크 구간의 지연 시간을 합산해 시각화합니다. 사용법: 각 구간의 예상 지연값을 입력하거나 기본값을 사용하고 계산 버튼을 누릅니다. 워터폴 차트, P50/P95/P99 백분위 지연, 레이턴시 버짓 모드로 병목 구간을 분석할 수 있습니다.</p>
+</div>
+<div class="site-footer">
+  <a href="https://www.wspace.ai.kr/">wspace 홈</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/about/">소개</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/privacy/">개인정보처리방침</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/contact/">연락처</a>
+</div>
 </body>
 </html>

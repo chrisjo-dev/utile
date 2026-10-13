@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="SVG 링 애니메이션으로 집중 25분과 휴식을 시각화하는 포모도로 타이머입니다. 세션 카운터와 알림음 포함.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>뽀모도로 타이머 — utile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -292,6 +293,17 @@ h1 span { color: var(--accent); }
   to   { opacity: 1; transform: translateY(0); }
 }
 </style>
+<style id="tool-help-css">
+.tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
+.tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
+.tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+</style>
+<style id="site-footer-css">
+.site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
+.site-footer a{color:var(--text-3,#71717a);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
+.site-footer a:hover{color:var(--accent,#22d3ee);}
+.sf-sep{display:inline-block;width:18px;}
+</style>
 </head>
 <body>
 <div class="app">
@@ -522,5 +534,19 @@ totalSeconds = durations[currentMode] * 60;
 remaining = totalSeconds;
 updateDisplay();
 </script>
+
+<div class="tool-help">
+  <h2>이 도구는</h2>
+  <p>집중 25분, 짧은 휴식 5분, 긴 휴식 15분의 포모도로 사이클을 SVG 링으로 시각화합니다. 사용법: 시작 버튼을 눌러 타이머를 시작하고, 집중 세션이 끝나면 알림음이 울립니다. 4회 집중 세션이 쌓이면 자동으로 긴 휴식으로 전환됩니다. 세션 횟수와 총 집중 시간이 하단에 표시됩니다.</p>
+</div>
+<div class="site-footer">
+  <a href="https://www.wspace.ai.kr/">wspace 홈</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/about/">소개</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/privacy/">개인정보처리방침</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/contact/">연락처</a>
+</div>
 </body>
 </html>

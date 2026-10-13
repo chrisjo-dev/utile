@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="CAP 정리를 인터랙티브 삼각형으로 학습하는 도구입니다. CA/CP/AP 존, DB 예시, 파티션 시뮬레이터를 제공합니다.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CAP Theorem — utile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -695,6 +696,17 @@ body::before {
     overflow-y: visible;
   }
 }
+</style>
+<style id="tool-help-css">
+.tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
+.tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
+.tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+</style>
+<style id="site-footer-css">
+.site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
+.site-footer a{color:var(--text-3,#71717a);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
+.site-footer a:hover{color:var(--accent,#22d3ee);}
+.sf-sep{display:inline-block;width:18px;}
 </style>
 </head>
 <body>
@@ -1407,5 +1419,19 @@ function endAnimation(ctx, canvas) {
 selectZone('ca');
 renderTabs();
 </script>
+
+<div class="tool-help">
+  <h2>이 도구는</h2>
+  <p>분산 시스템의 CAP 정리(일관성·가용성·파티션 허용)를 인터랙티브하게 학습할 수 있습니다. 사용법: 삼각형의 세 영역(CA/CP/AP)을 클릭하면 해당 특성과 대표적인 데이터베이스 예시가 표시됩니다. 파티션 시뮬레이터를 통해 네트워크 분할 상황에서 각 DB의 동작 방식을 시각적으로 확인할 수 있습니다.</p>
+</div>
+<div class="site-footer">
+  <a href="https://www.wspace.ai.kr/">wspace 홈</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/about/">소개</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/privacy/">개인정보처리방침</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/contact/">연락처</a>
+</div>
 </body>
 </html>

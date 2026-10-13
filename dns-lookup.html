@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="DNS over HTTPS로 도메인의 A, AAAA, MX, CNAME, TXT, NS 레코드를 조회하는 네트워크 도구입니다.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DNS Lookup</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -271,6 +272,17 @@ header p {
   .dns-table th:nth-child(1),
   .dns-table td:nth-child(1) { display: none; }
 }
+</style>
+<style id="tool-help-css">
+.tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
+.tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
+.tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+</style>
+<style id="site-footer-css">
+.site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
+.site-footer a{color:var(--text-3,#71717a);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
+.site-footer a:hover{color:var(--accent,#22d3ee);}
+.sf-sep{display:inline-block;width:18px;}
 </style>
 </head>
 <body>
@@ -569,5 +581,19 @@ domainInput.addEventListener('keydown', e => { if (e.key === 'Enter') runLookup(
 // Init
 renderHistory();
 </script>
+
+<div class="tool-help">
+  <h2>이 도구는</h2>
+  <p>도메인 이름을 입력하면 DNS over HTTPS를 통해 각종 DNS 레코드를 조회합니다. 사용법: 조회할 도메인을 입력하고 조회할 레코드 타입(A/AAAA/MX/CNAME/TXT/NS)을 선택합니다. 결과에서 레코드 값과 TTL을 확인할 수 있으며, 이전 조회 히스토리도 저장됩니다.</p>
+</div>
+<div class="site-footer">
+  <a href="https://www.wspace.ai.kr/">wspace 홈</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/about/">소개</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/privacy/">개인정보처리방침</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/contact/">연락처</a>
+</div>
 </body>
 </html>

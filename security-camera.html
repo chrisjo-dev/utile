@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="브라우저 카메라로 구역별 모션을 감지하고 소리 알람과 타임스탬프를 기록하는 보안 카메라 도구입니다.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Security Camera — utile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -553,6 +554,17 @@ input[type=range]::-moz-range-thumb {
 }
 .stat-value.accent { color: var(--accent); }
 .stat-value.red { color: var(--red); }
+</style>
+<style id="tool-help-css">
+.tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
+.tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
+.tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+</style>
+<style id="site-footer-css">
+.site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
+.site-footer a{color:var(--text-3,#71717a);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
+.site-footer a:hover{color:var(--accent,#22d3ee);}
+.sf-sep{display:inline-block;width:18px;}
 </style>
 </head>
 <body>
@@ -1183,5 +1195,19 @@ input[type=range]::-moz-range-thumb {
   updateArmStatus();
 })();
 </script>
+
+<div class="tool-help">
+  <h2>이 도구는</h2>
+  <p>카메라 화면을 구역별로 나눠 움직임을 감지하고, 모션 발생 시 소리 알람과 타임스탬프를 기록합니다. 사용법: 카메라 시작 버튼을 눌러 권한을 허용하고, 감지 민감도와 알람 구역을 설정합니다. 모션이 감지되면 알람이 울리고 이벤트 로그에 시간이 기록됩니다. 카메라 영상은 브라우저 안에서만 처리되며 서버로 전송되지 않습니다.</p>
+</div>
+<div class="site-footer">
+  <a href="https://www.wspace.ai.kr/">wspace 홈</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/about/">소개</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/privacy/">개인정보처리방침</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/contact/">연락처</a>
+</div>
 </body>
 </html>

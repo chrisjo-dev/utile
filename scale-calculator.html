@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="DAU와 RPS를 입력하면 서버 스펙, 스토리지, 캐시, CDN 대역폭 요구사항을 추정하는 시스템 설계 도구입니다.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>System Scalability Calculator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -596,6 +597,17 @@ header p {
 .scale-tier.growth { background: rgba(34,211,238,0.12); color: var(--accent); }
 .scale-tier.scale { background: rgba(251,191,36,0.12); color: var(--warn); }
 .scale-tier.hyper { background: rgba(248,113,113,0.12); color: var(--danger); }
+</style>
+<style id="tool-help-css">
+.tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
+.tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
+.tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+</style>
+<style id="site-footer-css">
+.site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
+.site-footer a{color:var(--text-3,#71717a);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
+.site-footer a:hover{color:var(--accent,#22d3ee);}
+.sf-sep{display:inline-block;width:18px;}
 </style>
 </head>
 <body>
@@ -1509,5 +1521,19 @@ function clearPresetActive() {
 // Initial render
 calculate();
 </script>
+
+<div class="tool-help">
+  <h2>이 도구는</h2>
+  <p>서비스의 DAU(일일 활성 사용자)와 RPS(초당 요청 수)를 입력하면 필요한 서버 스펙, DB 스토리지, 캐시 메모리, CDN 대역폭을 추정합니다. 사용법: DAU, 피크 배율, 요청당 크기 등 항목을 입력하거나 프리셋을 선택합니다. 단계별 계산 과정이 공개되어 시스템 설계 학습에도 활용할 수 있으며 결과를 HTML 보고서로 내보낼 수 있습니다.</p>
+</div>
+<div class="site-footer">
+  <a href="https://www.wspace.ai.kr/">wspace 홈</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/about/">소개</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/privacy/">개인정보처리방침</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/contact/">연락처</a>
+</div>
 </body>
 </html>

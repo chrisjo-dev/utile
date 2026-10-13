@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="Mermaid 다이어그램 코드를 실시간으로 렌더링하는 도구입니다. 분할 에디터, 예제, SVG 다운로드를 지원합니다.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mermaid Renderer — utile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -452,6 +453,17 @@ select option { background: var(--surface-2); }
   to { opacity: 1; transform: translateY(0); }
 }
 </style>
+<style id="tool-help-css">
+.tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
+.tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
+.tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+</style>
+<style id="site-footer-css">
+.site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
+.site-footer a{color:var(--text-3,#71717a);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
+.site-footer a:hover{color:var(--accent,#22d3ee);}
+.sf-sep{display:inline-block;width:18px;}
+</style>
 </head>
 <body>
 <div class="app">
@@ -766,5 +778,19 @@ editor.value = EXAMPLES.flowchart;
 updateLineNumbers();
 render();
 </script>
+
+<div class="tool-help">
+  <h2>이 도구는</h2>
+  <p>Mermaid 문법으로 작성한 텍스트를 즉시 다이어그램으로 렌더링합니다. 사용법: 왼쪽 에디터에 Mermaid 코드를 입력하면 오른쪽 패널에 다이어그램이 실시간으로 표시됩니다. 플로우차트, 시퀀스 다이어그램, Gantt 차트 등 다양한 예제를 불러올 수 있습니다. 완성된 다이어그램을 SVG 파일로 다운로드할 수 있습니다.</p>
+</div>
+<div class="site-footer">
+  <a href="https://www.wspace.ai.kr/">wspace 홈</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/about/">소개</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/privacy/">개인정보처리방침</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/contact/">연락처</a>
+</div>
 </body>
 </html>

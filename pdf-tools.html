@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="PDF 뷰어, 파일 병합, 페이지 분할 및 추출을 브라우저에서 처리하는 도구입니다. 서버 업로드 없음.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PDF Tools — utile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -557,6 +558,17 @@ h1 span { color: var(--accent); }
 ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 </style>
+<style id="tool-help-css">
+.tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
+.tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
+.tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+</style>
+<style id="site-footer-css">
+.site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
+.site-footer a{color:var(--text-3,#71717a);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
+.site-footer a:hover{color:var(--accent,#22d3ee);}
+.sf-sep{display:inline-block;width:18px;}
+</style>
 </head>
 <body>
 <div class="app">
@@ -1034,5 +1046,19 @@ function downloadBlob(bytes, name, mime) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 </script>
+
+<div class="tool-help">
+  <h2>이 도구는</h2>
+  <p>PDF 파일을 브라우저 안에서 열람하고, 여러 파일을 하나로 병합하거나 특정 페이지만 추출할 수 있습니다. 사용법: PDF 파일을 드래그해 업로드합니다. 병합 탭에서는 여러 파일을 순서대로 추가한 뒤 병합 버튼을 누릅니다. 분할 탭에서는 페이지 범위를 입력해 원하는 페이지만 새 PDF로 추출합니다. PDF 파일 데이터는 브라우저 안에서만 처리되며 외부 서버로 업로드되지 않습니다.</p>
+</div>
+<div class="site-footer">
+  <a href="https://www.wspace.ai.kr/">wspace 홈</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/about/">소개</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/privacy/">개인정보처리방침</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/contact/">연락처</a>
+</div>
 </body>
 </html>

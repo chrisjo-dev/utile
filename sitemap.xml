@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://util.wspace.ai.kr/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://util.wspace.ai.kr/api-checklist.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/arch-advisor.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/cache-visualizer.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/cap-theorem.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/cidr-calculator.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/compound-interest.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/db-selector.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/distance-meter.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/dns-lookup.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/document-scanner.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/flashcards.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/focus-monitor.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/image-optimizer.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/k8s-diagram.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/latency-calculator.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/load-balancer.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/loan-calculator.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/mermaid-renderer.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/pdf-tools.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/pomodoro.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/qr-generator.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/rep-counter.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/scale-calculator.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/security-camera.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/stats.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/system-design-advisor.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://util.wspace.ai.kr/system-design-builder.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+</urlset>

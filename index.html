@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="description" content="utile — 브라우저에서 바로 쓰는 클라이언트 사이드 유틸리티 모음입니다. 이미지, PDF, 카메라, 개발자 도구 등 서버 업로드 없이 동작합니다.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>utile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -341,6 +342,17 @@ footer {
   margin-top: 48px;
 }
 </style>
+<style id="site-footer-css">
+.site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
+.site-footer a{color:var(--text-3,#71717a);text-decoration:none;letter-spacing:.04em;transition:color .2s;}
+.site-footer a:hover{color:var(--accent,#22d3ee);}
+.sf-sep{display:inline-block;width:18px;}
+</style>
+<style id="site-intro-css">
+.site-intro{margin:-32px 0 48px;padding:20px 24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);border-left:3px solid var(--accent);}
+.site-intro p{font-family:'DM Mono',monospace;font-size:13px;color:var(--text-2);line-height:1.8;margin:0;}
+.site-intro p+p{margin-top:6px;}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -368,6 +380,13 @@ footer {
       </div>
     </div>
   </header>
+<section class="site-intro">
+  <p>BrowserTools는 브라우저 안에서만 동작하는 무료 유틸리티 모음입니다.</p>
+  <p>이미지 최적화, PDF 편집, 문서 스캔, 카메라 활용, 개발자 도구 등 27가지 기능을 제공합니다.</p>
+  <p>모든 파일과 데이터는 서버로 업로드되지 않고 사용자의 기기 안에서 처리됩니다.</p>
+  <p>로그인 없이 누구나 바로 사용할 수 있으며, 개발자·학생·프리랜서에게 특히 유용합니다.</p>
+</section>
+
 
   <div class="section-header" style="animation-delay:0.1s">
     <span class="section-tag">생산성</span>
@@ -601,9 +620,19 @@ footer {
   </div>
 
   <footer>
-    <span class="footer-text">// 모든 처리는 브라우저에서 이루어집니다</span>
-    <div class="footer-dot"></div>
-  </footer>
+  <span class="footer-text">// 모든 처리는 브라우저에서 이루어집니다</span>
+  <div class="footer-dot"></div>
+</footer>
+<div class="site-footer">
+  <a href="https://www.wspace.ai.kr/">wspace 홈</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/about/">소개</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/privacy/">개인정보처리방침</a>
+  <span class="sf-sep"></span>
+  <a href="https://www.wspace.ai.kr/contact/">연락처</a>
+</div>
+
 </div>
 
 <script>
