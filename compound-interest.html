@@ -390,6 +390,7 @@ tbody tr:last-child td.total-col { color: var(--accent); }
 .tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
 .tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
 .tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+.tool-help h3{font-family:'DM Mono','Courier New',monospace;font-size:12px;font-weight:600;color:var(--text,#fafafa);margin:20px 0 6px;}.tool-help .guide-section{margin-bottom:0;}
 </style>
 <style id="site-footer-css">
 .site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
@@ -614,8 +615,32 @@ calculate();
 </script>
 
 <div class="tool-help">
-  <h2>이 도구는</h2>
-  <p>원금에 이자가 이자를 낳는 복리 효과를 시뮬레이션해 자산 성장을 시각화합니다. 사용법: 초기 원금, 연이율, 투자 기간(년), 매월 추가납입액을 입력합니다. 연도별 잔액이 차트로 표시되고 최종 원금과 이자 합계를 확인할 수 있습니다.</p>
+  <h2>사용 가이드</h2>
+
+  <h3>이런 때 쓰세요</h3>
+  <p>적금, 투자, 연금처럼 장기 복리로 굴리는 돈이 얼마나 불어나는지 계산할 때 유용합니다. "매달 얼마씩 넣으면 10년 뒤 얼마가 될까?", "연 7% 수익률로 20년 투자하면 원금 대비 이자가 얼마나 될까?" 같은 질문에 바로 답을 줍니다. 연도별 결과가 표로도 보여서 각 시점의 잔액을 한눈에 파악할 수 있습니다.</p>
+
+  <h3>사용 순서</h3>
+  <p>1. 초기 원금을 입력하세요. 처음에 넣는 금액입니다.<br>
+  2. 연 수익률(%)을 입력하세요. 예금 금리, 기대 투자 수익률 등을 넣으면 됩니다.<br>
+  3. 투자 기간(년)을 설정하세요.<br>
+  4. 매월 추가 납입액을 입력하세요. 매달 새로 넣는 금액입니다. 한 번 넣고 끝나는 경우라면 0으로 두세요.<br>
+  5. 복리 계산 주기를 선택하세요. 월 복리, 연 복리 등 상품 조건에 맞게 선택합니다.<br>
+  6. 입력값이 바뀔 때마다 자동으로 계산되어 최종 금액, 원금 합계, 이자 합계가 표시되고, 연도별 막대 차트와 상세 표가 갱신됩니다.</p>
+
+  <h3>예시</h3>
+  <p>초기 원금 1,000만 원, 연 수익률 7%, 투자 기간 20년, 매월 추가 납입 0원으로 설정하면 약 3,869만 원이 됩니다. 여기에 매월 30만 원씩 추가하면 20년 후 약 1억 7,000만 원이 넘습니다. 막대 차트에서 시간이 지날수록 이자 비중(파란 막대)이 급격히 커지는 복리 효과를 볼 수 있습니다.</p>
+
+  <h3>주의점과 한계</h3>
+  <p>이 계산기는 복리 공식을 수학적으로 계산하는 도구입니다. 실제 금융 상품의 수익은 세금, 수수료, 금리 변동 등에 따라 달라집니다. 계산 결과를 투자 판단의 참고 자료로만 사용하고, 실제 금융 결정은 전문가와 상담하세요. 금액은 원화(KRW) 기준으로 표시됩니다.</p>
+
+  <h3>자주 묻는 질문</h3>
+  <p><strong>Q. 월 복리와 연 복리 중 어떤 게 더 유리한가요?</strong><br>
+  A. 같은 연 수익률이라면 복리 주기가 짧을수록(월 복리 &gt; 연 복리) 이자가 조금 더 많아집니다. 차이는 크지 않지만 장기적으로는 누적됩니다.<br><br>
+  <strong>Q. 물가상승률을 반영할 수 있나요?</strong><br>
+  A. 물가상승률 반영 기능은 없습니다. 실질 수익률(명목 수익률 - 물가상승률)을 직접 연 수익률 입력란에 넣어 추정할 수 있습니다.<br><br>
+  <strong>Q. 계산 결과를 저장할 수 있나요?</strong><br>
+  A. 별도 저장 기능은 없습니다. 페이지를 캡처하거나 표를 복사해서 사용하세요.</p>
 </div>
 <div class="site-footer">
   <a href="https://www.wspace.ai.kr/">wspace 홈</a>

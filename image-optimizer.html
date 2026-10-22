@@ -110,6 +110,7 @@ header p { color: var(--text-3); font-size:13px; margin-top:4px; }
 .tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
 .tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
 .tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+.tool-help h3{font-family:'DM Mono','Courier New',monospace;font-size:12px;font-weight:600;color:var(--text,#fafafa);margin:20px 0 6px;}.tool-help .guide-section{margin-bottom:0;}
 </style>
 <style id="site-footer-css">
 .site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
@@ -376,8 +377,31 @@ $('bClr').addEventListener('click', () => {
 </script>
 
 <div class="tool-help">
-  <h2>이 도구는</h2>
-  <p>이미지를 WebP·JPEG·PNG 등으로 변환하고 품질을 조절해 파일 크기를 줄여줍니다. 사용법: 이미지 파일을 드래그하거나 파일 선택 버튼으로 업로드합니다. 품질 슬라이더와 출력 포맷을 선택한 뒤 변환 버튼을 누르면 결과를 바로 다운로드할 수 있습니다. 이미지 데이터는 브라우저 안에서만 처리되며 서버로 전송되지 않습니다.</p>
+  <h2>사용 가이드</h2>
+
+  <h3>이런 때 쓰세요</h3>
+  <p>블로그, SNS, 이메일에 이미지를 올리기 전 용량이 너무 클 때, 또는 WebP처럼 웹에 최적화된 포맷으로 변환해야 할 때 유용합니다. 스마트폰 사진은 보통 3~10 MB인데, 이를 그대로 웹에 올리면 페이지 로딩이 느려집니다. 여러 장을 한 번에 처리할 수 있어서 포트폴리오 사이트나 온라인 쇼핑몰 상품 사진 정리에도 자주 씁니다.</p>
+
+  <h3>사용 순서</h3>
+  <p>1. 이미지 파일을 드롭존에 드래그하거나 클릭해서 파일 선택 창을 여세요. PNG, JPG, WebP, GIF, BMP를 지원하며 여러 파일을 한 번에 선택할 수 있습니다.<br>
+  2. 출력 포맷을 선택하세요. "자동"은 원본 포맷을 그대로 유지합니다. 용량을 더 줄이려면 JPEG나 WebP를 선택하세요.<br>
+  3. 최대 용량(KB), 최대 해상도(가로x세로), JPEG 품질(%)을 상황에 맞게 설정하세요. "용량 초과 시 자동 조절"에 체크하면 설정한 최대 용량을 넘을 경우 품질을 단계적으로 낮춰 맞춰줍니다.<br>
+  4. "일괄 변환" 버튼을 누르면 목록의 모든 이미지가 순서대로 처리되고, 완료 후 원본 대비 절감률이 각 항목에 표시됩니다.<br>
+  5. 개별 다운로드(↓) 버튼 또는 "전체 다운로드" 버튼으로 결과를 저장하세요.</p>
+
+  <h3>예시</h3>
+  <p>스마트폰 사진 4장(각 4 MB, 4032x3024 픽셀)을 WebP 품질 85%, 최대 1920x1080으로 설정하고 변환하면 장당 약 200~400 KB 수준이 됩니다. 원본 합계 16 MB에서 변환 후 1~1.5 MB 수준으로 줄어드는 경우가 많습니다.</p>
+
+  <h3>주의점과 한계</h3>
+  <p>모든 처리는 브라우저의 Canvas API를 사용합니다. 파일이 크거나 장 수가 많으면 시간이 걸릴 수 있습니다. GIF를 입력하면 첫 프레임 정지 이미지로 변환되므로 애니메이션 GIF는 지원하지 않습니다. PNG로 변환할 때 용량을 초과하면 이미지를 단계적으로 축소하는 방식으로 용량을 줄입니다. 이미지 데이터는 외부 서버로 전송되지 않습니다.</p>
+
+  <h3>자주 묻는 질문</h3>
+  <p><strong>Q. WebP와 JPEG 중 무엇을 선택해야 할까요?</strong><br>
+  A. 웹이나 앱에서 보여줄 사진이라면 WebP를 추천합니다. 같은 화질에서 JPEG보다 파일 크기가 약 25~35% 더 작습니다. 다만 일부 구형 이메일 클라이언트나 편집 프로그램에서 열리지 않을 수 있으니, 범용성이 필요하다면 JPEG를 선택하세요.<br><br>
+  <strong>Q. 여러 장을 한 번에 변환할 수 있나요?</strong><br>
+  A. 네, 파일을 여러 장 드래그하거나 파일 선택 창에서 다중 선택하면 목록에 추가됩니다. "일괄 변환" 버튼 하나로 전체를 처리합니다.<br><br>
+  <strong>Q. 원본 파일이 서버에 저장되나요?</strong><br>
+  A. 저장되지 않습니다. 모든 변환은 브라우저 안에서만 이루어지며, 결과물도 다운로드 버튼을 눌러야만 내 기기에 저장됩니다.</p>
 </div>
 <div class="site-footer">
   <a href="https://www.wspace.ai.kr/">wspace 홈</a>

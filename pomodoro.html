@@ -297,6 +297,7 @@ h1 span { color: var(--accent); }
 .tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
 .tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
 .tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+.tool-help h3{font-family:'DM Mono','Courier New',monospace;font-size:12px;font-weight:600;color:var(--text,#fafafa);margin:20px 0 6px;}.tool-help .guide-section{margin-bottom:0;}
 </style>
 <style id="site-footer-css">
 .site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
@@ -541,8 +542,30 @@ updateDisplay();
 </script>
 
 <div class="tool-help">
-  <h2>이 도구는</h2>
-  <p>집중 25분, 짧은 휴식 5분, 긴 휴식 15분의 포모도로 사이클을 SVG 링으로 시각화합니다. 사용법: 시작 버튼을 눌러 타이머를 시작하고, 집중 세션이 끝나면 알림음이 울립니다. 4회 집중 세션이 쌓이면 자동으로 긴 휴식으로 전환됩니다. 세션 횟수와 총 집중 시간이 하단에 표시됩니다.</p>
+  <h2>사용 가이드</h2>
+
+  <h3>이런 때 쓰세요</h3>
+  <p>집중이 잘 안 되거나 작업 시간을 측정하고 싶을 때 유용합니다. 포모도로 기법은 25분 집중, 5분 휴식을 반복하는 시간 관리 방법입니다. 4번 집중 세션을 마치면 15분 긴 휴식을 취합니다. 공부, 글쓰기, 코딩처럼 깊은 집중이 필요한 작업에 효과적입니다. 오늘 몇 포모도로를 완료했는지 화면 하단에 표시되어 하루 작업량을 파악할 수 있습니다.</p>
+
+  <h3>사용 순서</h3>
+  <p>1. "집중" 탭이 선택된 상태에서 시작 버튼을 누르면 SVG 링 타이머가 줄어들기 시작합니다.<br>
+  2. 기본값은 집중 25분, 짧은 휴식 5분, 긴 휴식 15분입니다. 각 탭의 시간 숫자를 클릭하면 직접 수정할 수 있습니다.<br>
+  3. 집중 세션이 끝나면 알림음이 울립니다. 이때 "짧은 휴식" 탭으로 전환하거나, 자동으로 넘어가도록 두세요.<br>
+  4. 집중 세션 4번이 쌓이면 자동으로 긴 휴식 모드로 전환됩니다. 세션 진행 상황은 화면 하단의 점으로 확인할 수 있습니다.</p>
+
+  <h3>예시</h3>
+  <p>논문 한 섹션 쓰기를 목표로 설정하고 집중 25분을 시작합니다. 알림이 울리면 5분 휴식 후 다시 시작합니다. 4 포모도로(약 2시간) 후 긴 휴식 15분을 취합니다. 화면 하단에 "오늘 4 포모도로 완료"가 표시됩니다.</p>
+
+  <h3>주의점과 한계</h3>
+  <p>브라우저 탭을 닫거나 새로고침하면 현재 타이머와 오늘 세션 횟수가 초기화됩니다. 타이머 데이터는 저장되지 않습니다. 알림음은 Web Audio API로 생성한 비프음입니다. 브라우저 탭이 비활성화된 상태에서도 타이머는 계속 진행되지만, 일부 브라우저는 백그라운드 탭의 정밀도를 낮출 수 있습니다.</p>
+
+  <h3>자주 묻는 질문</h3>
+  <p><strong>Q. 집중 시간을 25분이 아닌 다른 시간으로 바꿀 수 있나요?</strong><br>
+  A. 네, 각 탭(집중, 짧은 휴식, 긴 휴식)의 숫자를 직접 클릭해서 원하는 분 단위로 수정할 수 있습니다.<br><br>
+  <strong>Q. 알림음 없이 쓸 수 있나요?</strong><br>
+  A. 현재 알림음을 끄는 별도의 설정 버튼은 없습니다. 브라우저나 시스템 볼륨을 낮추면 됩니다.<br><br>
+  <strong>Q. 오늘 완료한 포모도로 기록을 저장할 수 있나요?</strong><br>
+  A. 현재 세션 수는 페이지를 새로고침하면 초기화됩니다. 별도의 저장 기능은 없습니다.</p>
 </div>
 <div class="site-footer">
   <a href="https://www.wspace.ai.kr/">wspace 홈</a>

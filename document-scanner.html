@@ -316,6 +316,7 @@ input[type=range]::-moz-range-thumb {
 .tool-help{max-width:900px;margin:48px auto 0;padding:24px 28px;background:var(--surface,#18181b);border:1px solid var(--border,#2e2e33);border-radius:14px;}
 .tool-help h2{font-family:'DM Mono','Courier New',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#22d3ee);margin-bottom:12px;}
 .tool-help p{font-size:13px;color:var(--text-2,#a1a1aa);line-height:1.75;font-family:'DM Mono','Courier New',monospace;}
+.tool-help h3{font-family:'DM Mono','Courier New',monospace;font-size:12px;font-weight:600;color:var(--text,#fafafa);margin:20px 0 6px;}.tool-help .guide-section{margin-bottom:0;}
 </style>
 <style id="site-footer-css">
 .site-footer{margin-top:56px;padding:24px 20px;border-top:1px solid var(--border,#2e2e33);text-align:center;font-family:'DM Mono','Courier New',monospace;font-size:12px;color:var(--text-3,#71717a);}
@@ -1418,8 +1419,31 @@ document.getElementById('btnDownloadTxt').addEventListener('click', () => {
 </script>
 
 <div class="tool-help">
-  <h2>이 도구는</h2>
-  <p>스마트폰이나 웹캠으로 문서를 촬영하면 자동으로 원근 왜곡을 보정하고 깔끔한 스캔 이미지를 만들어줍니다. 사용법: 카메라 시작 버튼을 눌러 권한을 허용한 뒤 문서가 화면에 들어오도록 위치를 맞춥니다. 촬영 버튼을 누르면 코너를 자동 감지하며, 수동으로 드래그해 조정할 수 있습니다. 흑백·그레이스케일 모드를 선택하고 PNG 또는 PDF로 다운로드합니다. 카메라 영상과 촬영 데이터는 브라우저 안에서만 처리되며 서버로 전송되지 않습니다.</p>
+  <h2>사용 가이드</h2>
+
+  <h3>이런 때 쓰세요</h3>
+  <p>휴대폰 없이 노트북 웹캠만으로 종이 문서를 스캔해야 할 때 유용합니다. 명함, 영수증, 손으로 쓴 메모, A4 문서를 촬영해서 기울어진 원근감을 자동으로 보정하고 저장할 수 있습니다. 앱 설치 없이 브라우저에서 바로 동작합니다.</p>
+
+  <h3>사용 순서</h3>
+  <p>1. "카메라 시작" 버튼을 누르면 웹캠 사용 권한을 요청합니다. 허용하면 실시간 카메라 화면이 표시됩니다.<br>
+  2. 문서를 평평한 배경(가능하면 밝은 단색 책상) 위에 놓고 카메라를 수직에 가깝게 맞추세요.<br>
+  3. 캡처 버튼을 누르면 현재 프레임을 저장하고, Canny 엣지 검출 알고리즘으로 문서의 네 꼭짓점을 자동으로 감지합니다.<br>
+  4. 자동 감지가 성공하면 원근 변환(호모그래피)이 적용된 보정 이미지가 표시됩니다. 감지 결과가 부정확하면 꼭짓점을 직접 드래그해서 수동으로 조정하세요.<br>
+  5. 대비(Contrast) 슬라이더로 이미지를 선명하게 조정한 뒤 다운로드하거나, "Re-scan" 버튼으로 다시 찍을 수 있습니다.</p>
+
+  <h3>예시</h3>
+  <p>A4 계약서를 어두운 책상 위에 놓고 노트북 웹캠으로 비스듬히 촬영했더니 사다리꼴로 찍혔습니다. 캡처 후 도구가 네 꼭짓점을 자동 감지해서 직사각형으로 펴준 이미지를 보여줬습니다. 대비를 +30 정도 높이면 글자가 더 선명해집니다.</p>
+
+  <h3>주의점과 한계</h3>
+  <p>자동 꼭짓점 감지는 문서와 배경의 색상 대비가 뚜렷할 때 잘 동작합니다. 배경이 복잡하거나 문서와 비슷한 색이면 감지 실패 확률이 높습니다. 감지가 잘 안 될 때는 꼭짓점을 직접 드래그해서 수동으로 지정할 수 있습니다. 결과 이미지 품질은 웹캠 해상도에 따라 다릅니다. 모든 처리는 브라우저 안에서만 이루어지며 서버로 전송되지 않습니다. 카메라 접근 권한이 필요하므로 HTTPS 환경에서만 동작합니다.</p>
+
+  <h3>자주 묻는 질문</h3>
+  <p><strong>Q. 카메라가 두 개인 경우 전환할 수 있나요?</strong><br>
+  A. 네, 카메라 전환 버튼(flip)으로 전면/후면 카메라를 바꿀 수 있습니다.<br><br>
+  <strong>Q. 출력 파일 형식은 무엇인가요?</strong><br>
+  A. PNG 이미지로 저장됩니다.<br><br>
+  <strong>Q. 자동 감지가 계속 실패합니다.</strong><br>
+  A. 문서 뒤에 흰 종이나 어두운 책을 놓아 배경과 대비를 높이세요. 그래도 안 되면 캡처 후 꼭짓점을 수동으로 드래그해서 조정하면 됩니다.</p>
 </div>
 <div class="site-footer">
   <a href="https://www.wspace.ai.kr/">wspace 홈</a>
